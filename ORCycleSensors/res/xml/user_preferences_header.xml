@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<preference-headers xmlns:android="http://schemas.android.com/apk/res/android" >
+    
+    <header
+        android:fragment="edu.pdx.cecs.orcyclesensors.Fragment_Preferences" 
+        android:title="General Application Settings"
+        android:summary="Recording frequency..." />
+
+    <header
+        android:title="Location Settings"
+        android:summary="System location settings">
+
+    	    <intent
+	        android:action="android.settings.LOCATION_SOURCE_SETTINGS" />
+    </header>
+</preference-headers>

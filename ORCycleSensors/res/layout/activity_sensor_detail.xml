@@ -1,0 +1,556 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="fill_parent" >
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical" >
+
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:background="@color/psu_green"
+		android:orientation="vertical"
+		android:paddingBottom="4dp"
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="4dp" />
+    
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="1dp"
+		android:background="#fcfcfc"
+		android:orientation="vertical"
+		android:paddingBottom="4dp"
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="4dp" >
+	
+	    <TextView
+	        android:id="@+id/tv_label_sensor_name"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginRight="4dp"
+	        android:layout_marginEnd="4dp"
+	        android:text="@string/asd_tv_label_sensor_name"
+	        android:textAppearance="?android:attr/textAppearanceMedium"
+	        android:textColor="@color/psu_sienna"
+	        android:textSize="16sp"
+	        android:textStyle="bold" />
+	    
+		<TextView
+		    android:id="@+id/tv_sensor_name"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:layout_alignBaseline="@id/tv_label_sensor_name"
+		    android:layout_toRightOf="@id/tv_label_sensor_name"
+		    android:layout_toEndOf="@id/tv_label_sensor_name"
+		    android:text="" />
+	
+	</RelativeLayout>
+	
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="1dp"
+		android:background="#fcfcfc"
+		android:orientation="vertical"
+		android:paddingBottom="4dp"
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="4dp" >
+
+		<TextView
+	        android:id="@+id/tv_label_stringType"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginRight="4dp"
+	        android:layout_marginEnd="4dp"
+	        android:text="@string/asd_tv_label_stringType"
+	        android:textSize="16sp"
+			android:textStyle="bold" 
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:textColor="@color/psu_sienna"  />
+	
+		<TextView
+	        android:id="@+id/tv_stringType"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+		    android:layout_alignBaseline="@id/tv_label_stringType"
+		    android:layout_toRightOf="@id/tv_label_stringType"
+		    android:layout_toEndOf="@id/tv_label_stringType"
+	        android:text="" />
+
+		</RelativeLayout>
+		
+		<RelativeLayout
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginTop="1dp"
+			android:background="#fcfcfc"
+			android:orientation="vertical"
+			android:paddingBottom="4dp"
+			android:paddingLeft="@dimen/activity_horizontal_margin"
+			android:paddingRight="@dimen/activity_horizontal_margin"
+			android:paddingTop="4dp" >
+	
+		<TextView
+	        android:id="@+id/tv_label_sensor_rate"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+			android:layout_alignParentStart="true"
+	        android:text="@string/asd_tv_label_sensor_rate"
+	        android:textSize="16sp"
+			android:textStyle="bold" 
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:textColor="@color/psu_sienna"  />
+	
+		<Spinner
+		    android:id="@+id/spn_asd_sensor_rate"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+			android:layout_alignBaseline="@id/tv_label_sensor_rate"
+			android:layout_toEndOf="@id/tv_label_sensor_rate"
+			android:entries="@array/asd_spn_sensor_rates"
+			android:textAppearance="?android:attr/textAppearanceMedium" />
+
+		</RelativeLayout>
+		<RelativeLayout
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginTop="1dp"
+			android:background="@color/psu_green"
+			android:orientation="vertical"
+			android:paddingBottom="4dp"
+			android:paddingLeft="@dimen/activity_horizontal_margin"
+			android:paddingRight="@dimen/activity_horizontal_margin"
+			android:paddingTop="4dp" >
+		</RelativeLayout>
+		    	
+		
+		<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="1dp"
+		android:background="#fcfcfc"
+		android:orientation="vertical"
+		android:paddingBottom="4dp"
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="4dp" >
+	
+	
+		<TextView
+	        android:id="@+id/tv_label_fifoMaxEventCount"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginEnd="4dp"
+	        android:text="@string/asd_tv_label_fifoMaxEventCount"
+	        android:textSize="16sp"
+			android:textStyle="bold" 
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:textColor="@color/psu_sienna"  />
+	
+		<TextView
+		    android:id="@+id/tv_fifoMaxEventCount"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:layout_alignBaseline="@id/tv_label_fifoMaxEventCount"
+		    android:layout_alignParentRight="false"
+		    android:layout_toEndOf="@id/tv_label_fifoMaxEventCount"
+		    android:text="" />
+
+		</RelativeLayout>
+		
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="1dp"
+		android:background="#fcfcfc"
+		android:orientation="vertical"
+		android:paddingBottom="4dp"
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="4dp" >
+
+		<TextView
+	        android:id="@+id/tv_label_fifoReservedEventCount"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginRight="4dp"
+	        android:layout_marginEnd="4dp"
+	        android:text="@string/asd_tv_label_fifoReservedEventCount"
+	        android:textSize="16sp"
+			android:textStyle="bold" 
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:textColor="@color/psu_sienna"  />
+	
+		<TextView
+	        android:id="@+id/tv_fifoReservedEventCount"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+		    android:layout_alignBaseline="@id/tv_label_fifoReservedEventCount"
+		    android:layout_toRightOf="@id/tv_label_fifoReservedEventCount"
+		    android:layout_toEndOf="@id/tv_label_fifoReservedEventCount"
+	        android:text="" />
+
+		</RelativeLayout>
+		
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="1dp"
+		android:background="#fcfcfc"
+		android:orientation="vertical"
+		android:paddingBottom="4dp"
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="4dp" >
+
+		<TextView
+	        android:id="@+id/tv_label_maxDelay"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginRight="4dp"
+	        android:layout_marginEnd="4dp"
+	        android:text="@string/asd_tv_label_maxDelay"
+	        android:textSize="16sp"
+			android:textStyle="bold" 
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:textColor="@color/psu_sienna"  />
+	
+		<TextView
+	        android:id="@+id/tv_maxDelay"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+		    android:layout_alignBaseline="@id/tv_label_maxDelay"
+		    android:layout_toRightOf="@id/tv_label_maxDelay"
+		    android:layout_toEndOf="@id/tv_label_maxDelay"
+	        android:text="" />
+
+		</RelativeLayout>
+		
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="1dp"
+		android:background="#fcfcfc"
+		android:orientation="vertical"
+		android:paddingBottom="4dp"
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="4dp" >
+
+		<TextView
+	        android:id="@+id/tv_label_maximumRange"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginRight="4dp"
+	        android:layout_marginEnd="4dp"
+	        android:text="@string/asd_tv_label_maximumRange"
+	        android:textSize="16sp"
+			android:textStyle="bold" 
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:textColor="@color/psu_sienna"  />
+	
+		<TextView
+	        android:id="@+id/tv_maximumRange"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+		    android:layout_alignBaseline="@id/tv_label_maximumRange"
+		    android:layout_toRightOf="@id/tv_label_maximumRange"
+		    android:layout_toEndOf="@id/tv_label_maximumRange"
+	        android:text="" />
+
+		</RelativeLayout>
+		
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="1dp"
+		android:background="#fcfcfc"
+		android:orientation="vertical"
+		android:paddingBottom="4dp"
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="4dp" >
+
+		<TextView
+	        android:id="@+id/tv_label_minDelay"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginRight="4dp"
+	        android:layout_marginEnd="4dp"
+	        android:text="@string/asd_tv_label_minDelay"
+	        android:textSize="16sp"
+			android:textStyle="bold" 
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:textColor="@color/psu_sienna"  />
+	
+		<TextView
+	        android:id="@+id/tv_minDelay"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+		    android:layout_alignBaseline="@id/tv_label_minDelay"
+		    android:layout_toRightOf="@id/tv_label_minDelay"
+		    android:layout_toEndOf="@id/tv_label_minDelay"
+	        android:text="" />
+
+		</RelativeLayout>
+		
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="1dp"
+		android:background="#fcfcfc"
+		android:orientation="vertical"
+		android:paddingBottom="4dp"
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="4dp" >
+
+		<TextView
+	        android:id="@+id/tv_label_power"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginRight="4dp"
+	        android:layout_marginEnd="4dp"
+	        android:text="@string/asd_tv_label_power"
+	        android:textSize="16sp"
+			android:textStyle="bold" 
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:textColor="@color/psu_sienna"  />
+	
+		<TextView
+	        android:id="@+id/tv_power"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+		    android:layout_alignBaseline="@id/tv_label_power"
+		    android:layout_toRightOf="@id/tv_label_power"
+		    android:layout_toEndOf="@id/tv_label_power"
+	        android:text="" />
+
+		</RelativeLayout>
+		
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="1dp"
+		android:background="#fcfcfc"
+		android:orientation="vertical"
+		android:paddingBottom="4dp"
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="4dp" >
+
+		<TextView
+	        android:id="@+id/tv_label_reportingMode"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginRight="4dp"
+	        android:layout_marginEnd="4dp"
+	        android:text="@string/asd_tv_label_reportingMode"
+	        android:textSize="16sp"
+			android:textStyle="bold" 
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:textColor="@color/psu_sienna"  />
+	
+		<TextView
+	        android:id="@+id/tv_reportingMode"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+		    android:layout_alignBaseline="@id/tv_label_reportingMode"
+		    android:layout_toRightOf="@id/tv_label_reportingMode"
+		    android:layout_toEndOf="@id/tv_label_reportingMode"
+	        android:text="" />
+
+		</RelativeLayout>
+		
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="1dp"
+		android:background="#fcfcfc"
+		android:orientation="vertical"
+		android:paddingBottom="4dp"
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="4dp" >
+
+		<TextView
+	        android:id="@+id/tv_label_resolution"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginRight="4dp"
+	        android:layout_marginEnd="4dp"
+	        android:text="@string/asd_tv_label_resolution"
+	        android:textSize="16sp"
+			android:textStyle="bold" 
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:textColor="@color/psu_sienna"  />
+	
+		<TextView
+	        android:id="@+id/tv_resolution"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+		    android:layout_alignBaseline="@id/tv_label_resolution"
+		    android:layout_toRightOf="@id/tv_label_resolution"
+		    android:layout_toEndOf="@id/tv_label_resolution"
+	        android:text="" />
+
+		</RelativeLayout>
+		
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="1dp"
+		android:background="#fcfcfc"
+		android:orientation="vertical"
+		android:paddingBottom="4dp"
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="4dp" >
+
+		<TextView
+	        android:id="@+id/tv_label_type"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginRight="4dp"
+	        android:layout_marginEnd="4dp"
+	        android:text="@string/asd_tv_label_type"
+	        android:textSize="16sp"
+			android:textStyle="bold" 
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:textColor="@color/psu_sienna"  />
+	
+		<TextView
+	        android:id="@+id/tv_type"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+		    android:layout_alignBaseline="@id/tv_label_type"
+		    android:layout_toRightOf="@id/tv_label_type"
+		    android:layout_toEndOf="@id/tv_label_type"
+	        android:text="" />
+
+		</RelativeLayout>
+		
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="1dp"
+		android:background="#fcfcfc"
+		android:orientation="vertical"
+		android:paddingBottom="4dp"
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="4dp" >
+
+		<TextView
+	        android:id="@+id/tv_label_vendor"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginRight="4dp"
+	        android:layout_marginEnd="4dp"
+	        android:text="@string/asd_tv_label_vendor"
+	        android:textSize="16sp"
+			android:textStyle="bold" 
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:textColor="@color/psu_sienna"  />
+	
+		<TextView
+	        android:id="@+id/tv_vendor"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+		    android:layout_alignBaseline="@id/tv_label_vendor"
+		    android:layout_toRightOf="@id/tv_label_vendor"
+		    android:layout_toEndOf="@id/tv_label_vendor"
+	        android:text="" />
+
+		</RelativeLayout>
+		
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="1dp"
+		android:background="#fcfcfc"
+		android:orientation="vertical"
+		android:paddingBottom="4dp"
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="4dp" >
+
+		<TextView
+	        android:id="@+id/tv_label_version"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginRight="4dp"
+	        android:layout_marginEnd="4dp"
+	        android:text="@string/asd_tv_label_version"
+	        android:textSize="16sp"
+			android:textStyle="bold" 
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:textColor="@color/psu_sienna"  />
+	
+		<TextView
+	        android:id="@+id/tv_version"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+		    android:layout_alignBaseline="@id/tv_label_version"
+		    android:layout_toRightOf="@id/tv_label_version"
+		    android:layout_toEndOf="@id/tv_label_version"
+	        android:text="" />
+
+		</RelativeLayout>
+		
+		<RelativeLayout
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginTop="1dp"
+			android:background="#fcfcfc"
+			android:orientation="vertical"
+			android:paddingBottom="4dp"
+			android:paddingLeft="@dimen/activity_horizontal_margin"
+			android:paddingRight="@dimen/activity_horizontal_margin"
+			android:paddingTop="4dp" >
+	
+			<TextView
+		        android:id="@+id/tv_label_isWakeUpSensor"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_marginRight="4dp"
+		        android:layout_marginEnd="4dp"
+		        android:text="@string/asd_tv_label_isWakeUpSensor"
+		        android:textSize="16sp"
+				android:textStyle="bold" 
+				android:textAppearance="?android:attr/textAppearanceMedium"
+				android:textColor="@color/psu_sienna"  />
+		
+			<TextView
+		        android:id="@+id/tv_isWakeUpSensor"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+			    android:layout_alignBaseline="@id/tv_label_isWakeUpSensor"
+			    android:layout_toRightOf="@id/tv_label_isWakeUpSensor"
+			    android:layout_toEndOf="@id/tv_label_isWakeUpSensor"
+		        android:text="" />
+	
+		</RelativeLayout>
+		
+		<RelativeLayout
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginTop="1dp"
+			android:background="@color/psu_green"
+			android:orientation="vertical"
+			android:paddingBottom="4dp"
+			android:paddingLeft="@dimen/activity_horizontal_margin"
+			android:paddingRight="@dimen/activity_horizontal_margin"
+			android:paddingTop="4dp" >
+		</RelativeLayout>
+
+</LinearLayout>
+</ScrollView>

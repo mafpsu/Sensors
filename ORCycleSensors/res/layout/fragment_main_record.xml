@@ -1,0 +1,194 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="edu.pdx.cecs.orcyclesensors.MainActivity$PlaceholderFragment" >
+
+    <fragment
+        android:id="@+id/map"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@+id/recordStatusLayout1"
+        android:layout_gravity="bottom"
+        android:name="com.google.android.gms.maps.MapFragment"
+        android:scrollbars="vertical" />
+
+    <LinearLayout
+        android:id="@+id/recordStatusLayout1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/lcdscreen"
+        android:baselineAligned="false"
+        android:gravity="center_horizontal"
+        android:measureWithLargestChild="true" >
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start|fill_vertical"
+            android:layout_weight="1"
+            android:orientation="vertical" >
+
+            <TextView
+                android:id="@+id/textViewElapsedTime"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center"
+                android:text="@string/ami_initial_elapsed_time"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <TextView
+                android:id="@+id/labelElapsedTime"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp"
+                android:layout_marginLeft="4dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:text="@string/ami_elapsed_time"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_vertical|center"
+            android:layout_weight="1"
+            android:orientation="vertical" >
+
+            <TextView
+                android:id="@+id/textViewDistance"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center|center"
+                android:text="@string/ami_initial_miles"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+            
+            <TextView
+                android:id="@+id/labelViewDistance"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:text="@string/ami_distance"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical" >
+
+            <TextView
+                android:id="@+id/textViewAvgSpeed"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center"
+                android:text="@string/ami_initial_mph"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <TextView
+                android:id="@+id/textView4"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:text="@string/ami_avg_speed"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        </LinearLayout>
+        
+    </LinearLayout>
+
+		<TextView
+		    android:id="@+id/tv_waiting_device_connect"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:layout_below="@id/recordStatusLayout1"
+		    android:layout_centerInParent="true"
+		    android:layout_centerVertical="false"
+		    android:layout_marginTop="20dp"
+		    android:background="@color/user_button_background"
+		    android:paddingLeft="6dp"
+		    android:paddingRight="6dp"
+		    android:text="@string/tv_waiting_device_connect"
+		    android:textColor="@color/user_button_text"
+		    android:textStyle="bold"
+		    android:visibility="gone" />
+
+		<LinearLayout
+            style="?android:attr/buttonBarStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="30dp"
+            android:gravity="center|bottom"
+            android:orientation="horizontal"
+            android:showDividers="none" >
+
+            <Button
+                android:id="@+id/buttonStart"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:background="@color/user_button_background"
+                android:paddingLeft="6dp"
+                android:paddingRight="6dp"
+                android:text="@string/btn_lbl_start"
+                android:textColor="@color/user_button_text"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/buttonPause"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:background="@color/user_button_background"
+                android:paddingLeft="6dp"
+                android:paddingRight="6dp"
+                android:text="@string/btn_lbl_pause"
+                android:textColor="@color/user_button_text"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/buttonResume"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:background="@color/user_button_background"
+                android:paddingLeft="6dp"
+                android:paddingRight="6dp"
+                android:text="@string/btn_lbl_resume"
+                android:textColor="@color/user_button_text"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/buttonFinish"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:background="@color/user_button_background"
+                android:paddingLeft="6dp"
+                android:paddingRight="6dp"
+                android:text="@string/btn_lbl_finish"
+                android:textColor="@color/user_button_text"
+                android:textStyle="bold" />
+            
+        </LinearLayout>
+
+</RelativeLayout>

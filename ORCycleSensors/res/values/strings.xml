@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">ORcycle Sensors</string>
+
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_title_select_sensors">Select Sensors</string>
+    
+    <string name="tab_title_record">Record</string>
+    <string name="tab_title_trips">Trips</string>
+    <string name="tab_title_devices">Devices</string>
+    <string name="tab_title_sensors">Sensors</string>
+    <string name="hello_world">Hello world!</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="action_add_device">Add device</string>
+    <string name="action_delete_devices">Delete devices</string>
+    <string name="action_edit_sensors">Edit sensors</string>
+    
+	<string name="ami_initial_elapsed_time">00:00:00</string>
+	<string name="ami_elapsed_time">Settings</string>
+	<string name="ami_initial_miles">0.0 miles</string>
+	<string name="ami_initial_mph">0.0 mph</string>
+	<string name="ami_distance">Distance</string>
+	<string name="ami_avg_speed">Avg. Speed</string>
+	<string name="ami_initial_calories">Calories</string>
+	<string name="ami_calories">0.0 kcal</string>
+	<string name="ami_co2">CO2 Offset</string>
+	<string name="ami_initial_co2">0.0 lbs</string>
+                    
+    <string name="fmi_no_gps">Your phone\'s GPS is disabled. ORCycle needs GPS to determine your location.\n\nGo to System Settings now to enable GPS?</string>
+	<string name="fmi_no_gps_dialog_ok">GPS Settings&#8230;</string>
+    <string name="fmi_no_gps_dialog_cancel">Cancel</string>
+	<string name="fmi_no_gps_data">No GPS data acquired; nothing to submit.</string>
+	<string name="fmi_dtf_save_trip">Save Trip</string>
+    <string name="fmi_dtf_query_save">Do you want to save this trip?</string>
+    <string name="fmi_dtf_discard">Discard</string>
+    <string name="fmi_dtf_resume">Resume</string>
+    <string name="fmi_dtf_save">Save</string>
+	
+	<string name="fmi_reset_duration">00:00:00</string>
+    <string name="fmi_reset_distance">0.0 miles</string>
+    <string name="fmi_reset_avg_speed">0.0 mph</string>
+	
+	<string name="btn_lbl_start">Start Trip</string>
+    <string name="btn_lbl_pause">Pause</string>
+    <string name="btn_lbl_resume">Resume</string>
+    <string name="btn_lbl_finish">Finish</string>
+    <string name="btn_lbl_rate_segment_start">Rate segment&#8230;</string>
+    <string name="btn_lbl_rate_segment_finish">Enter end of segment</string>
+    
+    <string name="atm_trip_purpose">Trip Purpose:</string>
+    <string name="atm_trip_info_long_string">Trip info: The quick brown fox jumps over the lazy dog</string>
+    <string name="atm_crosshair_image_description">Map Crosshairs</string>
+    <string name="atm_crosshair_distance_message">Cannot mark location! Target must be within 150 feet of bike path.</string>
+    
+    <!-- Ant+ additions -->
+    <string name="menu_reset">Reset Connection</string>
+    <string name="no_activities_available">No Activities Available</string>
+    <string-array name="device_types">
+        <item>Bike Power</item>
+        <item>Controllable Device</item>
+        <item>Fitness Equipment</item>
+        <item>Blood Pressure</item>
+        <item>Geocache</item>
+        <item>Environment</item>
+        <item>Weight Scale</item>
+        <item>Heart Rate</item>
+        <item>Bike Speed and Cadence</item>
+        <item>Bike Cadence</item>
+        <item>Bike Speed</item>
+        <item>Stride-based Speed and Distance</item>
+    </string-array>
+
+    <string name="label_multiDeviceSearchButton">Start Search</string>
+    <string name="searchingText">Searching for devices&#8230;</string>
+    <string name="label_alreadyConnected">Already Connected Devices:</string>
+    <string name="label_foundDevices">Devices Found In Scan:</string>
+    <string name="label_selectAll">Select All</string>
+    <string name="label_deviceTypeFilter">Select Device Types to Search:</string>
+    <string name="label_RSSI">RSSI: </string>
+    
+    <string name="asd_tv_label_sensor_name">Name:</string>
+    <string name="asd_tv_label_fifoMaxEventCount">Fifo Max Event Count:</string>
+    <string name="asd_tv_label_fifoReservedEventCount">Fifo Reserved Event Count:</string>
+    <string name="asd_tv_label_isWakeUpSensor">Is WakeUp Sensor:</string>
+    <string name="asd_tv_label_maxDelay">Max Delay:</string>
+    <string name="asd_tv_label_maximumRange">Maximum Range:</string>
+    <string name="asd_tv_label_minDelay">Min Delay:</string>
+    <string name="asd_tv_label_power">Power:</string>
+    <string name="asd_tv_label_reportingMode">Reporting Mode:</string>
+    <string name="asd_tv_label_resolution">Resolution:</string>
+    <string name="asd_tv_label_stringType">Type:</string>
+    <string name="asd_tv_label_type">Type Value:</string>
+    <string name="asd_tv_label_vendor">Vendor:</string>
+    <string name="asd_tv_label_version">Version:</string>
+    <string name="asd_tv_label_sensor_type">Type:</string>
+    <string name="asd_tv_label_sensor_rate">Rate:</string>
+    <string name="asd_tv_default_name">MPU6500 Acceleration Sensor</string>
+    <string name="asd_tv_default_type">Accelerometer</string>
+    
+    <string name="misc_longest_date_string">September 27, 2014 11:02 PM</string>
+    <string name="tv_waiting_device_connect">Waiting for Ant+ devices to connect&#8230;</string>
+    
+    <string-array name="asd_spn_sensor_rates">
+        <item>Fastest</item>
+        <item>Game</item>
+        <item>UI</item>
+        <item>Normal</item>
+        <item>Off</item>
+    </string-array>
+
+</resources>
