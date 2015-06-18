@@ -1,39 +1,51 @@
 package edu.pdx.cecs.orcyclesensors;
 
-import java.math.BigDecimal;
-import java.util.EnumSet;
-
-import com.dsi.ant.plugins.antplus.pcc.AntPlusHeartRatePcc;
-import com.dsi.ant.plugins.antplus.pcc.AntPlusHeartRatePcc.DataState;
-import com.dsi.ant.plugins.antplus.pcc.AntPlusHeartRatePcc.IHeartRateDataReceiver;
 import com.dsi.ant.plugins.antplus.pcc.defines.DeviceState;
-import com.dsi.ant.plugins.antplus.pcc.defines.EventFlag;
+import com.dsi.ant.plugins.antplus.pcc.defines.DeviceType;
 import com.dsi.ant.plugins.antplus.pcc.defines.RequestAccessResult;
-import com.dsi.ant.plugins.antplus.pccbase.PccReleaseHandle;
 import com.dsi.ant.plugins.antplus.pccbase.AntPluginPcc.IDeviceStateChangeReceiver;
-import com.dsi.ant.plugins.antplus.pccbase.AntPluginPcc.IPluginAccessResultReceiver;
 
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.DialogInterface.OnClickListener;
-import android.hardware.SensorEventListener;
-import android.net.Uri;
 import android.util.Log;
 import android.widget.Toast;
 
-public class AntDeviceRecorder {
+public abstract class AntDeviceRecorder implements IDeviceStateChangeReceiver {
 
 	private static final String MODULE_TAG = "AntDeviceRecorder";
+
+	public enum State { IDLE, CONNECTING, RUNNING, PAUSED, FAILED };
+
+	// **********************************
+	// * Abstract methods
+	// **********************************
 	
-	private static void showResultStatus(Context context, AntPlusHeartRatePcc result, 
+    protected abstract void requestAccessToPcc();
+    
+    protected abstract void unregister();
+    
+    protected abstract void writeResult(TripData tripData, long currentTimeMillis);
+    
+	// ************************************************
+	// * Protected section classes, methods & variables
+	// ************************************************
+
+	protected final int deviceNumber;
+	
+	protected Context context;
+	
+	protected State state = State.IDLE;
+    
+	protected AntDeviceRecorder(int deviceNumber) {
+		this.deviceNumber = deviceNumber;
+	}
+
+	protected static void showResultStatus(Context context, String deviceName, boolean supportsRssi,
 			RequestAccessResult resultCode, DeviceState initialDeviceState) {
 		switch(resultCode)
 	    {
 	        case SUCCESS:
-	            Log.i(MODULE_TAG, result.getDeviceName() + ": " + initialDeviceState);
-	            if(!result.supportsRssi()) {
+	            Log.i(MODULE_TAG, deviceName + ": " + initialDeviceState);
+	            if(!supportsRssi) {
 	            	Log.i(MODULE_TAG,"tv_rssi: N/A");
 	            	}
 	            break;
@@ -77,109 +89,20 @@ public class AntDeviceRecorder {
 	    }
 	}
 
-	private final class HeartRateDataEvent implements IHeartRateDataReceiver {
-		@Override
-		synchronized public void onNewHeartRateData(final long estTimestamp, EnumSet<EventFlag> eventFlags,
-		    final int computedHeartRate, final long heartBeatCount,
-		    final BigDecimal heartBeatEventTime, final DataState dataState)
-		{
-			if (DataState.UNRECOGNIZED != dataState) {
-				addSample(computedHeartRate);
-			}
-		}
-	}
-
-	private final class DeviceStateChangeReceiver implements
-			IDeviceStateChangeReceiver {
-		@Override
-		synchronized public void onDeviceStateChange(final DeviceState newDeviceState) {
-			
-			// TODO: this should be synchronized
-			AntDeviceRecorder.this.deviceState = newDeviceState;
-		}
-	}
-
-	private final class AccessResultReceiver implements
-			IPluginAccessResultReceiver<AntPlusHeartRatePcc> {
-		//Handle the result, connecting to events on success or reporting failure to user.
-		@Override
-		synchronized public void onResultReceived(AntPlusHeartRatePcc result, RequestAccessResult resultCode,
-		    DeviceState initialDeviceState)
-		{
-			showResultStatus(context, result, resultCode, initialDeviceState);
-			
-			if (RequestAccessResult.SUCCESS == resultCode) {
-	            hrPcc = result;
-	            state = State.RUNNING;
-	            subscribeToHrEvents();
-			}
-			else {
-				hrPcc = null;
-	            state = State.FAILED;
-			}
-		}
-	}
-
-	private Context context;
-	private int deviceNumber;
-	private int deviceType;
-	private DeviceState deviceState;
-    private float sumHeartRate = 0; 
-    private int numSamples = 0; 
-
-	public enum State { IDLE, CONNECTING, RUNNING, PAUSED, FAILED };
-	private State state = State.IDLE;
+	// **********************************
+	// * public interface
+	// **********************************
 	
-	private PccReleaseHandle<AntPlusHeartRatePcc> releaseHandle = null;
-    private AntPlusHeartRatePcc hrPcc = null;
-
-    //Receives device's connection result
-    private IPluginAccessResultReceiver<AntPlusHeartRatePcc> accessResultReciever =
-            new AccessResultReceiver();
-
-	//Receives state changes
-	private  IDeviceStateChangeReceiver deviceStateChangeReceiver =
-	    new DeviceStateChangeReceiver();
-            
-	public static AntDeviceRecorder create(int deviceNumber, int type) {
-		return new AntDeviceRecorder(deviceNumber, type);
-	}
-	
-	private AntDeviceRecorder(int deviceNumber, int deviceType) {
-		this.deviceNumber = deviceNumber;
-		this.deviceType = deviceType;
-	}
-	
-	private float[] averageValues() {
+	public static AntDeviceRecorder create(int deviceNumber, DeviceType deviceType) throws Exception {
 		
-		float[] averageValues;
-		
-		switch(deviceType) {
-		
-		case AntDeviceInfo.HEART_RATE_DEVICE:
-			averageValues = new float[1];
-			averageValues[0] = (numSamples == 0 ? 0 : sumHeartRate/(float)numSamples);
-			break;
-		
-		default:
-			averageValues = null;
-			break;
+		if (deviceType == DeviceType.HEARTRATE) {
+			return new AntDeviceHeartRateRecorder(deviceNumber);
+		}
+		else if (deviceType == DeviceType.BIKE_POWER) {
+			return new AntDeviceBikePowerRecorder(deviceNumber);
 		}
 
-		return averageValues;
-	}
-	
-	synchronized private void addSample(int computedHeartRate) {
-		if (State.RUNNING == state) {
-			sumHeartRate += computedHeartRate;
-			++numSamples;		
-		}
-	}
-	
-	synchronized public AntDeviceRecorderResult getResult() {
-		AntDeviceRecorderResult result = new AntDeviceRecorderResult(deviceNumber, deviceType, numSamples, averageValues());
-		reset();
-		return result;
+		throw new Exception("Attempt to create unknown DeviceRecorder type.");
 	}
 	
 	synchronized public void start(Context context) {
@@ -206,15 +129,6 @@ public class AntDeviceRecorder {
 		}
 	}
 
-	synchronized public void unregister() {
-        if(releaseHandle != null)
-        	
-        {
-            releaseHandle.close();
-            releaseHandle = null;
-        }
-	}
-
 	synchronized public State getState() {
 		return state;
 	}
@@ -226,22 +140,8 @@ public class AntDeviceRecorder {
         requestAccessToPcc();
     }
 
-    private void requestAccessToPcc()
-    {
-    	state = State.CONNECTING;
-
-	    // starts the plugins UI search
-	    releaseHandle = AntPlusHeartRatePcc.requestAccess(this.context,
-	        deviceNumber, 0, accessResultReciever, deviceStateChangeReceiver);
-    }
-    
-    private void subscribeToHrEvents()
-    {
-        hrPcc.subscribeHeartRateDataEvent(new HeartRateDataEvent());
-    }
-    
-	private void reset() {
-		sumHeartRate = 0.0f;
-		numSamples = 0;
+	@Override
+	synchronized public void onDeviceStateChange(
+			final DeviceState newDeviceState) {
 	}
 }

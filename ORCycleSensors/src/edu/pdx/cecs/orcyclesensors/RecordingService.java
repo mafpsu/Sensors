@@ -147,8 +147,6 @@ public class RecordingService extends Service
 
 	public int getState() {
 		
-		int deviceConnectState;
-		
 		if (STATE_WAITING_FOR_DEVICE_CONNECT == state) {
 			
 			switch(getDeviceConnectState()) {
@@ -200,10 +198,12 @@ public class RecordingService extends Service
 	 *  - reset trip variables
 	 *  - enable location manager updates
 	 *  - enable bike bell timer
+	 * @throws Exception 
 	 */
 	public void startRecording(TripData trip, 
 			ArrayList<AntDeviceInfo> antDeviceInfos, 
-			ArrayList<SensorItem> sensorItems) {
+			ArrayList<SensorItem> sensorItems,
+			long minTimeBetweenReadings) throws Exception {
 		
 		this.trip = trip;
 		this.pauseId = -1;
@@ -223,11 +223,11 @@ public class RecordingService extends Service
 
 		// Create a recorder for each Ant+ device
 		for (AntDeviceInfo antDeviceInfo: this.devices) {
-			deviceRecorders.put(antDeviceInfo.getNumber(), AntDeviceRecorder.create(antDeviceInfo.getNumber(), antDeviceInfo.getType()));
+			deviceRecorders.put(antDeviceInfo.getNumber(), AntDeviceRecorder.create(antDeviceInfo.getNumber(), antDeviceInfo.getDeviceType()));
 		}
 
 		// Start listening for GPS updates!
-		registerLocationUpdates();
+		registerLocationUpdates(minTimeBetweenReadings);
 
 		// Start listening for device updates!
 		startDeviceRecorders();
@@ -329,20 +329,8 @@ public class RecordingService extends Service
 	// *                     LocationListener Implementation
 	// *********************************************************************************
 
-	private void registerLocationUpdates() {
-		Long minTimeBetweenReadings;
-		
-		Context context = getApplicationContext();
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		String stringHz = prefs.getString("PREF_GPS_FREQUENCY", "");
-		long hz;
-		
-		hz = Long.parseLong(stringHz);
-		if (hz <= 0)
-			minTimeBetweenReadings = 0L;
-		else
-			minTimeBetweenReadings = 1000L / hz;  
-		
+	private void registerLocationUpdates(long minTimeBetweenReadings) {
+
 		LocationManager lm;
 		if (null != (lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE))) {
 			lm.requestLocationUpdates(LocationManager.GPS_PROVIDER,
@@ -368,9 +356,6 @@ public class RecordingService extends Service
 
 			if (location != null) {
 
-				double timeSinceStart = System.currentTimeMillis() - trip.getStartTime();
-				float accuracy = location.getAccuracy();
-
 				if ((null != speedMonitor) && (location.hasSpeed()))
 					speedMonitor.recordSpeed(System.currentTimeMillis(), location.getSpeed());
 
@@ -384,35 +369,14 @@ public class RecordingService extends Service
 
 				// record sensor values
 				for (SensorRecorder sensorRecorder: sensorRecorders.values()) {
-
-					SensorRecorderResult sResult = sensorRecorder.getResult();
-					
-					trip.addSensorReadings(currentTimeMillis, 
-							sResult.getSensorName(), 
-							sResult.getSensorType(),
-							sResult.getNumSamples(),
-							sResult.getValues(),
-							sResult.getSumSquareDifferences());
+					sensorRecorder.writeResult(trip, currentTimeMillis);
 				}
 
 				// record device values
 				for (AntDeviceRecorder deviceRecorder: deviceRecorders.values()) {
-					
-					AntDeviceRecorderResult dResult = deviceRecorder.getResult();
-					
-					Log.i(MODULE_TAG, "HR-Result: " + dResult.getNumSamples() + ", " + dResult.getValues()[0] + ")");
-					
-					switch(dResult.getDeviceType()) {
-					
-					case AntDeviceInfo.HEART_RATE_DEVICE:
-						trip.addHeartRateDeviceReading(currentTimeMillis, 
-								dResult.getNumSamples(),
-								dResult.getValues()[0]);
-						break;
-					
-					}
-					
+					deviceRecorder.writeResult(trip, currentTimeMillis);
 				}
+				
 				// record location for distance measurement
 				lastLocation = location;
 			}

@@ -43,7 +43,11 @@
     <string name="fmi_reset_distance">0.0 miles</string>
     <string name="fmi_reset_avg_speed">0.0 mph</string>
 	
-	<string name="btn_lbl_start">Start Trip</string>
+    <string name="fmr_dnc_title"><b>Device Connection Failed!</b></string>
+    <string name="fmr_dnc_message">One or more devices failed to connect. Recording not started.</string>
+    <string name="fmr_dnc_button_ok">OK</string>
+    
+    	<string name="btn_lbl_start">Start Trip</string>
     <string name="btn_lbl_pause">Pause</string>
     <string name="btn_lbl_resume">Resume</string>
     <string name="btn_lbl_finish">Finish</string>
@@ -101,7 +105,7 @@
     <string name="asd_tv_default_type">Accelerometer</string>
     
     <string name="misc_longest_date_string">September 27, 2014 11:02 PM</string>
-    <string name="tv_waiting_device_connect">Waiting for Ant+ devices to connect&#8230;</string>
+    <string name="tv_waiting_device_connect">Waiting for recording devices to connect&#8230;</string>
     
     <string-array name="asd_spn_sensor_rates">
         <item>Fastest</item>

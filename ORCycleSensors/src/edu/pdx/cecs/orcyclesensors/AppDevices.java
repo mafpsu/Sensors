@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.dsi.ant.plugins.antplus.pcc.defines.DeviceType;
+
 import android.content.SharedPreferences;
 import android.util.Log;
 
@@ -35,8 +37,16 @@ public class AppDevices {
 		appDevices = this;
 	}
 	
-	public void addDevice(int number, String name, int type) {
-		devices.add(new AntDeviceInfo(number, name, type));
+	public void addDevice(int number, String name, DeviceType deviceType) {
+		
+		// Note that only one device of a given type is allowed
+		for (AntDeviceInfo info: devices) {
+			if (deviceType == info.getDeviceType()) {
+				devices.remove(info);
+			}
+		}
+
+		devices.add(new AntDeviceInfo(number, name, deviceType));
 	}
 	
 	public void deleteDevice(int number) {
@@ -66,7 +76,7 @@ public class AppDevices {
 				JSONObject o = new JSONObject();
 				o.put("name", deviceInfo.getName());
 				o.put("number", deviceInfo.getNumber());
-				o.put("type", deviceInfo.getType());
+				o.put("type", deviceInfo.getDeviceType().getIntValue());
 				list.put(o);
 			}
 			catch (Exception ex) {
@@ -93,7 +103,7 @@ public class AppDevices {
 						number = o.getInt("number");
 						name = o.getString("name");
 						type = o.getInt("type");
-						devices.add(new AntDeviceInfo(number, name, type));
+						devices.add(new AntDeviceInfo(number, name, DeviceType.getValueFromInt(type)));
 					}
 					catch(Exception ex) {
 						Log.e(MODULE_TAG, ex.getMessage());
@@ -110,7 +120,7 @@ public class AppDevices {
 		
 		ArrayList<AntDeviceInfo> newList = new ArrayList<AntDeviceInfo>();
 		for (AntDeviceInfo info: devices) {
-			newList.add(new AntDeviceInfo(info.getNumber(), info.getName(), info.getType()));
+			newList.add(new AntDeviceInfo(info.getNumber(), info.getName(), info.getDeviceType()));
 		}
 		return newList;
 	}

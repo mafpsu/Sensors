@@ -32,28 +32,12 @@ import android.util.Log;
 
 public class Controller_MainRecord extends Controller {
 
-	private static final String MODULE_TAG = "Controller";
+	private static final String MODULE_TAG = "Controller_MainRecord";
 
 	private static final String COM_ANDROID_SETTINGS = "com.android.settings";
 	private static final String COM_ANDROID_SETTINGS_SECURITY_SETTINGS = "com.android.settings.SecuritySettings";
 
-	public static final int DSA_ID_WELCOME_DIALOG_ID = 1000;
-	public static final int DSA_ID_WELCOME_DIALOG_CONTINUE = 1001;
-	public static final int DSA_ID_WELCOME_DIALOG_INSTRUCTIONS = 1002;
-	public static final int DSA_ID_WELCOME_BACK_FROM_INSTRUCTIONS = 1003;
-
-	public static final int DSA_ID_USER_PROFILE_DIALOG_ID = 2000;
-	public static final int DSA_ID_USER_PROFILE_DIALOG_OK = 2001;
-	public static final int DSA_ID_USER_PROFILE_DIALOG_LATER = 2002;
-
-	public static final int DSA_ID_HOW_TO_DIALOG_ID = 3000;
-	public static final int DSA_ID_HOW_TO_DIALOG_CONTINUE = 3001;
-
-	private static int nextHowToScreen;
-	private static final int LAST_HOW_TO_SCREEN = 2;
-
 	public Controller_MainRecord() {
-		nextHowToScreen = 0;
 	}
 
 	// *********************************************************************************

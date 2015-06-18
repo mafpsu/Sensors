@@ -36,16 +36,17 @@ public class Fragment_MainDevices extends Fragment {
 
 			try {
 				if (actionModeEdit != null) {
-					// highlight
 					if (devicesToDelete.indexOf(antDeviceNumber) > -1) {
+						// highlight list item and record device to delete
 						devicesToDelete.remove(antDeviceNumber);
 						v.setBackgroundColor(getResources().getColor(R.color.default_color));
 					} else {
+						// Remove highlight from list item and remove device to delete from list of devices to delete
 						devicesToDelete.add(antDeviceNumber);
 						v.setBackgroundColor(getResources().getColor(R.color.pressed_color));
 					}
-					// Toast.makeText(getActivity(), "Selected: " + noteIdArray,
-					// Toast.LENGTH_SHORT).show();
+
+					// If there are devices to delete, enable delete menu item
 					if (devicesToDelete.size() == 0) {
 						deleteMenuItem.setEnabled(false);
 					} else {
@@ -53,6 +54,9 @@ public class Fragment_MainDevices extends Fragment {
 					}
 
 					actionModeEdit.setTitle(devicesToDelete.size() + " Selected");
+				}
+				else {
+					//transitionToSensorDetailActivity(sensor.getName());
 				}
 			}
 			catch(Exception ex) {
@@ -65,6 +69,10 @@ public class Fragment_MainDevices extends Fragment {
 
 	public Fragment_MainDevices() {
 	}
+
+	// *********************************************************************************
+	// *                              Activity Lifecycle
+	// *********************************************************************************
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,

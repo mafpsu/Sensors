@@ -66,8 +66,9 @@ public class AppSensors {
 	public SensorItem getSensor(String name) {
 		
 		for (SensorItem sensor: sensors) {
-			if (name.equals(sensor.getName()))
+			if (name.equals(sensor.getName())) {
 				return new SensorItem(sensor);
+			}
 		}
 		return null;
 	}

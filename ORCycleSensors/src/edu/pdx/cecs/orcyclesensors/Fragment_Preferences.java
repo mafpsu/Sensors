@@ -19,4 +19,9 @@ public class Fragment_Preferences extends PreferenceFragment{
 		}
 	}
 
+	@Override
+	public void onStop() {
+        super.onStop();
+        MyApplication.getInstance().loadMinTimeBetweenReadings();
+    }
 }

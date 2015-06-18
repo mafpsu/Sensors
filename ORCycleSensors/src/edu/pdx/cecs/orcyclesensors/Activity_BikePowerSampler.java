@@ -18,6 +18,9 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
+
+
 //import com.dsi.ant.antplus.pluginsampler.multidevicesearch.Activity_MultiDeviceSearchSampler;
 import com.dsi.ant.plugins.antplus.pcc.AntPlusBikePowerPcc;
 import com.dsi.ant.plugins.antplus.pcc.AntPlusBikePowerPcc.AutoZeroStatus;
@@ -43,6 +46,7 @@ import com.dsi.ant.plugins.antplus.pcc.AntPlusBikePowerPcc.IRawWheelTorqueDataRe
 import com.dsi.ant.plugins.antplus.pcc.AntPlusBikePowerPcc.ITorqueEffectivenessReceiver;
 import com.dsi.ant.plugins.antplus.pcc.defines.BatteryStatus;
 import com.dsi.ant.plugins.antplus.pcc.defines.DeviceState;
+import com.dsi.ant.plugins.antplus.pcc.defines.DeviceType;
 import com.dsi.ant.plugins.antplus.pcc.defines.EventFlag;
 import com.dsi.ant.plugins.antplus.pcc.defines.RequestAccessResult;
 import com.dsi.ant.plugins.antplus.pcc.defines.RequestStatus;
@@ -153,91 +157,16 @@ public class Activity_BikePowerSampler extends Activity
         public void onResultReceived(AntPlusBikePowerPcc result,
             RequestAccessResult resultCode, DeviceState initialDeviceState)
         {
-            switch (resultCode)
-            {
-                case SUCCESS:
-                    pwrPcc = result;
-                    textView_status.setText(result.getDeviceName() + ": " + initialDeviceState);
-                    subscribeToEvents();
-                    break;
-                case CHANNEL_NOT_AVAILABLE:
-                    Toast.makeText(Activity_BikePowerSampler.this, "Channel Not Available",
-                        Toast.LENGTH_SHORT).show();
-                    textView_status.setText("Error. Do Menu->Reset.");
-                    break;
-                case ADAPTER_NOT_DETECTED:
-                    Toast
-                        .makeText(
-                            Activity_BikePowerSampler.this,
-                            "ANT Adapter Not Available. Built-in ANT hardware or external adapter required.",
-                            Toast.LENGTH_SHORT).show();
-                    textView_status.setText("Error. Do Menu->Reset.");
-                    break;
-                case BAD_PARAMS:
-                    // Note: Since we compose all the params ourself, we should
-                    // never see this result
-                    Toast.makeText(Activity_BikePowerSampler.this, "Bad request parameters.",
-                        Toast.LENGTH_SHORT).show();
-                    textView_status.setText("Error. Do Menu->Reset.");
-                    break;
-                case OTHER_FAILURE:
-                    Toast.makeText(Activity_BikePowerSampler.this,
-                        "RequestAccess failed. See logcat for details.", Toast.LENGTH_SHORT)
-                        .show();
-                    textView_status.setText("Error. Do Menu->Reset.");
-                    break;
-                case DEPENDENCY_NOT_INSTALLED:
-                    textView_status.setText("Error. Do Menu->Reset.");
-                    AlertDialog.Builder adlgBldr = new AlertDialog.Builder(
-                        Activity_BikePowerSampler.this);
-                    adlgBldr.setTitle("Missing Dependency");
-                    adlgBldr.setMessage("The required service\n\""
-                        + AntPlusBikePowerPcc.getMissingDependencyName()
-                        + "\"\n was not found. You need to install the ANT+ Plugins service or"
-                        + "you may need to update your existing version if you already have it"
-                        + ". Do you want to launch the Play Store to get it?");
-                    adlgBldr.setCancelable(true);
-                    adlgBldr.setPositiveButton("Go to Store", new OnClickListener()
-                    {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which)
-                        {
-                            Intent startStore = null;
-                            startStore = new Intent(
-                                Intent.ACTION_VIEW,
-                                Uri.parse("market://details?id="
-                                    + AntPlusBikePowerPcc.getMissingDependencyPackageName()));
-                            startStore.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-                            Activity_BikePowerSampler.this.startActivity(startStore);
-                        }
-                    });
-                    adlgBldr.setNegativeButton("Cancel", new OnClickListener()
-                    {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which)
-                        {
-                            dialog.dismiss();
-                        }
-                    });
-
-                    final AlertDialog waitDialog = adlgBldr.create();
-                    waitDialog.show();
-                    break;
-                case USER_CANCELLED:
-                    textView_status.setText("Cancelled. Do Menu->Reset.");
-                    break;
-                case UNRECOGNIZED:
-                    Toast.makeText(Activity_BikePowerSampler.this,
-                        "PluginLib Upgrade Required?" + resultCode, Toast.LENGTH_SHORT).show();
-                    textView_status.setText("Error. Do Menu->Reset.");
-                    break;
-                default:
-                    Toast.makeText(Activity_BikePowerSampler.this,
-                        "Unrecognized result: " + resultCode, Toast.LENGTH_SHORT).show();
-                    textView_status.setText("Error. Do Menu->Reset.");
-                    break;
-            }
+        	if (RequestAccessResult.SUCCESS == resultCode) {
+                pwrPcc = result;
+                textView_status.setText(result.getDeviceName() + ": " + initialDeviceState);
+                MyApplication.getInstance().addAppDevice(result.getAntDeviceNumber(), result.getDeviceName(), DeviceType.BIKE_POWER);
+                subscribeToEvents();
+        	}
+        	else {
+            	AntPlusPccCommonResponse response = new AntPlusPccCommonResponse(Activity_BikePowerSampler.this);
+            	textView_status.setText(response.onBadResult(resultCode, initialDeviceState));
+        	}
         }
 
         private void subscribeToEvents()
@@ -963,8 +892,7 @@ public class Activity_BikePowerSampler extends Activity
                 }
             });
 
-            pwrPcc
-                .subscribeManufacturerIdentificationEvent(new IManufacturerIdentificationReceiver()
+            pwrPcc.subscribeManufacturerIdentificationEvent(new IManufacturerIdentificationReceiver()
             {
                 @Override
                 public void onNewManufacturerIdentification(final long estTimestamp,
@@ -1021,34 +949,33 @@ public class Activity_BikePowerSampler extends Activity
                 }
             });
 
-                pwrPcc.subscribeBatteryStatusEvent(
-                        new IBatteryStatusReceiver()
+            pwrPcc.subscribeBatteryStatusEvent(new IBatteryStatusReceiver()
+                    {
+                        @Override
+                        public void onNewBatteryStatus(final long estTimestamp,
+                                EnumSet<EventFlag> eventFlags, final long cumulativeOperatingTime,
+                                final BigDecimal batteryVoltage, final BatteryStatus batteryStatus,
+                                final int cumulativeOperatingTimeResolution, final int numberOfBatteries,
+                                final int batteryIdentifier)
                         {
-                            @Override
-                            public void onNewBatteryStatus(final long estTimestamp,
-                                    EnumSet<EventFlag> eventFlags, final long cumulativeOperatingTime,
-                                    final BigDecimal batteryVoltage, final BatteryStatus batteryStatus,
-                                    final int cumulativeOperatingTimeResolution, final int numberOfBatteries,
-                                    final int batteryIdentifier)
-                            {
-                                runOnUiThread(
-                                    new Runnable()
+                            runOnUiThread(
+                                new Runnable()
+                                {
+                                    @Override
+                                    public void run()
                                     {
-                                        @Override
-                                        public void run()
-                                        {
-                                            textView_EstTimestamp.setText(String.valueOf(estTimestamp));
+                                        textView_EstTimestamp.setText(String.valueOf(estTimestamp));
 
-                                            textView_CumulativeOperatingTime.setText(String.valueOf(cumulativeOperatingTime) + "s");
-                                            textView_BatteryVoltage.setText(String.valueOf(batteryVoltage) + "V");
-                                            textView_BatteryStatus.setText(batteryStatus.toString());
-                                            textView_CumulativeOperatingTimeResolution.setText(String.valueOf(cumulativeOperatingTimeResolution) + "s");
-                                            textView_NumberOfBatteries.setText(String.valueOf(numberOfBatteries));
-                                            textView_BatteryIdentifier.setText(String.valueOf(batteryIdentifier));
-                                        }
-                                    });
-                            }
-                        });
+                                        textView_CumulativeOperatingTime.setText(String.valueOf(cumulativeOperatingTime) + "s");
+                                        textView_BatteryVoltage.setText(String.valueOf(batteryVoltage) + "V");
+                                        textView_BatteryStatus.setText(batteryStatus.toString());
+                                        textView_CumulativeOperatingTimeResolution.setText(String.valueOf(cumulativeOperatingTimeResolution) + "s");
+                                        textView_NumberOfBatteries.setText(String.valueOf(numberOfBatteries));
+                                        textView_BatteryIdentifier.setText(String.valueOf(batteryIdentifier));
+                                    }
+                                });
+                        }
+                    });
         }
     };
 

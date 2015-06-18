@@ -105,30 +105,34 @@ public class Activity_Main extends FragmentActivity implements
 		fragmentToShow = FRAG_INDEX_RECORD;
 		if (null != (intent = getIntent())) {
 			if (null != (bundle = intent.getExtras())) {
-				switch(bundle.getInt(Controller.EXTRA_SHOW_FRAGMENT, Controller.EXTRA_SHOW_FRAGMENT_RECORD)) {
-
-				case Controller.EXTRA_SHOW_FRAGMENT_RECORD:
-					fragmentToShow = FRAG_INDEX_RECORD;
-					break;
-				
-				case Controller.EXTRA_SHOW_FRAGMENT_TRIPS:
-					fragmentToShow = FRAG_INDEX_TRIPS;
-					break;
-				
-				case Controller.EXTRA_SHOW_FRAGMENT_DEVICES:
-					fragmentToShow = FRAG_INDEX_DEVICES;
-					break;
-				
-				case Controller.EXTRA_SHOW_FRAGMENT_SENSORS:
-					fragmentToShow = FRAG_INDEX_SENSORS;
-					break;
-				
-				default:
-					break;
-				}
+				setFragmentToShow(bundle, Controller.EXTRA_SHOW_FRAGMENT_RECORD);
 			}
 		}
-}
+	}
+	
+	private void setFragmentToShow(Bundle bundle, int defaultFragment) {
+		switch(bundle.getInt(Controller.EXTRA_SHOW_FRAGMENT, Controller.EXTRA_SHOW_FRAGMENT_RECORD)) {
+
+		case Controller.EXTRA_SHOW_FRAGMENT_RECORD:
+			fragmentToShow = FRAG_INDEX_RECORD;
+			break;
+		
+		case Controller.EXTRA_SHOW_FRAGMENT_TRIPS:
+			fragmentToShow = FRAG_INDEX_TRIPS;
+			break;
+		
+		case Controller.EXTRA_SHOW_FRAGMENT_DEVICES:
+			fragmentToShow = FRAG_INDEX_DEVICES;
+			break;
+		
+		case Controller.EXTRA_SHOW_FRAGMENT_SENSORS:
+			fragmentToShow = FRAG_INDEX_SENSORS;
+			break;
+		
+		default:
+			break;
+		}
+	}
 	
 	@Override
 	public void onResume() {
@@ -144,6 +148,36 @@ public class Activity_Main extends FragmentActivity implements
 		catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}
+	}
+
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+
+		Log.v(MODULE_TAG, "Cycle: TabsConfig onResume");
+
+		try {
+			outState.putInt(Controller.EXTRA_SHOW_FRAGMENT, tabIndex);
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		super.onSaveInstanceState(outState);
+	}
+
+	@Override
+	public void onRestoreInstanceState(Bundle outState) {
+
+		Log.v(MODULE_TAG, "Cycle: TabsConfig onRestoreInstanceState");
+
+		try {
+			if (null != outState) {
+				setFragmentToShow(outState, Controller.EXTRA_SHOW_FRAGMENT_UNDEFINED);
+			}
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		super.onSaveInstanceState(outState);
 	}
 
 	@Override

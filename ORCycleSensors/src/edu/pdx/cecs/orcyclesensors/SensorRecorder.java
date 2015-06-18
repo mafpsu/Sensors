@@ -15,7 +15,6 @@ public class SensorRecorder implements SensorEventListener {
 	private static final String MODULE_TAG = "AntDeviceRecorder";
 	
 	private enum State { IDLE, RUNNING, PAUSED, FAILED };
-	private enum SensorRate { IDLE, RUNNING, PAUSED, FAILED };
 	
 	private State state;
 	private String sensorName;
@@ -27,10 +26,6 @@ public class SensorRecorder implements SensorEventListener {
 	private ArrayList<Float> readings0;
 	private ArrayList<Float> readings1;
 	private ArrayList<Float> readings2;
-	private float[] averageValues;
-	private float[] sumSquareDifferences;
-	
-	
 
 	public static SensorRecorder create(String sensorName, int type, int rate) {
 		
@@ -273,65 +268,73 @@ public class SensorRecorder implements SensorEventListener {
 		}
 	}
 	
-	synchronized public SensorRecorderResult getResult() {
-		calcValues();
-		SensorRecorderResult result = new SensorRecorderResult(sensorName, type, numSamples, averageValues, sumSquareDifferences);
-		reset();
-		return result;
-	}
-	
-	private void calcValues() {
+	synchronized public void writeResult(TripData tripData, long currentTimeMillis) {
 		
+		float[] averageValues;
+		float[] sumSquareDifferences;
+
 		switch(numValuesToRead) {
 		
 		case 1:
 			
 			averageValues = new float[1];
-			averageValues[0] = getAverageValue(readings0);
 			sumSquareDifferences = new float[1];
-			sumSquareDifferences[0] = getSumSquareDifference(readings0, averageValues[0]);
+			
+			if (readings0.size() == 0) {
+				averageValues[0] = 0;
+				sumSquareDifferences[0] = 0;
+			}
+			else {
+				averageValues[0] = MyMath.getAverageValueF(readings0);
+				sumSquareDifferences[0] = MyMath.getSumSquareDifferenceF(readings0, averageValues[0]);
+			}
 			break;
 		
 		case 3:
 			
 			averageValues = new float[3];
-			averageValues[0] = getAverageValue(readings0);
-			averageValues[1] = getAverageValue(readings1);
-			averageValues[2] = getAverageValue(readings2);
 			sumSquareDifferences = new float[3];
-			sumSquareDifferences[0] = getSumSquareDifference(readings0, averageValues[0]);
-			sumSquareDifferences[1] = getSumSquareDifference(readings1, averageValues[1]);
-			sumSquareDifferences[2] = getSumSquareDifference(readings2, averageValues[2]);
+			
+			if (readings0.size() == 0) {
+				averageValues[0] = 0;
+				sumSquareDifferences[0] = 0;
+			}
+			else {
+				averageValues[0] = MyMath.getAverageValueF(readings0);
+				sumSquareDifferences[0] = MyMath.getSumSquareDifferenceF(readings0, averageValues[0]);
+			}
+			
+			if (readings1.size() == 0) {
+				averageValues[1] = 0;
+				sumSquareDifferences[1] = 0;
+			}
+			else {
+				averageValues[1] = MyMath.getAverageValueF(readings1);
+				sumSquareDifferences[1] = MyMath.getSumSquareDifferenceF(readings1, averageValues[1]);
+			}
+			
+			if (readings2.size() == 0) {
+				averageValues[2] = 0;
+				sumSquareDifferences[2] = 0;
+			}
+			else {
+				averageValues[2] = MyMath.getAverageValueF(readings2);
+				sumSquareDifferences[2] = MyMath.getSumSquareDifferenceF(readings2, averageValues[2]);
+			}
 			break;
 		
 		default:
 			
-			averageValues = null;
 			Log.e(MODULE_TAG, "Invalid number of sensor values encountered");
-			break;
+			return;
 		}
+		
+		tripData.addSensorReadings(currentTimeMillis, sensorName, type, numSamples,
+				averageValues, sumSquareDifferences);
+
+		reset();
 	}
 	
-	private float getAverageValue(ArrayList<Float> readings) {
-		float sum = 0.0f;
-		for (float reading : readings) {
-			sum += reading;
-		}
-		return sum / (float) readings.size();
-	}
-
-	private float getSumSquareDifference(ArrayList<Float> readings, float average) {
-
-		float sum = 0.0f;
-		float value;
-
-		for (float reading : readings) {
-			value = reading - average;
-			sum += (value * value);
-		}
-		return sum;
-	}
-
 	private void reset() {
 		numSamples = 0;
 		readings0.clear();

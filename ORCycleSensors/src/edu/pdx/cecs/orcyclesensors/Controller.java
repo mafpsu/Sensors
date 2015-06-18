@@ -4,6 +4,7 @@ public class Controller {
 
 	public static final String EXTRA_KEEP_ME = "EXTRA_KEEP_ME";
 	public static final String EXTRA_SHOW_FRAGMENT = "EXTRA_SHOW_FRAGMENT";
+	public static final int EXTRA_SHOW_FRAGMENT_UNDEFINED = -1;
 	public static final int EXTRA_SHOW_FRAGMENT_RECORD = 0;
 	public static final int EXTRA_SHOW_FRAGMENT_TRIPS = 1;
 	public static final int EXTRA_SHOW_FRAGMENT_DEVICES = 2;

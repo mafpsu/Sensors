@@ -76,7 +76,9 @@ public interface IRecordService {
 	public int getState();
 
 	public void startRecording(TripData trip, 
-			ArrayList<AntDeviceInfo> devices, ArrayList<SensorItem> sensors);
+			ArrayList<AntDeviceInfo> devices, 
+			ArrayList<SensorItem> sensors,
+			long minTimeBetweenReadings) throws Exception;
 
 	public void cancelRecording();
 

@@ -81,22 +81,26 @@ import android.util.Log;
  */
 public class DbAdapter {
 
+	private static final String MODULE_TAG = "DbAdapter";
+
 	// Database versions
 	private static final int DATABASE_VERSION_START = 1;
 	private static final int DATABASE_VERSION_SENSOR_VALUES_TABLE = 2;
 	private static final int DATABASE_VERSION_HEART_RATE_TABLE = 3;
+	private static final int DATABASE_VERSION_BIKE_POWER_TABLE = 4;
 	
-	private static final int DATABASE_VERSION = DATABASE_VERSION_HEART_RATE_TABLE;
+	private static final int DATABASE_VERSION = DATABASE_VERSION_BIKE_POWER_TABLE;
 
-	// Table Names
+	// Table names
 	private static final String DATABASE_NAME = "data";
 	private static final String DATA_TABLE_TRIPS = "trips";
 	private static final String DATA_TABLE_COORDS = "coords";
 	private static final String DATA_TABLE_PAUSES = "pauses";
 	private static final String DATA_TABLE_SENSOR_VALUES = "sensor_values";
 	private static final String DATA_TABLE_HEART_RATE = "heart_rate";
+	private static final String DATA_TABLE_BIKE_POWER = "bike_power";
 
-	// Trips Table columns
+	// Trips table columns
 	public static final String K_TRIP_ROWID = "_id";
 	public static final String K_TRIP_PURP = "purp";
 	public static final String K_TRIP_START = "start";
@@ -111,7 +115,7 @@ public class DbAdapter {
 	public static final String K_TRIP_LGTLO = "lgtlo";
 	public static final String K_TRIP_STATUS = "status";
 
-	// Coords Table columns
+	// Coords table columns
 	public static final String K_POINT_ROWID = "_id";
 	public static final String K_POINT_TRIP = "trip";
 	public static final String K_POINT_TIME = "time";
@@ -121,12 +125,12 @@ public class DbAdapter {
 	public static final String K_POINT_ALT = "alt";
 	public static final String K_POINT_SPEED = "speed";
 
-	// Pauses Table columns
+	// Pauses table columns
 	public static final String K_PAUSE_TRIP_ID = "_id";
 	public static final String K_PAUSE_START_TIME = "starttime";
 	public static final String K_PAUSE_END_TIME = "endtime";
 	
-	// Sensor Table columns
+	// Sensor table columns
 	public static final String K_SENSOR_TIME = "time";
 	public static final String K_SENSOR_ID = "id";
 	public static final String K_SENSOR_TYPE = "type";
@@ -139,18 +143,30 @@ public class DbAdapter {
 	public static final String K_SENSOR_SSD_1 = "ssd1";
 	public static final String K_SENSOR_SSD_2 = "ssd2";
 
-	// Sensor Table columns
+	// Heart rate table columns
 	public static final String K_HR_TIME = "time";
-	public static final String K_HR_SAMPLES = "samples";
-	public static final String K_HR_AVG_HEART_RATE = "hr";
+	public static final String K_HR_NUM_SAMPLES = "samples";
+	public static final String K_HR_AVG_HEART_RATE = "avg_heart_rate";
+	public static final String K_HR_SSD_HEART_RATE = "ssd_heart_rate";
 
-	private static final String MODULE_TAG = "DbAdapter";
-	private DatabaseHelper mDbHelper;
-	private SQLiteDatabase mDb;
-
-	/**
-	 * Database creation sql statement
-	 */
+	// Bike power table columns
+	public static final String K_BP_TIME = "time";
+	public static final String K_BP_CALC_POWER_NUM_SAMPLES = "calc_power_samples";
+	public static final String K_BP_CALC_POWER_AVG = "calc_power_avg";
+	public static final String K_BP_CALC_POWER_SSD = "calc_power_ssd";
+	public static final String K_BP_CALC_TORQUE_NUM_SAMPLES = "calc_torque_samples";
+	public static final String K_BP_CALC_TORQUE_AVG = "calc_torque_avg";
+	public static final String K_BP_CALC_TORQUE_SSD = "calc_torque_ssd";
+	public static final String K_BP_CALC_CRANK_CADENCE_NUM_SAMPLES = "calc_crank_cadence_samples";
+	public static final String K_BP_CALC_CRANK_CADENCE_AVG = "calc_crank_cadence_avg";
+	public static final String K_BP_CALC_CRANK_CADENCE_SSD = "calc_crank_cadence_ssd";
+	public static final String K_BP_CALC_WHEEL_SPEED_NUM_SAMPLES = "calc_wheel_speed_samples";
+	public static final String K_BP_CALC_WHEEL_SPEED_AVG = "calc_wheel_speed_avg";
+	public static final String K_BP_CALC_WHEEL_SPEED_SSD = "calc_wheel_speed_ssd";
+	public static final String K_BP_CALC_WHEEL_DISTANCE_NUM_SAMPLES = "calc_wheel_distance_samples";
+	public static final String K_BP_CALC_WHEEL_DISTANCE_AVG = "calc_wheel_distance_avg";
+	public static final String K_BP_CALC_WHEEL_DISTANCE_SSD = "calc_wheel_distance_ssd";
+	
 	private static final String SQL_CREATE_TABLE_CMD = "create table";
 	
 	private static final String TABLE_CREATE_TRIPS = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_TRIPS + " ("
@@ -200,11 +216,33 @@ public class DbAdapter {
 			+ "PRIMARY KEY(" + K_SENSOR_TIME + ", " + K_SENSOR_ID + "));";
 
 	private static final String TABLE_CREATE_HEART_RATE = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_HEART_RATE + " ("
-			+ K_HR_TIME     + " integer, "
-			+ K_HR_SAMPLES        + " integer, "
+			+ K_HR_TIME           + " double, "
+			+ K_HR_NUM_SAMPLES    + " integer, "
 			+ K_HR_AVG_HEART_RATE + " double, "
+			+ K_HR_SSD_HEART_RATE + " double, "
 			+ "PRIMARY KEY(" + K_HR_TIME + "));";
 	
+	private static final String TABLE_CREATE_BIKE_POWER = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_BIKE_POWER + " ("
+			+ K_BP_TIME                   + " double, "
+			+ K_BP_CALC_POWER_NUM_SAMPLES + " integer, "
+			+ K_BP_CALC_POWER_AVG         + " double, "
+			+ K_BP_CALC_POWER_SSD         + " double, "
+			+ K_BP_CALC_TORQUE_NUM_SAMPLES + " integer, "
+			+ K_BP_CALC_TORQUE_AVG         + " double, "
+			+ K_BP_CALC_TORQUE_SSD         + " double, "
+			+ K_BP_CALC_CRANK_CADENCE_NUM_SAMPLES + " integer, "
+			+ K_BP_CALC_CRANK_CADENCE_AVG         + " double, "
+			+ K_BP_CALC_CRANK_CADENCE_SSD         + " double, "
+			+ K_BP_CALC_WHEEL_SPEED_NUM_SAMPLES + " integer, "
+			+ K_BP_CALC_WHEEL_SPEED_AVG         + " double, "
+			+ K_BP_CALC_WHEEL_SPEED_SSD         + " double, "
+			+ K_BP_CALC_WHEEL_DISTANCE_NUM_SAMPLES + " integer, "
+			+ K_BP_CALC_WHEEL_DISTANCE_AVG         + " double, "
+			+ K_BP_CALC_WHEEL_DISTANCE_SSD         + " double, "
+			+ "PRIMARY KEY(" + K_BP_TIME + "));";
+	
+	private DatabaseHelper mDbHelper;
+	private SQLiteDatabase mDb;
 	private final Context mCtx;
 
 	// ************************************************************************
@@ -224,6 +262,7 @@ public class DbAdapter {
 			db.execSQL(TABLE_CREATE_PAUSES);
 			db.execSQL(TABLE_CREATE_SENSOR_VALUES);
 			db.execSQL(TABLE_CREATE_HEART_RATE);
+			db.execSQL(TABLE_CREATE_BIKE_POWER);
 		}
 
 		@Override
@@ -245,6 +284,16 @@ public class DbAdapter {
 			if (oldVersion < DATABASE_VERSION_HEART_RATE_TABLE) {
 				try {
 					db.execSQL(TABLE_CREATE_HEART_RATE);
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+			}
+
+			// Create table for holding heart rate data
+			if (oldVersion < DATABASE_VERSION_BIKE_POWER_TABLE) {
+				try {
+					db.execSQL(TABLE_CREATE_BIKE_POWER);
 				}
 				catch(Exception ex) {
 					Log.e(MODULE_TAG, ex.getMessage());
@@ -363,6 +412,10 @@ public class DbAdapter {
 		}
 	}
 
+	// ************************************************************************
+	// *                    Sensor table methods
+	// ************************************************************************
+
 	public void addSensorReadings(double currentTime, String sensorName, int sensorType, int numSamples, float[] averageValues, float[] sumSquareDifferences) {
 
 		// Add the latest point
@@ -399,19 +452,6 @@ public class DbAdapter {
 		}
 	}
 
-	public void addHeartRateDeviceReading(double currentTime, int numSamples, double avgHeartRate) {
-
-		// Add the latest point
-		ContentValues cv = new ContentValues();
-		cv.put(K_HR_TIME, currentTime);
-		cv.put(K_HR_SAMPLES, numSamples);
-		cv.put(K_HR_AVG_HEART_RATE, avgHeartRate);
-
-		if (-1 == mDb.insert(DATA_TABLE_HEART_RATE, null, cv)) {
-			Log.e(MODULE_TAG, "Insert " + DATA_TABLE_HEART_RATE + ": failed");
-		}
-	}
-
 	public Cursor fetchSensorValues(double time) {
 		try {
 			String[] columns = new String[] {
@@ -433,12 +473,94 @@ public class DbAdapter {
 		}
 	}
 
+	// ************************************************************************
+	// *                 Heart Rate Device table methods
+	// ************************************************************************
+
+	public void addHeartRateDeviceReading(double currentTime, int numSamples, double avgHeartRate, double ssdHeartRate) {
+
+		// Add the latest point
+		ContentValues cv = new ContentValues();
+		cv.put(K_HR_TIME, currentTime);
+		cv.put(K_HR_NUM_SAMPLES, numSamples);
+		cv.put(K_HR_AVG_HEART_RATE, avgHeartRate);
+		cv.put(K_HR_SSD_HEART_RATE, ssdHeartRate);
+
+		if (-1 == mDb.insert(DATA_TABLE_HEART_RATE, null, cv)) {
+			Log.e(MODULE_TAG, "Insert " + DATA_TABLE_HEART_RATE + ": failed");
+		}
+	}
+
 	public Cursor fetchHeartRateDeviceValue(double time) {
 		try {
 			String[] columns = new String[] {
-					K_HR_SAMPLES, K_HR_AVG_HEART_RATE };
+					K_HR_NUM_SAMPLES, K_HR_AVG_HEART_RATE, K_HR_SSD_HEART_RATE };
 			
 			Cursor cursor = mDb.query(true, DATA_TABLE_HEART_RATE, columns, 
+					K_HR_TIME + "=" + time,
+					null, null, null, null, null);
+
+			if (cursor != null) {
+				cursor.moveToFirst();
+			}
+			return cursor;
+		} catch (Exception e) {
+			Log.e(MODULE_TAG, e.toString());
+			return null;
+		}
+	}
+
+	// ************************************************************************
+	// *                 Bike Power Device table methods
+	// ************************************************************************
+
+	public void addBikePowerDeviceReading(double currentTime, 
+			int nsCalcPower, double avgCalcPower, double ssdCalcPower,
+			int nsCalcTorque, double avgCalcTorque, double ssdCalcTorque,
+			int nsCalcCrankCadence, double avgCalcCrankCadence, double ssdCalcCrankCadence,
+			int nsCalcWheelSpeed, double avgCalcWheelSpeed, double ssdCalcWheelSpeed,
+			int nsCalcWheelDistance, double avgCalcWheelDistance, double ssdCalcWheelDistance) {
+
+		// Add the latest point
+		ContentValues cv = new ContentValues();
+		cv.put(K_BP_TIME, currentTime);
+		
+		cv.put(K_BP_CALC_POWER_NUM_SAMPLES, nsCalcPower);
+		cv.put(K_BP_CALC_POWER_AVG, avgCalcPower);
+		cv.put(K_BP_CALC_POWER_SSD, ssdCalcPower);
+		
+		cv.put(K_BP_CALC_TORQUE_NUM_SAMPLES, nsCalcTorque);
+		cv.put(K_BP_CALC_TORQUE_AVG, avgCalcTorque);
+		cv.put(K_BP_CALC_TORQUE_SSD, ssdCalcTorque);
+		
+		cv.put(K_BP_CALC_CRANK_CADENCE_NUM_SAMPLES, nsCalcCrankCadence);
+		cv.put(K_BP_CALC_CRANK_CADENCE_AVG, avgCalcCrankCadence);
+		cv.put(K_BP_CALC_CRANK_CADENCE_SSD, ssdCalcCrankCadence);
+		
+		cv.put(K_BP_CALC_WHEEL_SPEED_NUM_SAMPLES, nsCalcWheelSpeed);
+		cv.put(K_BP_CALC_WHEEL_SPEED_AVG, avgCalcWheelSpeed);
+		cv.put(K_BP_CALC_WHEEL_SPEED_SSD, ssdCalcWheelSpeed);
+		
+		cv.put(K_BP_CALC_WHEEL_DISTANCE_NUM_SAMPLES, nsCalcWheelDistance);
+		cv.put(K_BP_CALC_WHEEL_DISTANCE_AVG, avgCalcWheelDistance);
+		cv.put(K_BP_CALC_WHEEL_DISTANCE_SSD, ssdCalcWheelDistance);
+
+		if (-1 == mDb.insert(DATA_TABLE_BIKE_POWER, null, cv)) {
+			Log.e(MODULE_TAG, "Insert " + DATA_TABLE_BIKE_POWER + ": failed");
+		}
+	}
+
+	public Cursor fetchBikePowerDeviceValue(double time) {
+		try {
+			String[] columns = new String[] {
+					K_BP_CALC_POWER_NUM_SAMPLES,          K_BP_CALC_POWER_AVG,          K_BP_CALC_POWER_SSD, 
+					K_BP_CALC_TORQUE_NUM_SAMPLES,         K_BP_CALC_TORQUE_AVG,         K_BP_CALC_TORQUE_SSD, 
+					K_BP_CALC_CRANK_CADENCE_NUM_SAMPLES,  K_BP_CALC_CRANK_CADENCE_AVG,  K_BP_CALC_CRANK_CADENCE_SSD, 
+					K_BP_CALC_WHEEL_SPEED_NUM_SAMPLES,    K_BP_CALC_WHEEL_SPEED_AVG,    K_BP_CALC_WHEEL_SPEED_SSD, 
+					K_BP_CALC_WHEEL_DISTANCE_NUM_SAMPLES, K_BP_CALC_WHEEL_DISTANCE_AVG, K_BP_CALC_WHEEL_DISTANCE_SSD, 
+					};
+			
+			Cursor cursor = mDb.query(true, DATA_TABLE_BIKE_POWER, columns, 
 					K_HR_TIME + "=" + time,
 					null, null, null, null, null);
 
