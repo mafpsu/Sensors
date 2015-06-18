@@ -309,8 +309,7 @@ public class Activity_AddDevice extends ListActivity  {
 			mList = (ListView) findViewById(android.R.id.list);
 			mList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 				@Override
-				public void onItemClick(AdapterView<?> parent, View v,
-						int position, long id) {
+				public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
 					onListItemClick((ListView) parent, v, position, id);
 				}
 			});

@@ -37,5 +37,8 @@ public class Activity_UserPreferences extends PreferenceActivity{
 		return false;
     }
 
-	
+    @Override
+    public void onStop() {
+        super.onStop();
+    }
 }

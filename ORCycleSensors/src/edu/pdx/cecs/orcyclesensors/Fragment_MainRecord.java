@@ -27,13 +27,11 @@ import android.widget.Toast;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.GoogleMap.OnMyLocationButtonClickListener;
-
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.location.LocationServices;
-
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 
@@ -83,8 +81,6 @@ public class Fragment_MainRecord extends Fragment implements
 	final Handler taskHandler = new Handler();
 	
 	private Location currentLocation = null;
-
-	private boolean backFromInstructions;
 
 	// Format used to show elapsed time to user when recording trips
 	private final SimpleDateFormat tripDurationFormat = new SimpleDateFormat("HH:mm:ss", Locale.US);
@@ -196,19 +192,6 @@ public class Fragment_MainRecord extends Fragment implements
 	}
 
 	@Override
-	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-
-		switch(requestCode) {
-		case Controller_MainRecord.DSA_ID_WELCOME_DIALOG_ID:
-			backFromInstructions = true;
-			Log.e(MODULE_TAG, "back from ORcycle");
-			break;
-		case Controller_MainRecord.DSA_ID_USER_PROFILE_DIALOG_ID:
-			break;
-		}
-	}
-
-	@Override
 	public void onStart() {
         super.onStart();
         try {
@@ -307,6 +290,7 @@ public class Fragment_MainRecord extends Fragment implements
 
 		case RecordingService.STATE_DEVICE_CONNECT_FAILED:
 			setupButtons();
+			dialogFailedDeviceConnection();
 			break;
 
 		default:
@@ -343,7 +327,12 @@ public class Fragment_MainRecord extends Fragment implements
 		serviceConnectionTimer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				serviceConnectionHandler.post(doServiceConnection);
+				try {
+					serviceConnectionHandler.post(doServiceConnection);
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
 			}
 		}, 2000, 2000); // 2 second delay, at 2 second intervals
 	}
@@ -356,7 +345,12 @@ public class Fragment_MainRecord extends Fragment implements
 		deviceConnectionTimer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				deviceConnectionHandler.post(doWaitDeviceConnection);
+				try {
+					deviceConnectionHandler.post(doWaitDeviceConnection);
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
 			}
 		}, 2000, 2000); // 2 second delay, at 2 second intervals
 	}
@@ -430,18 +424,18 @@ public class Fragment_MainRecord extends Fragment implements
 					
 					Log.v(MODULE_TAG, "doWaitDeviceConnection(): device timed-out!");
 
-					// We now have connection to the service so cancel the timer
+					// The connection failed so cancel the timer
 					deviceConnectionTimer.cancel();
-					cancelRecording();
+					syncDisplayToRecordingState();
 				}
 				else if (IRecordService.STATE_RECORDING == state) {
 					
 					Log.v(MODULE_TAG, "doWaitDeviceConnection(): got connection!");
 
-					// We now have connection to the service so cancel the timer
+					// We now have connection to the device so cancel the timer
 					deviceConnectionTimer.cancel();
+					syncDisplayToRecordingState();
 				}
-				syncDisplayToRecordingState();
 			}
 			catch(Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());
@@ -583,6 +577,15 @@ public class Fragment_MainRecord extends Fragment implements
 			buttonResume.setVisibility(View.GONE);
 			buttonFinish.setVisibility(View.GONE);
 			break;
+
+		case IRecordService.STATE_DEVICE_CONNECT_FAILED:
+
+			txtWaitingDeviceConnect.setVisibility(View.GONE);
+			buttonStart.setVisibility(View.GONE);
+			buttonPause.setVisibility(View.GONE);
+			buttonResume.setVisibility(View.GONE);
+			buttonFinish.setVisibility(View.GONE);
+			break;
 		}
 	}
 
@@ -614,7 +617,7 @@ public class Fragment_MainRecord extends Fragment implements
 	}
 	
 	
-	private void startRecording() {
+	private void startRecording() throws Exception {
 		// Before we go to record, check GPS status
 		if (!myApp.getStatus().isProviderEnabled()) {
 			// Alert user GPS not available
@@ -754,6 +757,34 @@ public class Fragment_MainRecord extends Fragment implements
 	}
 
 	// *********************************************************************************
+	// *                            Dialog Faild
+	// *********************************************************************************
+
+	/**
+	 * Build dialog telling user that the GPS is not available
+	 */
+	private void dialogFailedDeviceConnection() {
+		final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+		builder.setTitle(R.string.fmr_dnc_title);
+		builder.setMessage(R.string.fmr_dnc_message);
+		builder.setPositiveButton(R.string.fmr_dnc_button_ok, new DialogDeviceNotConnected());
+		final AlertDialog alert = builder.create();
+		alert.show();
+	}
+
+	private final class DialogDeviceNotConnected implements DialogInterface.OnClickListener {
+		public void onClick(final DialogInterface dialog, final int id) {
+			try {
+				dialog.cancel();
+				cancelRecording();
+			}
+			catch(Exception ex) {
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
+		}
+	}
+
+	// *********************************************************************************
 	// *                            No GPS Dialog
 	// *********************************************************************************
 
@@ -774,14 +805,24 @@ public class Fragment_MainRecord extends Fragment implements
 
 	private final class DialogNoGps_OkListener implements DialogInterface.OnClickListener {
 		public void onClick(final DialogInterface dialog, final int id) {
-			controller.finish(setResult(Result.NO_GPS));
-			//setResult(Result.NO_GPS);
+			try {
+				controller.finish(setResult(Result.NO_GPS));
+				//setResult(Result.NO_GPS);
+			}
+			catch(Exception ex) {
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
 		}
 	}
 
 	private final class DialogNoGps_CancelListener implements DialogInterface.OnClickListener {
 		public void onClick(final DialogInterface dialog, final int id) {
-			dialog.cancel();
+			try {
+				dialog.cancel();
+			}
+			catch(Exception ex) {
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
 		}
 	}
 
@@ -906,7 +947,11 @@ public class Fragment_MainRecord extends Fragment implements
 	@Override
 	public void onConnectionSuspended(int arg0) {
 		// TODO Auto-generated method stub
-		
+		try {
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
 	}
 	
 	/**
@@ -934,6 +979,11 @@ public class Fragment_MainRecord extends Fragment implements
 
 	@Override
 	public boolean onMyLocationButtonClick() {
+		try {
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
 		return false;
 	}
 }

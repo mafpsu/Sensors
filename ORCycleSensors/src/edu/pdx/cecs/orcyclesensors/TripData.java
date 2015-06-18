@@ -432,13 +432,36 @@ public class TripData {
 		}
 	}
 
-	public void addHeartRateDeviceReading(double currentTime, int numSamples, float avgHeartRate) {
+	public void addHeartRateDeviceReading(double currentTime, 
+			int numSamples, float avgHeartRate, float ssdHeartRate) {
 
-		Log.i(MODULE_TAG, "HeartRate(time:" + currentTime + ", numSamples: " + numSamples + "rate: " + avgHeartRate + ")");
+		mDb.open();
+		try {
+			mDb.addHeartRateDeviceReading(currentTime, numSamples, avgHeartRate, ssdHeartRate);
+		}
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		finally {
+			mDb.close();
+		}
+	}
+
+	public void addBikePowerDeviceReading(double currentTime, 
+			int nsCalcPower, float avgCalcPower, float ssdCalcPower,
+			int nsCalcTorque, float avgCalcTorque, float ssdCalcTorque,
+			int nsCalcCrankCadence, float avgCalcCrankCadence, float ssdCalcCrankCadence,
+			int nsCalcWheelSpeed, float avgCalcWheelSpeed, float ssdCalcWheelSpeed,
+			int nsCalcWheelDistance, float avgCalcWheelDistance, float ssdCalcWheelDistance) {
 		
 		mDb.open();
 		try {
-			mDb.addHeartRateDeviceReading(currentTime, numSamples, avgHeartRate);
+			mDb.addBikePowerDeviceReading(currentTime,  
+					nsCalcPower, avgCalcPower, ssdCalcPower,
+					nsCalcTorque, avgCalcTorque, ssdCalcTorque,
+					nsCalcCrankCadence, avgCalcCrankCadence, ssdCalcCrankCadence,
+					nsCalcWheelSpeed, avgCalcWheelSpeed, ssdCalcWheelSpeed,
+					nsCalcWheelDistance, avgCalcWheelDistance, ssdCalcWheelDistance);
 		}
 		catch (Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());

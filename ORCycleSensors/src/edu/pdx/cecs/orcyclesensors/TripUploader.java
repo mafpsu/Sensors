@@ -78,6 +78,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.dsi.ant.plugins.antplus.pcc.defines.DeviceType;
+
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -103,7 +105,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	public static final String TRIP_COORDS_HACCURACY = "h";
 	public static final String TRIP_COORDS_VACCURACY = "v";
 	public static final String TRIP_COORDS_SENSOR_READINGS = "sr";
-	public static final String TRIP_COORDS_DEVICE_HEART_RATE_READINGS = "d0";
+	public static final String TRIP_COORDS_ANT_DEVICE_PREFIX = "ant_";
 
 	public static final String PAUSE_START = "ps";
 	public static final String PAUSE_END = "pe";
@@ -119,8 +121,29 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	public static final String TRIP_COORD_SENSOR_SSD_1 = "s_s1";
 	public static final String TRIP_COORD_SENSOR_SSD_2 = "s_s2";
 	
-	public static final String TRIP_COORD_HR_SAMPLES = "hr_s";
-	public static final String TRIP_COORD_HR_AVG_HEART_RATE = "hr_ahr";
+	public static final String TRIP_COORD_HR_SAMPLES = "hr_ns";
+	public static final String TRIP_COORD_HR_AVG_HEART_RATE = "hr_avg";
+	public static final String TRIP_COORD_HR_SSD_HEART_RATE = "hr_ssd";
+
+	public static final String TRIP_COORD_BP_NS_CALC_POWER  = "bp_cp_ns";
+	public static final String TRIP_COORD_BP_AVG_CALC_POWER = "bp_cp_avg";
+	public static final String TRIP_COORD_BP_SSD_CALC_POWER = "bp_cp_ssd";
+
+	public static final String TRIP_COORD_BP_NS_CALC_TORQUE  = "bp_ct_ns";
+	public static final String TRIP_COORD_BP_AVG_CALC_TORQUE = "bp_ct_avg";
+	public static final String TRIP_COORD_BP_SSD_CALC_TORQUE = "bp_ct_ssd";
+
+	public static final String TRIP_COORD_BP_NS_CALC_CRANK_CADENCE  = "bp_ccc_ns";
+	public static final String TRIP_COORD_BP_AVG_CALC_CRANK_CADENCE = "bp_ccc_avg";
+	public static final String TRIP_COORD_BP_SSD_CALC_CRANK_CADENCE = "bp_ccc_ssd";
+
+	public static final String TRIP_COORD_BP_NS_CALC_WHEEL_SPEED  = "bp_cws_ns";
+	public static final String TRIP_COORD_BP_AVG_CALC_WHEEL_SPEED = "bp_cws_avg";
+	public static final String TRIP_COORD_BP_SSD_CALC_WHEEL_SPEED = "bp_cws_ssd";
+
+	public static final String TRIP_COORD_BP_NS_CALC_WHEEL_DISTANCE  = "bp_cwd_ns";
+	public static final String TRIP_COORD_BP_AVG_CALC_WHEEL_DISTANCE = "bp_cwd_avg";
+	public static final String TRIP_COORD_BP_SSD_CALC_WHEEL_DISTANCE = "bp_cwd_ssd";
 
 	private final Context mCtx;
 	private final String userId;
@@ -139,6 +162,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		
 		JSONObject jsonTripCoords = null;
 		JSONObject jsonHeartRateDeviceReadings = null;
+		JSONObject jsonBikePowerDeviceReadings = null;
 		JSONArray jsonSensorReadings = null;
 		
 		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -148,7 +172,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		try {
 			Cursor cursorTripCoords = mDb.fetchAllCoordsForTrip(tripId);
 	
-			// Build the map between JSON fieldname and phone db fieldname:
+			// Build the map between JSON field name and phone db field name:
 			Map<String, Integer> fieldMap = new HashMap<String, Integer>();
 			
 			fieldMap.put(TRIP_COORDS_TIME,      cursorTripCoords.getColumnIndex(DbAdapter.K_POINT_TIME));
@@ -190,16 +214,26 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 					jsonCoord.put(TRIP_COORDS_SENSOR_READINGS, jsonSensorReadings);
 				}
 
-
-				// **********************************************************
-				// * Get all Device readings corresponding to this time index
-				// **********************************************************
+				// *****************************************************************
+				// * Get heart rate device readings corresponding to this time index
+				// *****************************************************************
 					
 				jsonHeartRateDeviceReadings = getJsonHeartRateDeviceReadings(coordTime);
 				
-				// insert sensor readings into coordinate jSON object
-				if ((null == jsonHeartRateDeviceReadings) || (jsonHeartRateDeviceReadings.length() > 0)) {
-					jsonCoord.put(TRIP_COORDS_DEVICE_HEART_RATE_READINGS, jsonHeartRateDeviceReadings);
+				// insert heart rate readings into coordinate jSON object
+				if ((null != jsonHeartRateDeviceReadings) && (jsonHeartRateDeviceReadings.length() > 0)) {
+					jsonCoord.put(TRIP_COORDS_ANT_DEVICE_PREFIX + DeviceType.HEARTRATE.getIntValue(), jsonHeartRateDeviceReadings);
+				}
+
+				// *****************************************************************
+				// * Get bike power device readings corresponding to this time index
+				// *****************************************************************
+					
+				jsonBikePowerDeviceReadings = getJsonBikePowerDeviceReadings(coordTime);
+				
+				// insert bike power readings into coordinate jSON object
+				if ((null != jsonBikePowerDeviceReadings) && (jsonBikePowerDeviceReadings.length() > 0)) {
+					jsonCoord.put(TRIP_COORDS_ANT_DEVICE_PREFIX + DeviceType.BIKE_POWER.getIntValue(), jsonBikePowerDeviceReadings);
 				}
 
 				// ****************************************************
@@ -295,7 +329,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	}
 	
 	/**
-	 * Get all sensor readings corresponding to this time index
+	 * Get all heart rate readings corresponding to this time index
 	 * @return
 	 */
 	private JSONObject getJsonHeartRateDeviceReadings(double coordTime) {
@@ -306,11 +340,80 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 			if (null != (cursor = mDb.fetchHeartRateDeviceValue(coordTime))) {
 				
 				if (!cursor.isAfterLast()) {
-					int colSamples = cursor.getColumnIndex(DbAdapter.K_HR_SAMPLES);
+					int colSamples = cursor.getColumnIndex(DbAdapter.K_HR_NUM_SAMPLES);
 					int colAvgHeartRate = cursor.getColumnIndex(DbAdapter.K_HR_AVG_HEART_RATE);
+					int colSsdHeartRate = cursor.getColumnIndex(DbAdapter.K_HR_SSD_HEART_RATE);
 					jsonHeartRateReading = new JSONObject();
 					jsonHeartRateReading.put(TRIP_COORD_HR_SAMPLES, cursor.getInt(colSamples));
 					jsonHeartRateReading.put(TRIP_COORD_HR_AVG_HEART_RATE, cursor.getDouble(colAvgHeartRate));
+					jsonHeartRateReading.put(TRIP_COORD_HR_SSD_HEART_RATE, cursor.getDouble(colSsdHeartRate));
+				}
+			}
+		}
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		finally {
+			if (null != cursor) {
+				cursor.close();
+			}
+		}
+		return jsonHeartRateReading;
+	}
+	
+	/**
+	 * Get all heart rate readings corresponding to this time index
+	 * @return
+	 */
+	private JSONObject getJsonBikePowerDeviceReadings(double coordTime) {
+		JSONObject jsonHeartRateReading = null;
+		Cursor cursor = null;
+		
+		try {
+			if (null != (cursor = mDb.fetchHeartRateDeviceValue(coordTime))) {
+				
+				if (!cursor.isAfterLast()) {
+
+					int colNsCalcPower = cursor.getColumnIndex(DbAdapter.K_BP_CALC_POWER_NUM_SAMPLES);
+					int colAvgCalcPower = cursor.getColumnIndex(DbAdapter.K_BP_CALC_POWER_AVG);
+					int colSsdCalcPower = cursor.getColumnIndex(DbAdapter.K_BP_CALC_POWER_SSD);
+					
+					int colNsCalcTorque = cursor.getColumnIndex(DbAdapter.K_BP_CALC_TORQUE_NUM_SAMPLES);
+					int colAvgCalcTorque = cursor.getColumnIndex(DbAdapter.K_BP_CALC_TORQUE_AVG);
+					int colSsdCalcTorque = cursor.getColumnIndex(DbAdapter.K_BP_CALC_TORQUE_SSD);
+					
+					int colNsCalcCrankCadence = cursor.getColumnIndex(DbAdapter.K_BP_CALC_CRANK_CADENCE_NUM_SAMPLES);
+					int colAvgCalcCrankCadence = cursor.getColumnIndex(DbAdapter.K_BP_CALC_CRANK_CADENCE_AVG);
+					int colSsdCalcCrankCadence = cursor.getColumnIndex(DbAdapter.K_BP_CALC_CRANK_CADENCE_SSD);
+					
+					int colNsCalcWheelSpeed = cursor.getColumnIndex(DbAdapter.K_BP_CALC_WHEEL_SPEED_NUM_SAMPLES);
+					int colAvgCalcWheelSpeed = cursor.getColumnIndex(DbAdapter.K_BP_CALC_WHEEL_SPEED_AVG);
+					int colSsdCalcWheelSpeed = cursor.getColumnIndex(DbAdapter.K_BP_CALC_WHEEL_SPEED_SSD);
+					
+					int colNsCalcWheelDistance = cursor.getColumnIndex(DbAdapter.K_BP_CALC_WHEEL_DISTANCE_NUM_SAMPLES);
+					int colAvgCalcWheelDistance = cursor.getColumnIndex(DbAdapter.K_BP_CALC_WHEEL_DISTANCE_AVG);
+					int colSsdCalcWheelDistance = cursor.getColumnIndex(DbAdapter.K_BP_CALC_WHEEL_DISTANCE_SSD);
+					
+					jsonHeartRateReading = new JSONObject();
+					jsonHeartRateReading.put(TRIP_COORD_BP_NS_CALC_POWER, cursor.getInt(colNsCalcPower));
+					jsonHeartRateReading.put(TRIP_COORD_BP_AVG_CALC_POWER, cursor.getDouble(colAvgCalcPower));
+					jsonHeartRateReading.put(TRIP_COORD_BP_SSD_CALC_POWER, cursor.getDouble(colSsdCalcPower));
+
+					jsonHeartRateReading.put(TRIP_COORD_BP_NS_CALC_TORQUE, cursor.getInt(colNsCalcTorque));
+					jsonHeartRateReading.put(TRIP_COORD_BP_AVG_CALC_TORQUE, cursor.getDouble(colAvgCalcTorque));
+					jsonHeartRateReading.put(TRIP_COORD_BP_SSD_CALC_TORQUE, cursor.getDouble(colSsdCalcTorque));
+					
+					jsonHeartRateReading.put(TRIP_COORD_BP_NS_CALC_CRANK_CADENCE, cursor.getInt(colNsCalcCrankCadence));
+					jsonHeartRateReading.put(TRIP_COORD_BP_AVG_CALC_CRANK_CADENCE, cursor.getDouble(colAvgCalcCrankCadence));
+					jsonHeartRateReading.put(TRIP_COORD_BP_SSD_CALC_CRANK_CADENCE, cursor.getDouble(colSsdCalcCrankCadence));
+
+					jsonHeartRateReading.put(TRIP_COORD_BP_NS_CALC_WHEEL_SPEED, cursor.getInt(colNsCalcWheelSpeed));
+					jsonHeartRateReading.put(TRIP_COORD_BP_AVG_CALC_WHEEL_SPEED, cursor.getDouble(colAvgCalcWheelSpeed));
+					jsonHeartRateReading.put(TRIP_COORD_BP_SSD_CALC_WHEEL_SPEED, cursor.getDouble(colSsdCalcWheelSpeed));
+
+					jsonHeartRateReading.put(TRIP_COORD_BP_NS_CALC_WHEEL_DISTANCE, cursor.getInt(colNsCalcWheelDistance));
+					jsonHeartRateReading.put(TRIP_COORD_BP_AVG_CALC_WHEEL_DISTANCE, cursor.getDouble(colAvgCalcWheelDistance));
+					jsonHeartRateReading.put(TRIP_COORD_BP_SSD_CALC_WHEEL_DISTANCE, cursor.getDouble(colSsdCalcWheelDistance));
 				}
 			}
 		}

@@ -34,8 +34,7 @@ public class Activity_SearchUiHeartRateSampler extends Activity_HeartRateDisplay
         if (intent.hasExtra(Activity_MultiDeviceSearchSampler.EXTRA_KEY_MULTIDEVICE_SEARCH_RESULT))
         {
             // device has already been selected through the multi-device search
-            MultiDeviceSearchResult result = intent
-                .getParcelableExtra(Activity_MultiDeviceSearchSampler.EXTRA_KEY_MULTIDEVICE_SEARCH_RESULT);
+            MultiDeviceSearchResult result = intent.getParcelableExtra(Activity_MultiDeviceSearchSampler.EXTRA_KEY_MULTIDEVICE_SEARCH_RESULT);
             releaseHandle = AntPlusHeartRatePcc.requestAccess(this, result.getAntDeviceNumber(), 0,
                 base_IPluginAccessResultReceiver, base_IDeviceStateChangeReceiver);
         } else

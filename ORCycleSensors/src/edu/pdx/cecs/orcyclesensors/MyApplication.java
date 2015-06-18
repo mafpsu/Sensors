@@ -2,13 +2,17 @@ package edu.pdx.cecs.orcyclesensors;
 
 import java.util.ArrayList;
 
+import com.dsi.ant.plugins.antplus.pcc.defines.DeviceType;
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.location.LocationManager;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 
@@ -24,10 +28,13 @@ public class MyApplication extends android.app.Application {
 
 	private final String MODULE_TAG = "MyApplication";
 	
-	public static final String PREFS_APPLICATION = "PREFS_APPLICATION";
+	private static final String PREFS_APPLICATION = "PREFS_APPLICATION";
 	private static final String SETTING_USER_ID = "SETTING_USER_ID";
 	private static final String SETTING_SENSORS = "SETTING_SENSORS";
 	private static final String SETTING_DEVICES = "SETTING_DEVICES";
+	private static final String SETTING_GPS_FREQUENCY = "PREF_GPS_FREQUENCY";
+	private static final String SETTING_DEFAULT_FREQUENCY = "1.0";
+	private static final long DEFAULT_MIN_RECORDING_DELAY = 1000;
 
 	private UserId userId = null;
 	private AppDevices appDevices = null;
@@ -35,6 +42,8 @@ public class MyApplication extends android.app.Application {
 	private AppInfo appInfo = null;
 	
 	private RecordingService recordingService = null;
+	private long minTimeBetweenReadings = 1000; // milliseconds
+
 	private TripData trip;
     private static final Controller_MainRecord ctrlMainRecord = new Controller_MainRecord();
     private static final Controller_TripMap ctrlTripMap = new Controller_TripMap();
@@ -100,6 +109,34 @@ public class MyApplication extends android.app.Application {
 		// setDefaultApplicationSettings();
 
 		appInfo = new AppInfo(this.getBaseContext());
+		loadMinTimeBetweenReadings();
+	}
+	
+	public void loadMinTimeBetweenReadings() {
+		
+		// shared prefs from settings screens
+		Context context = getApplicationContext();
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		String prefsFrequency = prefs.getString(SETTING_GPS_FREQUENCY, SETTING_DEFAULT_FREQUENCY);
+		boolean isBadValue = false;
+
+		try {
+			float frequency = Float.parseFloat(prefsFrequency);
+			if ((frequency <= 0) || Float.isNaN(frequency) || Float.isInfinite(frequency))
+				isBadValue = true;
+			else
+				minTimeBetweenReadings = (long)(1000.0f / frequency);
+		}
+		catch(Exception ex) {
+			isBadValue = true;
+		}
+
+		if (isBadValue) {
+			Editor editor = prefs.edit();
+			editor.putString(SETTING_GPS_FREQUENCY, SETTING_DEFAULT_FREQUENCY);
+			editor.apply();
+			minTimeBetweenReadings = DEFAULT_MIN_RECORDING_DELAY;
+		}
 	}
 
 	// *********************************
@@ -156,9 +193,9 @@ public class MyApplication extends android.app.Application {
 	// * Interface to application devices
 	// **********************************
 	
-	public void addAppDevice(int number, String name, int type) {
+	public void addAppDevice(int number, String name, DeviceType deviceType) {
 		
-		appDevices.addDevice(number, name, type);
+		appDevices.addDevice(number, name, deviceType);
 		
 		SharedPreferences settings = getSharedPreferences(PREFS_APPLICATION, MODE_PRIVATE);
 		
@@ -246,13 +283,14 @@ public class MyApplication extends android.app.Application {
 
     /**
      * startRecording
+     * @throws Exception 
      */
-    public void startRecording(FragmentActivity activity) {
+    public void startRecording(FragmentActivity activity) throws Exception {
 		switch (recordingService.getState()) {
 
 		case RecordingService.STATE_IDLE:
 			trip = TripData.createTrip(activity);
-			recordingService.startRecording(trip, appDevices.getAntDeviceInfos(), appSensors.getSensors());
+			recordingService.startRecording(trip, appDevices.getAntDeviceInfos(), appSensors.getSensors(), minTimeBetweenReadings);
 			break;
 
 		case RecordingService.STATE_RECORDING:

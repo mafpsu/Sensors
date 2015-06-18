@@ -11,6 +11,7 @@ package edu.pdx.cecs.orcyclesensors;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
@@ -28,6 +29,7 @@ import com.dsi.ant.plugins.antplus.pcc.AntPlusHeartRatePcc.IHeartRateDataReceive
 import com.dsi.ant.plugins.antplus.pcc.AntPlusHeartRatePcc.IPage4AddtDataReceiver;
 import com.dsi.ant.plugins.antplus.pcc.AntPlusHeartRatePcc.RrFlag;
 import com.dsi.ant.plugins.antplus.pcc.defines.DeviceState;
+import com.dsi.ant.plugins.antplus.pcc.defines.DeviceType;
 import com.dsi.ant.plugins.antplus.pcc.defines.EventFlag;
 import com.dsi.ant.plugins.antplus.pcc.defines.RequestAccessResult;
 import com.dsi.ant.plugins.antplus.pccbase.AntPlusCommonPcc.IRssiReceiver;
@@ -320,83 +322,25 @@ public abstract class Activity_HeartRateDisplayBase extends Activity
     protected IPluginAccessResultReceiver<AntPlusHeartRatePcc> base_IPluginAccessResultReceiver =
         new IPluginAccessResultReceiver<AntPlusHeartRatePcc>()
         {
-        //Handle the result, connecting to events on success or reporting failure to user.
-        @Override
-        public void onResultReceived(AntPlusHeartRatePcc result, RequestAccessResult resultCode,
-            DeviceState initialDeviceState)
-        {
-            showDataDisplay("Connecting...");
-            switch(resultCode)
-            {
-                case SUCCESS:
-                    hrPcc = result;
-                    tv_status.setText(result.getDeviceName() + ": " + initialDeviceState);
-                    MyApplication.getInstance().addAppDevice(result.getAntDeviceNumber(), result.getDeviceName(), AntDeviceInfo.HEART_RATE_DEVICE);
-                    subscribeToHrEvents();
-                    if(!result.supportsRssi()) tv_rssi.setText("N/A");
-                    break;
-                case CHANNEL_NOT_AVAILABLE:
-                    Toast.makeText(Activity_HeartRateDisplayBase.this, "Channel Not Available", Toast.LENGTH_SHORT).show();
-                    tv_status.setText("Error. Do Menu->Reset.");
-                    break;
-                case ADAPTER_NOT_DETECTED:
-                    Toast.makeText(Activity_HeartRateDisplayBase.this, "ANT Adapter Not Available. Built-in ANT hardware or external adapter required.", Toast.LENGTH_SHORT).show();
-                    tv_status.setText("Error. Do Menu->Reset.");
-                    break;
-                case BAD_PARAMS:
-                    //Note: Since we compose all the params ourself, we should never see this result
-                    Toast.makeText(Activity_HeartRateDisplayBase.this, "Bad request parameters.", Toast.LENGTH_SHORT).show();
-                    tv_status.setText("Error. Do Menu->Reset.");
-                    break;
-                case OTHER_FAILURE:
-                    Toast.makeText(Activity_HeartRateDisplayBase.this, "RequestAccess failed. See logcat for details.", Toast.LENGTH_SHORT).show();
-                    tv_status.setText("Error. Do Menu->Reset.");
-                    break;
-                case DEPENDENCY_NOT_INSTALLED:
-                    tv_status.setText("Error. Do Menu->Reset.");
-                    AlertDialog.Builder adlgBldr = new AlertDialog.Builder(Activity_HeartRateDisplayBase.this);
-                    adlgBldr.setTitle("Missing Dependency");
-                    adlgBldr.setMessage("The required service\n\"" + AntPlusHeartRatePcc.getMissingDependencyName() + "\"\n was not found. You need to install the ANT+ Plugins service or you may need to update your existing version if you already have it. Do you want to launch the Play Store to get it?");
-                    adlgBldr.setCancelable(true);
-                    adlgBldr.setPositiveButton("Go to Store", new OnClickListener()
-                    {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which)
-                        {
-                            Intent startStore = null;
-                            startStore = new Intent(Intent.ACTION_VIEW,Uri.parse("market://details?id=" + AntPlusHeartRatePcc.getMissingDependencyPackageName()));
-                            startStore.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-                            Activity_HeartRateDisplayBase.this.startActivity(startStore);
-                        }
-                    });
-                    adlgBldr.setNegativeButton("Cancel", new OnClickListener()
-                    {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which)
-                        {
-                            dialog.dismiss();
-                        }
-                    });
-
-                    final AlertDialog waitDialog = adlgBldr.create();
-                    waitDialog.show();
-                    break;
-                case USER_CANCELLED:
-                    tv_status.setText("Cancelled. Do Menu->Reset.");
-                    break;
-                case UNRECOGNIZED:
-                    Toast.makeText(Activity_HeartRateDisplayBase.this,
-                        "Failed: UNRECOGNIZED. PluginLib Upgrade Required?",
-                        Toast.LENGTH_SHORT).show();
-                    tv_status.setText("Error. Do Menu->Reset.");
-                    break;
-                default:
-                    Toast.makeText(Activity_HeartRateDisplayBase.this, "Unrecognized result: " + resultCode, Toast.LENGTH_SHORT).show();
-                    tv_status.setText("Error. Do Menu->Reset.");
-                    break;
-            }
-        }
+	        //Handle the result, connecting to events on success or reporting failure to user.
+	        @Override
+	        public void onResultReceived(AntPlusHeartRatePcc result, RequestAccessResult resultCode,
+	            DeviceState initialDeviceState)
+	        {
+	            showDataDisplay("Connecting...");
+	            
+	            if (RequestAccessResult.SUCCESS == resultCode) {
+	                hrPcc = result;
+	                tv_status.setText(result.getDeviceName() + ": " + initialDeviceState);
+	                MyApplication.getInstance().addAppDevice(result.getAntDeviceNumber(), result.getDeviceName(), DeviceType.HEARTRATE);
+	                subscribeToHrEvents();
+	                if(!result.supportsRssi()) tv_rssi.setText("N/A");
+	            }
+	            else {
+	            	AntPlusPccCommonResponse response = new AntPlusPccCommonResponse(Activity_HeartRateDisplayBase.this);
+	            	tv_status.setText(response.onBadResult(resultCode, initialDeviceState));
+	            }
+	        }
         };
 
         //Receives state changes and shows it on the status display line
