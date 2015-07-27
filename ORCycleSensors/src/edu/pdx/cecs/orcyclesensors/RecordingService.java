@@ -203,7 +203,8 @@ public class RecordingService extends Service
 	public void startRecording(TripData trip, 
 			ArrayList<AntDeviceInfo> antDeviceInfos, 
 			ArrayList<SensorItem> sensorItems,
-			long minTimeBetweenReadings) throws Exception {
+			long minTimeBetweenReadings,
+			boolean recordRawData) throws Exception {
 		
 		this.trip = trip;
 		this.pauseId = -1;
@@ -214,16 +215,28 @@ public class RecordingService extends Service
 		this.sensors = sensorItems;
 		this.sensorRecorders.clear();
 		
+		SensorDataFile sensorDataFile = null;
+		
 		// Create a recorder for each sensor
 		for (SensorItem sensorItem: this.sensors) {
 			if (sensorItem.getRate() <= SensorManager.SENSOR_DELAY_NORMAL) {
-				sensorRecorders.put(sensorItem.getName(), SensorRecorder.create(sensorItem.getName(), sensorItem.getType(), sensorItem.getRate()));
+				
+				// Create a data file for the sensor recorder if enabled
+				if (recordRawData) {
+					sensorDataFile = new SensorDataFile(sensorItem.getName(), trip.tripid);
+				}
+				
+				sensorRecorders.put(sensorItem.getName(), 
+						SensorRecorder.create(sensorItem.getName(), 
+								sensorItem.getType(), sensorItem.getRate(), sensorDataFile));
 			}
 		}
 
 		// Create a recorder for each Ant+ device
 		for (AntDeviceInfo antDeviceInfo: this.devices) {
-			deviceRecorders.put(antDeviceInfo.getNumber(), AntDeviceRecorder.create(antDeviceInfo.getNumber(), antDeviceInfo.getDeviceType()));
+			deviceRecorders.put(antDeviceInfo.getNumber(), 
+					AntDeviceRecorder.create(antDeviceInfo.getNumber(), 
+							antDeviceInfo.getDeviceType()));
 		}
 
 		// Start listening for GPS updates!
@@ -346,6 +359,13 @@ public class RecordingService extends Service
 		}
 	}
 
+    /**
+     * Called when the location has changed.
+     *
+     * <p> There are no restrictions on the use of the supplied Location object.
+     *
+     * @param location The new location, as a Location object.
+     */
 	@Override
 	public void onLocationChanged(Location location) {
 
@@ -386,10 +406,24 @@ public class RecordingService extends Service
 		}
 	}
 	
+    /**
+     * Called when the provider is disabled by the user. If requestLocationUpdates
+     * is called on an already disabled provider, this method is called
+     * immediately.
+     *
+     * @param provider the name of the location provider associated with this
+     * update.
+     */
 	@Override
 	public void onProviderDisabled(String arg0) {
 	}
 
+    /**
+     * Called when the provider is enabled by the user.
+     *
+     * @param provider the name of the location provider associated with this
+     * update.
+     */
 	@Override
 	public void onProviderEnabled(String arg0) {
 	}

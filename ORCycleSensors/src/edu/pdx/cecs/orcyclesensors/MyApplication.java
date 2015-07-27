@@ -290,7 +290,7 @@ public class MyApplication extends android.app.Application {
 
 		case RecordingService.STATE_IDLE:
 			trip = TripData.createTrip(activity);
-			recordingService.startRecording(trip, appDevices.getAntDeviceInfos(), appSensors.getSensors(), minTimeBetweenReadings);
+			recordingService.startRecording(trip, appDevices.getAntDeviceInfos(), appSensors.getSensors(), minTimeBetweenReadings, true);
 			break;
 
 		case RecordingService.STATE_RECORDING:

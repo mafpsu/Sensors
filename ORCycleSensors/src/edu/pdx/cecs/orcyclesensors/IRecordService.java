@@ -60,6 +60,8 @@ package edu.pdx.cecs.orcyclesensors;
 
 import java.util.ArrayList;
 
+import android.content.Context;
+
 public interface IRecordService {
 
 	public final static int STATE_IDLE = 0;
@@ -78,7 +80,8 @@ public interface IRecordService {
 	public void startRecording(TripData trip, 
 			ArrayList<AntDeviceInfo> devices, 
 			ArrayList<SensorItem> sensors,
-			long minTimeBetweenReadings) throws Exception;
+			long minTimeBetweenReadings,
+			boolean recordRawData) throws Exception;
 
 	public void cancelRecording();
 

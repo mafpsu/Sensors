@@ -7,8 +7,8 @@ public class ScalarSensorRecorder extends SensorRecorder {
 	private ArrayList<Float> readings0;
 	private int numSamples;
 
-	public ScalarSensorRecorder(String name, int type, int rate) {
-		super(name, type, rate);
+	public ScalarSensorRecorder(String name, int type, int rate, SensorDataFile sensorDataFile) {
+		super(name, type, rate, sensorDataFile);
 		this.readings0 = new ArrayList<Float>(1024);
 		this.readings0.ensureCapacity(1024);
 		reset();
@@ -45,6 +45,10 @@ public class ScalarSensorRecorder extends SensorRecorder {
 		
 		tripData.addSensorReadings(currentTimeMillis, sensorName, type, numSamples,
 				averageValues, sumSquareDifferences);
+		
+		if (null != sensorDataFile) {
+			sensorDataFile.write(readings0);
+		}
 
 		reset();
 	}
