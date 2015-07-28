@@ -14,20 +14,20 @@ public class SensorDataFile {
 
 	private static final String MODULE_TAG = "RawDataFile";
 
-	private String fileName;
+	private final String fileName;
 	private BufferedWriter file;
 	private StringBuilder sb = new StringBuilder();
+	private final String dataDir;
 	private boolean exceptionOccurred = false;
 	
-	public SensorDataFile(String name, long tripId) {
-		this.fileName = name + String.valueOf(tripId);
+	public SensorDataFile(String name, long tripId, String dataDir) {
+		this.dataDir = dataDir;
+		this.fileName = name + " " + String.valueOf(tripId);
 	}
 	
 	public void open(Context context) {
 		try {
-			file = new BufferedWriter(new FileWriter(new File(context.getFilesDir(), this.fileName)));
-			String tmp = context.getFilesDir().toString();
-			Log.i(MODULE_TAG, "file name: " + this.fileName);
+			file = new BufferedWriter(new FileWriter(new File(dataDir, this.fileName)));
 		} catch (IOException ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}
@@ -35,7 +35,9 @@ public class SensorDataFile {
 	
 	public void close() {
 		try {
-			file.close();
+			if (null != file) {
+				file.close();
+			}
 		} catch (IOException ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}

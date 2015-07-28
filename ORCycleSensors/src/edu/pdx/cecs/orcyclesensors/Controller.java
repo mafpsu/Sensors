@@ -9,6 +9,7 @@ public class Controller {
 	public static final int EXTRA_SHOW_FRAGMENT_TRIPS = 1;
 	public static final int EXTRA_SHOW_FRAGMENT_DEVICES = 2;
 	public static final int EXTRA_SHOW_FRAGMENT_SENSORS = 3;
+	public static final int EXTRA_SHOW_FRAGMENT_DATA_FILES = 4;
 
 	public static final String EXTRA_TRIP_ID = "EXTRA_TRIP_ID";
 	public static final int EXTRA_TRIP_ID_UNDEFINED = -1;

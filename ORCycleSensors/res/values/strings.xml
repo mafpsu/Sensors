@@ -11,12 +11,15 @@
     <string name="tab_title_trips">Trips</string>
     <string name="tab_title_devices">Devices</string>
     <string name="tab_title_sensors">Sensors</string>
+    <string name="tab_title_data_files">Data Files</string>
     <string name="hello_world">Hello world!</string>
 
     <string name="action_settings">Settings</string>
     <string name="action_add_device">Add device</string>
     <string name="action_delete_devices">Delete devices</string>
     <string name="action_edit_sensors">Edit sensors</string>
+    <string name="action_delete_data_files">Delete files</string>
+    <string name="action_email_data_files">E-mail files</string>
     
 	<string name="ami_initial_elapsed_time">00:00:00</string>
 	<string name="ami_elapsed_time">Settings</string>

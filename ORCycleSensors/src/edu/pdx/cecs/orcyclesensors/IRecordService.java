@@ -81,7 +81,7 @@ public interface IRecordService {
 			ArrayList<AntDeviceInfo> devices, 
 			ArrayList<SensorItem> sensors,
 			long minTimeBetweenReadings,
-			boolean recordRawData) throws Exception;
+			boolean recordRawData, String dataFileDir) throws Exception;
 
 	public void cancelRecording();
 

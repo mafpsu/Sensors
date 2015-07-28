@@ -1,9 +1,7 @@
 package edu.pdx.cecs.orcyclesensors;
 
 import java.util.ArrayList;
-
 import com.dsi.ant.plugins.antplus.pcc.defines.DeviceType;
-
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -39,6 +37,7 @@ public class MyApplication extends android.app.Application {
 	private UserId userId = null;
 	private AppDevices appDevices = null;
 	private AppSensors appSensors = null;
+	private ArrayList<DataFileInfo> appDataFiles = new ArrayList<DataFileInfo>();
 	private AppInfo appInfo = null;
 	
 	private RecordingService recordingService = null;
@@ -215,6 +214,25 @@ public class MyApplication extends android.app.Application {
 		return appDevices.getAntDeviceInfos();
 	}
 
+	// *************************************
+	// * Interface to application data Files
+	// *************************************
+	
+	public void deleteDataFile(int index) {
+		DataFileInfo dataFileInfo = appDataFiles.get(index);
+		DataFileInfo.deleteFile(dataFileInfo);
+	}
+
+	public ArrayList<DataFileInfo> getAppDataFiles(Context context) {
+		
+		if (!DataFileInfo.setPath(getFilesDir().getAbsolutePath() + "/data")) {
+			appDataFiles.clear();
+			return appDataFiles;
+		}
+
+		return DataFileInfo.getDataFiles(appDataFiles);
+	}
+
 	// *********************************************************************************
 	// *              RecordingService ServiceConnection Interface
 	// *********************************************************************************
@@ -290,7 +308,8 @@ public class MyApplication extends android.app.Application {
 
 		case RecordingService.STATE_IDLE:
 			trip = TripData.createTrip(activity);
-			recordingService.startRecording(trip, appDevices.getAntDeviceInfos(), appSensors.getSensors(), minTimeBetweenReadings, true);
+			recordingService.startRecording(trip, appDevices.getAntDeviceInfos(), 
+					appSensors.getSensors(), minTimeBetweenReadings, true, DataFileInfo.getDirPath());
 			break;
 
 		case RecordingService.STATE_RECORDING:

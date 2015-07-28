@@ -204,7 +204,7 @@ public class RecordingService extends Service
 			ArrayList<AntDeviceInfo> antDeviceInfos, 
 			ArrayList<SensorItem> sensorItems,
 			long minTimeBetweenReadings,
-			boolean recordRawData) throws Exception {
+			boolean recordRawData, String dataFileDir) throws Exception {
 		
 		this.trip = trip;
 		this.pauseId = -1;
@@ -223,7 +223,7 @@ public class RecordingService extends Service
 				
 				// Create a data file for the sensor recorder if enabled
 				if (recordRawData) {
-					sensorDataFile = new SensorDataFile(sensorItem.getName(), trip.tripid);
+					sensorDataFile = new SensorDataFile(sensorItem.getName(), trip.tripid, dataFileDir);
 				}
 				
 				sensorRecorders.put(sensorItem.getName(), 
