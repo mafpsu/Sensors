@@ -67,9 +67,6 @@ public class SavedTripsAdapter extends SimpleCursorAdapter {
 			TextView textViewPurpose = (TextView) rowView.findViewById(R.id.TextViewPurpose);
 			TextView textViewInfo = (TextView) rowView.findViewById(R.id.TextViewInfo);
 			ImageView imageTripPurpose = (ImageView) rowView.findViewById(R.id.ImageTripPurpose);
-			//TextView textViewCO2 = (TextView) rowView.findViewById(R.id.TextViewCO2);
-			//TextView textViewCalory = (TextView) rowView.findViewById(R.id.TextViewCalory);
-			//View llCaloryCo2 = rowView.findViewById(R.id.RelativeLayout2);
 
 			cursor.moveToPosition(position);
 
@@ -78,7 +75,8 @@ public class SavedTripsAdapter extends SimpleCursorAdapter {
 			String start = sdfStart.format(startTime);
 
 			textViewStart.setText(start);
-			textViewPurpose.setText(cursor.getString(cursor.getColumnIndex("purp")));
+			//textViewPurpose.setText(cursor.getString(cursor.getColumnIndex("purp")));
+			textViewPurpose.setText("ID: " + String.valueOf(cursor.getLong(cursor.getColumnIndex(DbAdapter.K_TRIP_ROWID))));
 
 			SimpleDateFormat sdfDuration = new SimpleDateFormat("HH:mm:ss");
 			sdfDuration.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -89,29 +87,6 @@ public class SavedTripsAdapter extends SimpleCursorAdapter {
 
 			textViewInfo.setText(duration);
 
-			//Double CO2 = cursor.getFloat(cursor.getColumnIndex("distance")) * 0.0006212 * 0.93;
-			//DecimalFormat df = new DecimalFormat("0.#");
-			//String CO2String = df.format(CO2);
-			//textViewCO2.setText("CO2 Saved: " + CO2String + " lbs");
-
-			//Double calory = cursor.getFloat(cursor.getColumnIndex("distance")) * 0.0006212 * 49 - 1.69;
-			//String caloryString = df.format(calory);
-			//if (calory <= 0) {
-			//	textViewCalory.setText("Calories Burned: " + 0 + " kcal");
-			//} else {
-			//	textViewCalory
-			//			.setText("Calories Burned: " + caloryString + " kcal");
-			//}
-
-			// ----------------------------------------------------------
-			// For the moment, these elements will be invisible until we
-			// have a more accurate solution for calories burned
-			// ----------------------------------------------------------
-
-			//llCaloryCo2.setVisibility(View.GONE);
-
-			//textViewCO2.setVisibility(View.GONE);
-			//textViewCalory.setVisibility(View.GONE);
 
 			// -------------------------------------------------------
 			//
