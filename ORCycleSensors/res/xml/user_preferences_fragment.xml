@@ -10,7 +10,13 @@
 	        android:title="GPS Frequency (Hz)"
 	        android:summary="Set frequency for recieving GPS location data" />
 	    
-	    <intent
+	    <CheckBoxPreference
+	        android:key="PREF_RECORD_RAW_DATA"
+	        android:title="Record Raw Data"
+	        android:summary="Save sensor and device readings to disk when recording trips" 
+	        android:defaultValue="false"/>
+	    
+	    	    <intent
 	        android:action="android.settings.DISPLAY_SETTINGS" />
 	    
 	</PreferenceCategory>

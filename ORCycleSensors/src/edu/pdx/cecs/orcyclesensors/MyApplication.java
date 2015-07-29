@@ -33,6 +33,8 @@ public class MyApplication extends android.app.Application {
 	private static final String SETTING_GPS_FREQUENCY = "PREF_GPS_FREQUENCY";
 	private static final String SETTING_DEFAULT_FREQUENCY = "1.0";
 	private static final long DEFAULT_MIN_RECORDING_DELAY = 1000;
+	private static final String PREF_RECORD_RAW_DATA = "PREF_RECORD_RAW_DATA";
+	private static final boolean DEFAULT_VALUE_RECORD_RAW_DATA = false;
 
 	private UserId userId = null;
 	private AppDevices appDevices = null;
@@ -42,7 +44,7 @@ public class MyApplication extends android.app.Application {
 	
 	private RecordingService recordingService = null;
 	private long minTimeBetweenReadings = 1000; // milliseconds
-
+	private boolean recordRawData = false;
 	private TripData trip;
     private static final Controller_MainRecord ctrlMainRecord = new Controller_MainRecord();
     private static final Controller_TripMap ctrlTripMap = new Controller_TripMap();
@@ -108,14 +110,15 @@ public class MyApplication extends android.app.Application {
 		// setDefaultApplicationSettings();
 
 		appInfo = new AppInfo(this.getBaseContext());
-		loadMinTimeBetweenReadings();
-	}
-	
-	public void loadMinTimeBetweenReadings() {
 		
-		// shared prefs from settings screens
 		Context context = getApplicationContext();
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		loadMinTimeBetweenReadings(prefs);
+		loadPrefSaveRawData(prefs);
+	}
+	
+	public void loadMinTimeBetweenReadings(SharedPreferences prefs) {
+		
 		String prefsFrequency = prefs.getString(SETTING_GPS_FREQUENCY, SETTING_DEFAULT_FREQUENCY);
 		boolean isBadValue = false;
 
@@ -138,6 +141,10 @@ public class MyApplication extends android.app.Application {
 		}
 	}
 
+	public void loadPrefSaveRawData(SharedPreferences prefs) {
+		recordRawData = prefs.getBoolean(PREF_RECORD_RAW_DATA, DEFAULT_VALUE_RECORD_RAW_DATA);
+	}
+	
 	// *********************************
 	// * General application information
 	// *********************************
@@ -309,7 +316,7 @@ public class MyApplication extends android.app.Application {
 		case RecordingService.STATE_IDLE:
 			trip = TripData.createTrip(activity);
 			recordingService.startRecording(trip, appDevices.getAntDeviceInfos(), 
-					appSensors.getSensors(), minTimeBetweenReadings, true, DataFileInfo.getDirPath());
+					appSensors.getSensors(), minTimeBetweenReadings, recordRawData, DataFileInfo.getDirPath());
 			break;
 
 		case RecordingService.STATE_RECORDING:
