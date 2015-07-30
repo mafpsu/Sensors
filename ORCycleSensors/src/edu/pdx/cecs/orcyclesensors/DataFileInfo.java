@@ -11,9 +11,9 @@ public class DataFileInfo {
 	private static String dir = null;
 	private static File dataDir = null;
 
-	private String name;
-	private String path;
-	private long length;
+	private final String name;
+	private final String path;
+	private final long length;
 
 	public DataFileInfo(String name, String path, long length) {
 		this.name = name;

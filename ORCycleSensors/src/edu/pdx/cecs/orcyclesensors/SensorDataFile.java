@@ -19,6 +19,7 @@ public class SensorDataFile {
 	private StringBuilder sb = new StringBuilder();
 	private final String dataDir;
 	private boolean exceptionOccurred = false;
+	private boolean firstLine = true;
 	
 	public SensorDataFile(String name, long tripId, String dataDir) {
 		this.dataDir = dataDir;
@@ -28,6 +29,7 @@ public class SensorDataFile {
 	public void open(Context context) {
 		try {
 			file = new BufferedWriter(new FileWriter(new File(dataDir, this.fileName)));
+			firstLine = true;
 		} catch (IOException ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}
@@ -54,8 +56,11 @@ public class SensorDataFile {
 		
 		// for each reading
 		for (float reading: readings0) {
-			if (sb.length() > 0) {
-				sb.append("\n");
+			if (!firstLine) {
+				sb.append("\r\n");
+			}
+			else {
+				firstLine = false;
 			}
 			sb.append(reading);
 		}
@@ -87,8 +92,11 @@ public class SensorDataFile {
 		
 		// for each reading
 		for (int i = 0; i < readings0.size(); ++i) {
-			if (sb.length() > 0) {
-				sb.append("\n");
+			if (!firstLine) {
+				sb.append("\r\n");
+			}
+			else {
+				firstLine = false;
 			}
 			sb.append(readings0.get(i));
 			sb.append(", ");

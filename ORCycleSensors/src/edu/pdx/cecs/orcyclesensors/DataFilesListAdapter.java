@@ -9,11 +9,25 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 public class DataFilesListAdapter extends BaseAdapter {
-	private final ArrayList<DataFileInfo> dataFilesList;
+	private final ArrayList<DataFileListItem> dataFiles;
 	private final LayoutInflater mInflater;
-	private final ArrayList<Long> selectedItems;
+	private final ArrayList<Long> selectedItems = new ArrayList<Long>();
 	private final int defaultColor;
 	private final int selectedColor;
+	
+	private class DataFileListItem extends DataFileInfo {
+		
+		private long id;
+		
+		public DataFileListItem(DataFileInfo d, long id) {
+			super(d.getName(), d.getPath(), d.getLength());
+			this.id = id;
+		}
+		
+		public long getId() {
+			return id;
+		}
+	}
 
 	private static class ViewHolder {
 		public TextView txtName;
@@ -21,36 +35,88 @@ public class DataFilesListAdapter extends BaseAdapter {
 	}
 
 	public DataFilesListAdapter(LayoutInflater layoutInflater, 
-			ArrayList<DataFileInfo> dataFilesList, 
-			ArrayList<Long> selectedItems,
+			ArrayList<DataFileInfo> dataFilesInfos, 
 			int defaultColor,
 			int selectedColor) {
+		
 		this.mInflater = layoutInflater;
-		this.dataFilesList = dataFilesList;
-		this.selectedItems = selectedItems;
 		this.defaultColor = defaultColor;
 		this.selectedColor = selectedColor;
+
+		this.dataFiles = new ArrayList<DataFileListItem>();
+		for (DataFileInfo d: dataFilesInfos) {
+			this.dataFiles.add(new DataFileListItem(d, dataFiles.size()));
+		}
 	}
 
+	public ArrayList<Long> getSelectedItems() {
+		return selectedItems;
+	}
+	
+	public boolean isSelected(long id) {
+		return selectedItems.indexOf(id) >= 0;
+	}
+	
+	public void select(long id, boolean select) {
+		if (select) {
+			selectedItems.add(id);
+		}
+		else {
+			selectedItems.remove(id);
+		}
+	}
+	
+	public int numSelectedItems() {
+		return selectedItems.size();
+	}
+	
+	public void toggleSelection(long id) {
+		if (isSelected(id)) {
+			select(id, false);
+		}
+		else {
+			select(id, true);
+		}
+	}
+	
+	public void clearSelectedItems() {
+		selectedItems.clear();
+	}
+	
+	public ArrayList<DataFileInfo> getSelectedDataFileInfos() {
+		
+		ArrayList<DataFileInfo> dataFileInfos = new ArrayList<DataFileInfo>(); 
+		DataFileInfo dataFileInfo;
+		
+		for (DataFileListItem item: dataFiles) {
+			if (isSelected(item.getId())) {
+				dataFileInfo = new DataFileInfo(item.getName(), item.getPath(), item.getLength()); 
+				dataFileInfos.add(dataFileInfo);
+			}
+		}
+		
+		return dataFileInfos;
+	}
+	
 	@Override
 	public int getCount() {
-		return dataFilesList.size();
+		return dataFiles.size();
 	}
 
 	@Override
 	public DataFileInfo getItem(int position) {
-		return dataFilesList.get(position);
+		return dataFiles.get(position);
 	}
 
 	@Override
 	public long getItemId(int position) {
-		return position;
+		return dataFiles.get(position).getId();
 	}
 
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 
-		DataFileInfo item = dataFilesList.get(position);
+		DataFileListItem item = dataFiles.get(position);
 
 		ViewHolder holder = null;
 		if (convertView == null) {
@@ -68,18 +134,10 @@ public class DataFilesListAdapter extends BaseAdapter {
 			holder = (ViewHolder) convertView.getTag();
 		}
 
-		// Display item data
+		// Display item data and selection color
 		holder.txtName.setText(item.getName());
 		holder.txtNumber.setText(String.valueOf(item.getLength()));
-
-		long id = (long) position;
-		if (selectedItems.indexOf(id) > -1) {
-			// highlight view
-			convertView.setBackgroundColor(selectedColor);
-		} else {
-			// Remove highlight view
-			convertView.setBackgroundColor(defaultColor);
-		}
+		convertView.setBackgroundColor(isSelected(item.getId()) ? selectedColor : defaultColor);
 
 		return convertView;
 	}
