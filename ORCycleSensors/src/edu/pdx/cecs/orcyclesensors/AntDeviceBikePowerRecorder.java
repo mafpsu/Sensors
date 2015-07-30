@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
+import android.location.Location;
 import android.util.Log;
 
 import com.dsi.ant.plugins.antplus.pcc.AntPlusBikePowerPcc;
@@ -776,7 +777,7 @@ public class AntDeviceBikePowerRecorder extends AntDeviceRecorder implements
 		}
 	}
 	
-	synchronized public void writeResult(TripData tripData, long currentTimeMillis) {
+	synchronized public void writeResult(TripData tripData, long currentTimeMillis, Location location) {
 
 		// Calculate averages and sum square differences
 		float avgCalcPower = 0.0f;

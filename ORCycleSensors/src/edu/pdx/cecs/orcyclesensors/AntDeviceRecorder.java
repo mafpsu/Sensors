@@ -6,6 +6,7 @@ import com.dsi.ant.plugins.antplus.pcc.defines.RequestAccessResult;
 import com.dsi.ant.plugins.antplus.pccbase.AntPluginPcc.IDeviceStateChangeReceiver;
 
 import android.content.Context;
+import android.location.Location;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -23,7 +24,7 @@ public abstract class AntDeviceRecorder implements IDeviceStateChangeReceiver {
     
     protected abstract void unregister();
     
-    protected abstract void writeResult(TripData tripData, long currentTimeMillis);
+    protected abstract void writeResult(TripData tripData, long currentTimeMillis, Location location);
     
 	// ************************************************
 	// * Protected section classes, methods & variables

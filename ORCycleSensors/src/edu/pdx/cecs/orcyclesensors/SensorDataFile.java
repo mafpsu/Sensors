@@ -5,9 +5,11 @@ import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 import android.content.Context;
+import android.location.Location;
 import android.util.Log;
 
 public class SensorDataFile {
@@ -20,6 +22,8 @@ public class SensorDataFile {
 	private final String dataDir;
 	private boolean exceptionOccurred = false;
 	private boolean firstLine = true;
+	private SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
 	
 	public SensorDataFile(String name, long tripId, String dataDir) {
 		this.dataDir = dataDir;
@@ -45,11 +49,14 @@ public class SensorDataFile {
 		}
 	}
 	
-	public void write(List<Float> readings0) {
+	public void write(long currentTimeMillis, Location location, List<Float> readings0) {
 		
 		if (exceptionOccurred) {
 			return;
 		}
+
+		long lat = (int) (location.getLatitude() * 1E6);
+		long lgt = (int) (location.getLongitude() * 1E6);
 
 		// Clear previous string output
 		sb.setLength(0);
@@ -62,6 +69,12 @@ public class SensorDataFile {
 			else {
 				firstLine = false;
 			}
+			sb.append(df.format(currentTimeMillis));
+			sb.append(", ");
+			sb.append(((double)lat) / 1E6);
+			sb.append(", ");
+			sb.append(((double)lgt) / 1E6);
+			sb.append(", ");
 			sb.append(reading);
 		}
 		
@@ -79,13 +92,17 @@ public class SensorDataFile {
 		}
 	}
 	
-	public void write(List<Float> readings0, 
+	public void write(long currentTimeMillis, Location location, 
+			List<Float> readings0, 
 			List<Float> readings1,
 			List<Float> readings2) {
 		
 		if (exceptionOccurred) {
 			return;
 		}
+
+		long lat = (int) (location.getLatitude() * 1E6);
+		long lgt = (int) (location.getLongitude() * 1E6);
 
 		// Clear previous string output
 		sb.setLength(0);
@@ -98,6 +115,12 @@ public class SensorDataFile {
 			else {
 				firstLine = false;
 			}
+			sb.append(df.format(currentTimeMillis));
+			sb.append(", ");
+			sb.append(((double)lat) / 1E6);
+			sb.append(", ");
+			sb.append(((double)lgt) / 1E6);
+			sb.append(", ");
 			sb.append(readings0.get(i));
 			sb.append(", ");
 			sb.append(readings1.get(i));

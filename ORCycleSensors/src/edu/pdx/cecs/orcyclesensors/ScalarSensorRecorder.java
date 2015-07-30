@@ -2,6 +2,8 @@ package edu.pdx.cecs.orcyclesensors;
 
 import java.util.ArrayList;
 
+import android.location.Location;
+
 public class ScalarSensorRecorder extends SensorRecorder {
 	
 	private ArrayList<Float> readings0;
@@ -26,7 +28,7 @@ public class ScalarSensorRecorder extends SensorRecorder {
 		}
 	}
 	
-	synchronized public void writeResult(TripData tripData, long currentTimeMillis) {
+	synchronized public void writeResult(TripData tripData, long currentTimeMillis, Location location) {
 		
 		float[] averageValues;
 		float[] sumSquareDifferences;
@@ -47,7 +49,7 @@ public class ScalarSensorRecorder extends SensorRecorder {
 				averageValues, sumSquareDifferences);
 		
 		if (null != sensorDataFile) {
-			sensorDataFile.write(readings0);
+			sensorDataFile.write(currentTimeMillis, location, readings0);
 		}
 
 		reset();

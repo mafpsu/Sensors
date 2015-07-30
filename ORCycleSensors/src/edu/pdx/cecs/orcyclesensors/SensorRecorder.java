@@ -7,6 +7,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Location;
 import android.util.Log;
 
 public abstract class SensorRecorder implements SensorEventListener {
@@ -166,7 +167,7 @@ public abstract class SensorRecorder implements SensorEventListener {
 
 	abstract void addSample(float[] values);
 	
-	abstract void writeResult(TripData tripData, long currentTimeMillis);
+	abstract void writeResult(TripData tripData, long currentTimeMillis, Location location);
 	
 	@Override
 	synchronized public void onSensorChanged(SensorEvent event) {

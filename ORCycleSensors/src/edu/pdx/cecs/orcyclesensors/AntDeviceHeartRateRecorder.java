@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
+import android.location.Location;
 import android.util.Log;
 
 import com.dsi.ant.plugins.antplus.pcc.AntPlusHeartRatePcc;
@@ -107,7 +108,7 @@ public class AntDeviceHeartRateRecorder extends AntDeviceRecorder implements
 		}
 	}
 
-	synchronized public void writeResult(TripData tripData, long currentTimeMillis) {
+	synchronized public void writeResult(TripData tripData, long currentTimeMillis, Location location) {
 		
 		float avgHeartRate = 0.0f;
 		float ssdHeartRate = 0.0f;

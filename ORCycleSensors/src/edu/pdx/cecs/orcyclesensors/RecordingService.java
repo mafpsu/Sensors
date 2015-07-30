@@ -389,12 +389,12 @@ public class RecordingService extends Service
 
 				// record sensor values
 				for (SensorRecorder sensorRecorder: sensorRecorders.values()) {
-					sensorRecorder.writeResult(trip, currentTimeMillis);
+					sensorRecorder.writeResult(trip, currentTimeMillis, location);
 				}
 
 				// record device values
 				for (AntDeviceRecorder deviceRecorder: deviceRecorders.values()) {
-					deviceRecorder.writeResult(trip, currentTimeMillis);
+					deviceRecorder.writeResult(trip, currentTimeMillis, location);
 				}
 				
 				// record location for distance measurement

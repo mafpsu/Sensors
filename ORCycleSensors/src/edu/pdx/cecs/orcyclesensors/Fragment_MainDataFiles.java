@@ -22,6 +22,7 @@ public class Fragment_MainDataFiles extends Fragment {
 
 	private static final String MODULE_TAG = "Fragment_MainDataFiles";
 	private static final String BSENSOR_EMAIL_ADDRESS = "robin5@pdx.edu";
+	//private static final String BSENSOR_EMAIL_ADDRESS = "figliozzi@pdx.edu";
 
 	private DataFilesListAdapter dataFilesListAdapter;
 	private ListView lvDataFiles;
