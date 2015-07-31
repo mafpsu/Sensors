@@ -1,15 +1,11 @@
 package edu.pdx.cecs.orcyclesensors;
 
-import java.io.File;
-import java.util.ArrayList;
-
-import android.util.Log;
-
+/**
+ * This class designates a file in the data directory.
+ * @author Robin Murray
+ *
+ */
 public class DataFileInfo {
-
-	private static final String MODULE_TAG = "DataFileInfo";
-	private static String dir = null;
-	private static File dataDir = null;
 
 	private final String name;
 	private final String path;
@@ -21,46 +17,27 @@ public class DataFileInfo {
 		this.length = length;
 	}
 	
+	/**
+	 * Returns the name of the file in the data directory
+	 * @return
+	 */
 	public String getName() {
 		return name;
 	}
 	
+	/**
+	 * Returns the absolute path to the file in the data directory
+	 * @return
+	 */
 	public String getPath() {
 		return path;
 	}
 	
+	/**
+	 * Returns the length of the file in the data directory
+	 * @return
+	 */
 	public long getLength() {
 		return length;
-	}
-	
-	public static void deleteFile(DataFileInfo dataFileInfo) {
-		File file = new File(dataFileInfo.getPath());
-		if (file.exists()) {
-			boolean success = file.delete();
-			if (!success) {
-				Log.e(MODULE_TAG, "Could not delete file: " + dataFileInfo.getPath());
-			}
-		}
-	}
-	
-	public static boolean setPath(String dirPath) {
-		dataDir = new File(dirPath);
-		if (!dataDir.exists()) {
-			return dataDir.mkdirs();
-		}
-		return true;
-	}
-	
-	public static String getDirPath() {
-		return dataDir.getAbsolutePath();
-	}
-	
-	public static ArrayList<DataFileInfo> getDataFiles(ArrayList<DataFileInfo> appDataFiles) {
-		appDataFiles.clear();
-		File dataFiles[] = dataDir.listFiles();
-		for (File dataFile: dataFiles) {
-			appDataFiles.add(new DataFileInfo(dataFile.getName(), dataFile.getAbsolutePath(), dataFile.length()));
-		}
-		return appDataFiles;
 	}
 }

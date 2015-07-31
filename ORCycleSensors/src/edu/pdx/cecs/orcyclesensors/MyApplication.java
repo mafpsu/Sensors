@@ -56,6 +56,8 @@ public class MyApplication extends android.app.Application {
 	private static final String SETTING_DEFAULT_FREQUENCY = "1.0";
 	private static final long DEFAULT_MIN_RECORDING_DELAY = 1000;
 
+	private static final String RAW_DATA_RELATIVE_DIRECTORY = "/data";
+
 	private static final String PREF_RECORD_RAW_DATA = "PREF_RECORD_RAW_DATA";
 	private static final boolean DEFAULT_VALUE_RECORD_RAW_DATA = false;
 
@@ -67,9 +69,7 @@ public class MyApplication extends android.app.Application {
 	private UserId userId = null;
 	private AppDevices appDevices = null;
 	private AppSensors appSensors = null;
-	private ArrayList<DataFileInfo> appDataFiles = new ArrayList<DataFileInfo>();
 	private AppInfo appInfo = null;
-	
 	private RecordingService recordingService = null;
 	private long minTimeBetweenReadings = 1000; // milliseconds
 	private boolean recordRawData = false;
@@ -136,6 +136,10 @@ public class MyApplication extends android.app.Application {
 		
 		(appSensors = AppSensors.getInstance()).loadFrom(settings, SETTING_SENSORS);
 		
+		if (!DataFileInfoManager.setDirPath(getFilesDir().getAbsolutePath() + RAW_DATA_RELATIVE_DIRECTORY)) {
+			Log.e(MODULE_TAG, "Could not create application directories");
+		}
+		
 		// setDefaultApplicationSettings();
 
 		appInfo = new AppInfo(this.getBaseContext());
@@ -176,7 +180,6 @@ public class MyApplication extends android.app.Application {
 		}
 	}
 
-	
 	// *********************************
 	// * General application information
 	// *********************************
@@ -262,19 +265,11 @@ public class MyApplication extends android.app.Application {
 	// *************************************
 	
 	public ArrayList<DataFileInfo> getAppDataFiles(Context context) {
-		
-		if (!DataFileInfo.setPath(getFilesDir().getAbsolutePath() + "/data")) {
-			appDataFiles.clear();
-			return appDataFiles;
-		}
-
-		return DataFileInfo.getDataFiles(appDataFiles);
+		return DataFileInfoManager.getAppDataFiles();
 	}
 
 	public void deleteDataFiles(ArrayList<DataFileInfo> dataFileInfos) {
-		for (DataFileInfo dataFileInfo : dataFileInfos) {
-			DataFileInfo.deleteFile(dataFileInfo);
-		}
+		DataFileInfoManager.deleteAppDataFiles(dataFileInfos);
 	}
 
 	// *********************************************************************************
@@ -353,7 +348,7 @@ public class MyApplication extends android.app.Application {
 		case RecordingService.STATE_IDLE:
 			trip = TripData.createTrip(activity);
 			recordingService.startRecording(trip, appDevices.getAntDeviceInfos(), 
-					appSensors.getSensors(), minTimeBetweenReadings, recordRawData, DataFileInfo.getDirPath());
+					appSensors.getSensors(), minTimeBetweenReadings, recordRawData, DataFileInfoManager.getDirPath());
 			break;
 
 		case RecordingService.STATE_RECORDING:
