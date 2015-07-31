@@ -35,9 +35,11 @@ public class DataFileInfo {
 	
 	public static void deleteFile(DataFileInfo dataFileInfo) {
 		File file = new File(dataFileInfo.getPath());
-		boolean success = file.delete();
-		if (!success) {
-			Log.e(MODULE_TAG, "Could not delete file: " + dataFileInfo.getPath());
+		if (file.exists()) {
+			boolean success = file.delete();
+			if (!success) {
+				Log.e(MODULE_TAG, "Could not delete file: " + dataFileInfo.getPath());
+			}
 		}
 	}
 	

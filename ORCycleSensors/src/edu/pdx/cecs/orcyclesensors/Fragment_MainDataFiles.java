@@ -1,6 +1,7 @@
 package edu.pdx.cecs.orcyclesensors;
 
 import java.util.ArrayList;
+
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -293,9 +294,7 @@ public class Fragment_MainDataFiles extends Fragment {
 
 				case R.id.action_delete_data_file:
 					// delete selected notes
-					for (int i = 0; i < dataFilesListAdapter.getSelectedItems().size(); i++) {
-						actionDeleteFile(dataFilesListAdapter.getSelectedItems().get(i));
-					}
+					actionDeleteSelectedFiles(dataFilesListAdapter.getSelectedDataFileInfos());
 					mode.finish(); // Action picked, so close the CAB
 					return true;
 					
@@ -321,9 +320,9 @@ public class Fragment_MainDataFiles extends Fragment {
 			}
 		}
 
-		private void actionDeleteFile(long position) { // TODO: change to delete by name
+		private void actionDeleteSelectedFiles(ArrayList<DataFileInfo> dataFileInfos) {
 			try {
-				MyApplication.getInstance().deleteDataFile((int)position);
+				MyApplication.getInstance().deleteDataFiles(dataFileInfos);
 				lvDataFiles.invalidate();
 				populateFileList();
 			}

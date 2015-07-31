@@ -21,7 +21,9 @@
 package edu.pdx.cecs.orcyclesensors;
 
 import java.util.ArrayList;
+
 import com.dsi.ant.plugins.antplus.pcc.defines.DeviceType;
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -259,11 +261,6 @@ public class MyApplication extends android.app.Application {
 	// * Interface to application data Files
 	// *************************************
 	
-	public void deleteDataFile(int index) {
-		DataFileInfo dataFileInfo = appDataFiles.get(index);
-		DataFileInfo.deleteFile(dataFileInfo);
-	}
-
 	public ArrayList<DataFileInfo> getAppDataFiles(Context context) {
 		
 		if (!DataFileInfo.setPath(getFilesDir().getAbsolutePath() + "/data")) {
@@ -272,6 +269,12 @@ public class MyApplication extends android.app.Application {
 		}
 
 		return DataFileInfo.getDataFiles(appDataFiles);
+	}
+
+	public void deleteDataFiles(ArrayList<DataFileInfo> dataFileInfos) {
+		for (DataFileInfo dataFileInfo : dataFileInfos) {
+			DataFileInfo.deleteFile(dataFileInfo);
+		}
 	}
 
 	// *********************************************************************************
