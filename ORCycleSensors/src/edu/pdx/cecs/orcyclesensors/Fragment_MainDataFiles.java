@@ -1,10 +1,9 @@
 package edu.pdx.cecs.orcyclesensors;
 
 import java.util.ArrayList;
-import java.util.List;
-
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -21,8 +20,6 @@ import android.widget.ListView;
 public class Fragment_MainDataFiles extends Fragment {
 
 	private static final String MODULE_TAG = "Fragment_MainDataFiles";
-	private static final String BSENSOR_EMAIL_ADDRESS = "robin5@pdx.edu";
-	//private static final String BSENSOR_EMAIL_ADDRESS = "figliozzi@pdx.edu";
 
 	private DataFilesListAdapter dataFilesListAdapter;
 	private ListView lvDataFiles;
@@ -166,9 +163,13 @@ public class Fragment_MainDataFiles extends Fragment {
 				if (actionModeEmail != null) {
 					return false;
 				}
-
-				// Start the CAB using the ActionMode.Callback defined above
-				actionModeEmail = getActivity().startActionMode(actionModeEmailCallback);
+				else if (MyApplication.getInstance().getRawDataEmailAddress().equals("")) {
+					DialogEmailAddressNotSet();
+				}
+				else {
+					// Start the email action mode
+					actionModeEmail = getActivity().startActionMode(actionModeEmailCallback);
+				}
 				return true;
 
 			default:
@@ -410,10 +411,51 @@ public class Fragment_MainDataFiles extends Fragment {
 		private void actionEmailSelectedDataFiles() {
 
 			// Create an email with the attached data files
-			Email email = new Email(dataFilesListAdapter.getSelectedDataFileInfos());
+			Email email = new Email(MyApplication.getInstance().getRawDataEmailAddress(), 
+					dataFilesListAdapter.getSelectedDataFileInfos());
 			
 			// Launch the email activity to send the email
 			transitionToEmailActivity(email);
+		}
+	}
+
+	// *********************************************************************************
+	// *                            Dialog E-mail address not set
+	// *********************************************************************************
+
+	/**
+	 * Build dialog telling user that the GPS is not available
+	 */
+	private void DialogEmailAddressNotSet() {
+		final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+		builder.setTitle(R.string.fmdf_deans_title);
+		builder.setMessage(R.string.fmdf_deans_message);
+		builder.setPositiveButton(R.string.fmdf_deans_button_ok, new DialogEmailAddressNotSet_ButtonOk());
+		builder.setNegativeButton(R.string.fmdf_deans_button_cancel, new DialogEmailAddressNotSet_ButtonCancel());
+		final AlertDialog alert = builder.create();
+		alert.show();
+	}
+
+	private final class DialogEmailAddressNotSet_ButtonOk implements DialogInterface.OnClickListener {
+		public void onClick(final DialogInterface dialog, final int id) {
+			try {
+				dialog.cancel();
+				transitionToSettingsActivity();
+			}
+			catch(Exception ex) {
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
+		}
+	}
+
+	private final class DialogEmailAddressNotSet_ButtonCancel implements DialogInterface.OnClickListener {
+		public void onClick(final DialogInterface dialog, final int id) {
+			try {
+				dialog.cancel();
+			}
+			catch(Exception ex) {
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
 		}
 	}
 
@@ -423,9 +465,10 @@ public class Fragment_MainDataFiles extends Fragment {
 
 	private void transitionToEmailActivity(Email email) {
 		try {
+			
 			Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
 			intent.setType("text/plain");
-			intent.putExtra(Intent.EXTRA_EMAIL, new String[] { BSENSOR_EMAIL_ADDRESS });
+			intent.putExtra(Intent.EXTRA_EMAIL, email.getAddresses());
 			intent.putExtra(Intent.EXTRA_SUBJECT, email.getSubject());
 			intent.putExtra(Intent.EXTRA_TEXT, email.getText());
 		    intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, email.getAttachments());
@@ -441,5 +484,12 @@ public class Fragment_MainDataFiles extends Fragment {
 		catch (Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}
+	}
+
+	private void transitionToSettingsActivity() {
+		//Intent intent = new Intent(this, Activity_About.class);
+		Intent intent = new Intent(getActivity(), Activity_UserPreferences.class);
+		startActivity(intent);
+		getActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
 	}
 }

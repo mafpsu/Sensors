@@ -38,6 +38,8 @@ public class Email {
 	private static final String subject = "Bsensor data files";
 	private static final String dataFileExtension = ".csv";
 	private static final StringBuilder sbText = new StringBuilder();
+
+	private final String[] addresses = new String[1];
 	private final ArrayList<Uri> attachments = new ArrayList<Uri>();
 
 	/**
@@ -45,12 +47,14 @@ public class Email {
 	 * 
 	 * @param dataFileInfos
 	 */
-	public Email(ArrayList<DataFileInfo> dataFileInfos) {
+	public Email(String address, ArrayList<DataFileInfo> dataFileInfos) {
 
 		long totalAttachmentSize = 0;
 		long fileLength;
 		String fileName;
 		String filePath;
+
+		addresses[0] = new String(address);
 
 		// Generate note text
 		sbText.append("Please find attached, the following data files:\n");
@@ -112,6 +116,14 @@ public class Email {
 		}
 	}
 
+	/**
+	 * Return e-mail addresses
+	 * @return
+	 */
+	public String[] getAddresses() {
+		return addresses;
+	}
+	
 	/**
 	 * Return e-mail subject line
 	 * 

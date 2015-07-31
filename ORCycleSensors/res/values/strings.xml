@@ -50,6 +50,12 @@
     <string name="fmr_dnc_message">One or more devices failed to connect. Recording not started.</string>
     <string name="fmr_dnc_button_ok">OK</string>
     
+    <string name="fmdf_deans_title"><b>E-mail Address Not Set!</b></string>
+    <string name="fmdf_deans_message">The e-mail address for the raw data files has not been set.  
+Would you like to go to settings, and enter an e-mail address?</string>
+    <string name="fmdf_deans_button_ok">OK</string>
+    <string name="fmdf_deans_button_cancel">Cancel</string>
+    
     	<string name="btn_lbl_start">Start Trip</string>
     <string name="btn_lbl_pause">Pause</string>
     <string name="btn_lbl_resume">Resume</string>

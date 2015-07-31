@@ -24,8 +24,12 @@ public class Fragment_Preferences extends PreferenceFragment{
 	@Override
 	public void onStop() {
         super.onStop();
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
-        MyApplication.getInstance().loadMinTimeBetweenReadings(prefs);
-        MyApplication.getInstance().loadPrefSaveRawData(prefs);
+		try {
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+	        MyApplication.getInstance().loadSharedPreferences(prefs);
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
     }
 }

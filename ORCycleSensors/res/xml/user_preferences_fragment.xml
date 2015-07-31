@@ -16,8 +16,10 @@
 	        android:summary="Save sensor and device readings to disk when recording trips" 
 	        android:defaultValue="false"/>
 	    
-	    	    <intent
-	        android:action="android.settings.DISPLAY_SETTINGS" />
+	    <EditTextPreference
+	        android:key="PREF_RAW_DATA_EMAIL_ADDRESS"
+	        android:title="Raw Data E-mail"
+	        android:summary="Set E-mail address to send raw data files" />
 	    
 	</PreferenceCategory>
 	
