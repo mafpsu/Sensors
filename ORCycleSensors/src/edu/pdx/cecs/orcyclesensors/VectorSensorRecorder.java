@@ -10,9 +10,11 @@ public class VectorSensorRecorder extends SensorRecorder {
 	private ArrayList<Float> readings1;
 	private ArrayList<Float> readings2;
 	private int numSamples;
+	private final RawDataFile_VectorSensor rawDataFile;
 
-	public VectorSensorRecorder(String name, int type, int rate, SensorDataFile sensorDataFile) {
-		super(name, type, rate, sensorDataFile);
+	public VectorSensorRecorder(String name, int type, int rate, RawDataFile_VectorSensor rawDataFile) {
+		super(name, type, rate, rawDataFile);
+		this.rawDataFile = rawDataFile;
 		this.readings0 = new ArrayList<Float>(1024);
 		this.readings0.ensureCapacity(1024);
 		this.readings1 = new ArrayList<Float>(1024);
@@ -76,8 +78,8 @@ public class VectorSensorRecorder extends SensorRecorder {
 		tripData.addSensorReadings(currentTimeMillis, sensorName, type, numSamples,
 				averageValues, sumSquareDifferences);
 
-		if (null != sensorDataFile) {
-			sensorDataFile.write(currentTimeMillis, location, readings0, readings1, readings2);
+		if (null != rawDataFile) {
+			rawDataFile.write(currentTimeMillis, location, readings0, readings1, readings2);
 		}
 
 		reset();

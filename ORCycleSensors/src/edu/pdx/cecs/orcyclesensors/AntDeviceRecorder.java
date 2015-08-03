@@ -16,6 +16,7 @@ public abstract class AntDeviceRecorder implements IDeviceStateChangeReceiver {
 
 	public enum State { IDLE, CONNECTING, RUNNING, PAUSED, FAILED };
 
+
 	// **********************************
 	// * Abstract methods
 	// **********************************
@@ -35,9 +36,12 @@ public abstract class AntDeviceRecorder implements IDeviceStateChangeReceiver {
 	protected Context context;
 	
 	protected State state = State.IDLE;
+	
+	private final RawDataFile rawDataFile;
     
-	protected AntDeviceRecorder(int deviceNumber) {
+	protected AntDeviceRecorder(int deviceNumber, RawDataFile rawDataFile) {
 		this.deviceNumber = deviceNumber;
+		this.rawDataFile = rawDataFile;
 	}
 
 	protected static void showResultStatus(Context context, String deviceName, boolean supportsRssi,
@@ -91,25 +95,34 @@ public abstract class AntDeviceRecorder implements IDeviceStateChangeReceiver {
 	}
 
 	// **********************************
-	// * public interface
+	// * static interface
 	// **********************************
 	
-	public static AntDeviceRecorder create(int deviceNumber, DeviceType deviceType) throws Exception {
+	public static AntDeviceRecorder create(int deviceNumber, DeviceType deviceType, boolean recordRawData, long tripId, String dataDir) throws Exception {
+		
+		String sensorName = "AntDevice-" + String.valueOf(deviceNumber);
 		
 		if (deviceType == DeviceType.HEARTRATE) {
-			return new AntDeviceHeartRateRecorder(deviceNumber);
+			return new AntDeviceHeartRateRecorder(deviceNumber, recordRawData ? new RawDataFile_HeartRate(sensorName, tripId, dataDir) : null);
 		}
 		else if (deviceType == DeviceType.BIKE_POWER) {
-			return new AntDeviceBikePowerRecorder(deviceNumber);
+			return new AntDeviceBikePowerRecorder(deviceNumber, recordRawData ? new RawDataFile_BikePower(sensorName, tripId, dataDir) : null);
 		}
 
 		throw new Exception("Attempt to create unknown DeviceRecorder type.");
 	}
 	
+	// **********************************
+	// * public interface
+	// **********************************
+	
 	synchronized public void start(Context context) {
 
 		this.context = context;
 		handleReset();
+		if (null != rawDataFile) {
+			rawDataFile.open(context);
+		}
 	}
 	
 	synchronized public void pause() {
@@ -140,6 +153,12 @@ public abstract class AntDeviceRecorder implements IDeviceStateChangeReceiver {
 		unregister();
         requestAccessToPcc();
     }
+	
+	protected void closeRawDataFile() {
+		if (null != rawDataFile) {
+			rawDataFile.close();
+		}
+	}
 
 	@Override
 	synchronized public void onDeviceStateChange(

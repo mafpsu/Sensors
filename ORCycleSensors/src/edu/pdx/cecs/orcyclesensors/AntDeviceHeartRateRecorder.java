@@ -24,13 +24,15 @@ public class AntDeviceHeartRateRecorder extends AntDeviceRecorder implements
 	private static final String MODULE_TAG = "AntDeviceHeartRateRecorder";
 
     private final ArrayList<Integer>  heartRates = new ArrayList<Integer>(1024); 
+	private final RawDataFile_HeartRate rawDataFile;
 
 	// **************************************************************
     // *                        Constructors
     // **************************************************************
 
-    public AntDeviceHeartRateRecorder(int deviceNumber) {
-		super(deviceNumber);
+    public AntDeviceHeartRateRecorder(int deviceNumber, RawDataFile_HeartRate rawDataFile) {
+		super(deviceNumber, rawDataFile);
+		this.rawDataFile = rawDataFile;
 	}
     
 	// **************************************************************
@@ -80,6 +82,7 @@ public class AntDeviceHeartRateRecorder extends AntDeviceRecorder implements
             releaseHandle.close();
             releaseHandle = null;
         }
+        closeRawDataFile();
 	}
 
     // **************************************************************
@@ -119,6 +122,11 @@ public class AntDeviceHeartRateRecorder extends AntDeviceRecorder implements
 			ssdHeartRate = MyMath.getSumSquareDifferenceI(heartRates, avgHeartRate);
 		}
 		tripData.addHeartRateDeviceReading(currentTimeMillis, numSamples, avgHeartRate, ssdHeartRate);
+
+		if (null != rawDataFile) {
+			rawDataFile.write(currentTimeMillis, location, heartRates);
+		}
+
 		heartRates.clear();
 	}
 }

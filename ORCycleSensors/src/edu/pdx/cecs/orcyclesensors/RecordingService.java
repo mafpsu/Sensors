@@ -215,28 +215,20 @@ public class RecordingService extends Service
 		this.sensors = sensorItems;
 		this.sensorRecorders.clear();
 		
-		SensorDataFile sensorDataFile = null;
-		
 		// Create a recorder for each sensor
 		for (SensorItem sensorItem: this.sensors) {
 			if (sensorItem.getRate() <= SensorManager.SENSOR_DELAY_NORMAL) {
-				
-				// Create a data file for the sensor recorder if enabled
-				if (recordRawData) {
-					sensorDataFile = new SensorDataFile(sensorItem.getName(), trip.tripid, dataFileDir);
-				}
-				
 				sensorRecorders.put(sensorItem.getName(), 
 						SensorRecorder.create(sensorItem.getName(), 
-								sensorItem.getType(), sensorItem.getRate(), sensorDataFile));
+								sensorItem.getType(), sensorItem.getRate(), recordRawData, trip.tripid, dataFileDir));
 			}
 		}
 
 		// Create a recorder for each Ant+ device
 		for (AntDeviceInfo antDeviceInfo: this.devices) {
 			deviceRecorders.put(antDeviceInfo.getNumber(), 
-					AntDeviceRecorder.create(antDeviceInfo.getNumber(), 
-							antDeviceInfo.getDeviceType()));
+					AntDeviceRecorder.create(antDeviceInfo.getNumber(),
+							antDeviceInfo.getDeviceType(), recordRawData, trip.tripid, dataFileDir));
 		}
 
 		// Start listening for GPS updates!

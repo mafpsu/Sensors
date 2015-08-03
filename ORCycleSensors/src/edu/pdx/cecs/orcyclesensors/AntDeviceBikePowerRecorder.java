@@ -124,17 +124,16 @@ public class AntDeviceBikePowerRecorder extends AntDeviceRecorder implements
     // TextView textView_AutoCrankLengthSupport;
 
 	private static final String MODULE_TAG = "AntDeviceBikePowerRecorder";
+	private final RawDataFile_BikePower rawDataFile;
 
 	// **************************************************************
     // *                        Constructors
     // **************************************************************
 
-    public AntDeviceBikePowerRecorder(int deviceNumber) {
-		super(deviceNumber);
+    public AntDeviceBikePowerRecorder(int deviceNumber, RawDataFile_BikePower rawDataFile) {
+		super(deviceNumber, rawDataFile);
+		this.rawDataFile = rawDataFile;
 	}
-    
-	
-
 
 	// **************************************************************
     // *             Connection variables and methods
@@ -185,6 +184,7 @@ public class AntDeviceBikePowerRecorder extends AntDeviceRecorder implements
             releaseHandle.close();
             releaseHandle = null;
         }
+        closeRawDataFile();
 	}
 
     // **************************************************************
@@ -821,6 +821,13 @@ public class AntDeviceBikePowerRecorder extends AntDeviceRecorder implements
 					calculatedCrankCadence.size(), avgCalcCrankCadence, ssdCalcCrankCadence,
 					calculatedWheelSpeed.size(), avgCalcWheelSpeed, ssdCalcWheelSpeed,
 					calculatedWheelDistance.size(), avgCalcWheelDistance, ssdCalcWheelDistance);
+
+			if (null != rawDataFile) {
+				rawDataFile.write(currentTimeMillis, location, calculatedPower,
+						calculatedTorque, calculatedCrankCadence, calculatedWheelSpeed, 
+						calculatedWheelDistance);
+			}
+
 			reset();
 		}
 		catch(Exception ex) {
