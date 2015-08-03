@@ -15,7 +15,8 @@ public class DataFileInfoManager {
 	 * @param dirPath
 	 * @return
 	 */
-	public static boolean setDirPath(String dirPath) {
+	public static boolean setDirPath(String appPath, String dataDirName) {
+		String dirPath = appPath + File.separator + dataDirName;
 		dataDir = new File(dirPath);
 		if (!dataDir.exists()) {
 			return dataDir.mkdirs();

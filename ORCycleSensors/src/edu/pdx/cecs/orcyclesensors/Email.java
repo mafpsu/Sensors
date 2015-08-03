@@ -36,8 +36,8 @@ public class Email {
 	private static final String MODULE_TAG = "Email";
 
 	private static final String subject = "Bsensor data files";
-	private static final String dataFileExtension = ".csv";
 	private static final StringBuilder sbText = new StringBuilder();
+	private static final String dataFileExtension = ".csv";
 
 	private final String[] addresses = new String[1];
 	private final ArrayList<Uri> attachments = new ArrayList<Uri>();
@@ -53,6 +53,7 @@ public class Email {
 		long fileLength;
 		String fileName;
 		String filePath;
+		Uri uri;
 
 		addresses[0] = new String(address);
 
@@ -60,60 +61,30 @@ public class Email {
 		sbText.append("Please find attached, the following data files:\n");
 
 		for (DataFileInfo file : dataFileInfos) {
-			
+
 			// Get file info
 			fileName = file.getName();
 			filePath = file.getPath();
 			fileLength = file.getLength();
 			totalAttachmentSize += fileLength;
 
-			// Put some information about file into message.
+			// Put file name in the message.
 			sbText.append(fileName);
 			sbText.append(" (");
+
+			// Put file length in the message.
 			sbText.append(fileLength);
 			sbText.append(" bytes)\n");
 
-			// Copy the file from internal to external storage 
-			// where it can be seen by other applications
-			File inFile = new File(filePath);
-			File outFile = null;
-	        try {
-	            outFile = new File(Environment.getExternalStorageDirectory() + File.separator + fileName + dataFileExtension);
-	            outFile.createNewFile();
-	            copyFile(inFile, outFile);
-	    		// Convert from paths to Android friendly Parcelable Uri's
-	            Uri uri = Uri.fromFile(outFile);
+			// Create attachment for email application
+			if (null != (uri = EmailManager.CreateAttachment(filePath, fileName, dataFileExtension))) {
 				attachments.add(uri);
-	        } 
-	        catch (IOException ex) {
-				Log.e(MODULE_TAG, ex.getMessage());
-	        }
+			}
 		}
 
 		sbText.append("\nTotal attachment size: ");
 		sbText.append(totalAttachmentSize);
 		sbText.append(" bytes\n");
-	}
-
-	/**
-	 * Copies file from external storage to internal storage
-	 * @param src
-	 * @param dst
-	 * @throws IOException
-	 */
-	void copyFile(File src, File dst) throws IOException {
-		FileChannel inChannel = null;
-		FileChannel outChannel = null;
-		try {
-			inChannel = new FileInputStream(src).getChannel();
-			outChannel = new FileOutputStream(dst).getChannel();
-			inChannel.transferTo(0, inChannel.size(), outChannel);
-		} finally {
-			if (inChannel != null)
-				inChannel.close();
-			if (outChannel != null)
-				outChannel.close();
-		}
 	}
 
 	/**

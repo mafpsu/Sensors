@@ -56,7 +56,7 @@ public class MyApplication extends android.app.Application {
 	private static final String SETTING_DEFAULT_FREQUENCY = "1.0";
 	private static final long DEFAULT_MIN_RECORDING_DELAY = 1000;
 
-	private static final String RAW_DATA_RELATIVE_DIRECTORY = "/data";
+	private static final String RAW_DATA_FILES_DIR_NAME = "data";
 
 	private static final String PREF_RECORD_RAW_DATA = "PREF_RECORD_RAW_DATA";
 	private static final boolean DEFAULT_VALUE_RECORD_RAW_DATA = false;
@@ -64,8 +64,6 @@ public class MyApplication extends android.app.Application {
 	private static final String PREF_RAW_DATA_EMAIL_ADDRESS = "PREF_RAW_DATA_EMAIL_ADDRESS";
 	private static final String DEFAULT_RAW_DATA_EMAIL_ADDRESS = "";
 
-	
-	
 	private UserId userId = null;
 	private AppDevices appDevices = null;
 	private AppSensors appSensors = null;
@@ -114,8 +112,18 @@ public class MyApplication extends android.app.Application {
     public final void onCreate() {
         super.onCreate();
         try {
-	        ConnectRecordingService();
+    		if (!DataFileInfoManager.setDirPath(getFilesDir().getAbsolutePath(), RAW_DATA_FILES_DIR_NAME)) {
+    			Log.e(MODULE_TAG, "Could not create raw data files directory");
+    		}
+    		
+			if (!EmailManager.setAttachmentPath("edu.pdx.cecs.orcyclesensors", "email_attachments")) {
+    			Log.e(MODULE_TAG, "Could not create attachment directory.  No external drive present");
+			}
+			//EmailManager.cleanAttachmentDirectory(); // TODO:  Don't do this here because mailer might not have mailed files yet
+
+			ConnectRecordingService();
 			loadApplicationSettings();
+			
         }
         catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
@@ -135,10 +143,6 @@ public class MyApplication extends android.app.Application {
 		(appDevices = AppDevices.getInstance()).loadFrom(settings, SETTING_DEVICES);
 		
 		(appSensors = AppSensors.getInstance()).loadFrom(settings, SETTING_SENSORS);
-		
-		if (!DataFileInfoManager.setDirPath(getFilesDir().getAbsolutePath() + RAW_DATA_RELATIVE_DIRECTORY)) {
-			Log.e(MODULE_TAG, "Could not create application directories");
-		}
 		
 		// setDefaultApplicationSettings();
 
