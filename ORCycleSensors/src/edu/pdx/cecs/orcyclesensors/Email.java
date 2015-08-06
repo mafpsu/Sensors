@@ -36,10 +36,11 @@ public class Email {
 	private static final String MODULE_TAG = "Email";
 
 	private static final String subject = "Bsensor data files";
-	private static final StringBuilder sbText = new StringBuilder();
 	private static final String dataFileExtension = ".csv";
+	private static final String indent = "    ";
 
 	private final String[] addresses = new String[1];
+	private final StringBuilder sbText = new StringBuilder();
 	private final ArrayList<Uri> attachments = new ArrayList<Uri>();
 
 	/**
@@ -54,14 +55,19 @@ public class Email {
 		String fileName;
 		String filePath;
 		Uri uri;
+		int count = 0;
 
 		addresses[0] = new String(address);
 
 		// Generate note text
-		sbText.append("Please find attached, the following data files:\n");
+		sbText.append("Please find the following ");
+		sbText.append(dataFileInfos.size());
+		sbText.append(" files attached:\n");
 
 		for (DataFileInfo file : dataFileInfos) {
 
+			++count;
+			
 			// Get file info
 			fileName = file.getName();
 			filePath = file.getPath();
@@ -69,6 +75,9 @@ public class Email {
 			totalAttachmentSize += fileLength;
 
 			// Put file name in the message.
+			sbText.append(indent);
+			sbText.append(count);
+			sbText.append(") ");
 			sbText.append(fileName);
 			sbText.append(" (");
 
@@ -82,6 +91,7 @@ public class Email {
 			}
 		}
 
+		// Append total size to message
 		sbText.append("\nTotal attachment size: ");
 		sbText.append(totalAttachmentSize);
 		sbText.append(" bytes\n");
