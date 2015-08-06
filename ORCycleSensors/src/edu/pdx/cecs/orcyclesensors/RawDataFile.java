@@ -12,7 +12,7 @@ import android.content.Context;
 import android.location.Location;
 import android.util.Log;
 
-public class RawDataFile {
+public abstract class RawDataFile {
 
 	private static final String MODULE_TAG = "RawDataFile";
 
@@ -43,6 +43,7 @@ public class RawDataFile {
 		try {
 			file = new BufferedWriter(new FileWriter(new File(dataDir, this.fileName)));
 			firstLine = true;
+			writeHeader();
 		} catch (IOException ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}
@@ -60,4 +61,8 @@ public class RawDataFile {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}
 	}
+
+	public void writeHeader() {
+	}
+
 }

@@ -10,6 +10,7 @@ import android.util.Log;
 public class RawDataFile_HeartRate extends RawDataFile {
 
 	private static final String MODULE_TAG = "RawDataFile_HeartRate";
+	private static final String FILE_HEADER = "HeartRate";
 
 	public RawDataFile_HeartRate(String name, long tripId, String dataDir) {
 		super(name, tripId, dataDir);

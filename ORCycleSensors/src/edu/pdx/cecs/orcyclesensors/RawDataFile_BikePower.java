@@ -10,9 +10,25 @@ import android.util.Log;
 public class RawDataFile_BikePower extends RawDataFile {
 
 	private static final String MODULE_TAG = "RawDataFile_BikePower";
-
+	private static final String FILE_HEADER = "Time,Latitude,Longitude,CalculatedPower,CalculatedTorque,"+
+			"CalculatedCrankCadence,CalculatedWheelSpeed,CalculatedWheelDistance\r\n";
+	
 	public RawDataFile_BikePower(String name, long tripId, String dataDir) {
 		super(name, tripId, dataDir);
+	}
+	
+	@Override
+	public void writeHeader() {
+		try {
+			file.write(FILE_HEADER, 0, FILE_HEADER.length());
+			firstLine = false;
+		}
+		catch(IOException ex) {
+			if (!exceptionOccurred) {
+				exceptionOccurred = true;
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
+		}
 	}
 
 	public void write(long currentTimeMillis, Location location, 
@@ -27,10 +43,10 @@ public class RawDataFile_BikePower extends RawDataFile {
 		}
 		
 		int calculatedPowerSize = calculatedPower.size();
-		int calculatedTorqueSize = calculatedPower.size();
-		int calculatedCrankCadenceSize = calculatedPower.size();
-		int calculatedWheelSpeedSize = calculatedPower.size();
-		int calculatedWheelDistanceSize = calculatedPower.size();
+		int calculatedTorqueSize = calculatedTorque.size();
+		int calculatedCrankCadenceSize = calculatedCrankCadence.size();
+		int calculatedWheelSpeedSize = calculatedWheelSpeed.size();
+		int calculatedWheelDistanceSize = calculatedWheelDistance.size();
 		
 		int maxReadings = calculatedPowerSize;
 		if (calculatedTorqueSize > maxReadings) maxReadings = calculatedTorqueSize;
@@ -46,12 +62,6 @@ public class RawDataFile_BikePower extends RawDataFile {
 		
 		// for each reading
 		for (int i = 0; i < maxReadings; ++i) {
-			if (!firstLine) {
-				sb.append("\r\n");
-			}
-			else {
-				firstLine = false;
-			}
 			sb.append(df.format(currentTimeMillis));
 			sb.append(", ");
 			sb.append(((double)lat) / 1E6);
@@ -60,40 +70,34 @@ public class RawDataFile_BikePower extends RawDataFile {
 			sb.append(", ");
 
 			// Calculated Power
-			if (i < calculatedPowerSize)
+			if (i < calculatedPowerSize) {
 				sb.append(calculatedPower.get(i));
-			else
-				sb.append("null");
+			}
 			sb.append(", ");
 			
 			// Calculated Torque
-			if (i < calculatedTorqueSize)
+			if (i < calculatedTorqueSize) {
 				sb.append(calculatedTorque.get(i));
-			else
-				sb.append("null");
+			}
 			sb.append(", ");
 			
 			// Calculated Crank Cadence
-			if (i < calculatedCrankCadenceSize)
+			if (i < calculatedCrankCadenceSize) {
 				sb.append(calculatedCrankCadence.get(i));
-			else
-				sb.append("null");
+			}
 			sb.append(", ");
 			
 			// Calculated Wheel Speed
-			if (i < calculatedWheelSpeedSize)
+			if (i < calculatedWheelSpeedSize) {
 				sb.append(calculatedWheelSpeed.get(i));
-			else
-				sb.append("null");
+			}
 			sb.append(", ");
 			
 			// Calculated Wheel Distance
-			if (i < calculatedWheelDistanceSize)
+			if (i < calculatedWheelDistanceSize) {
 				sb.append(calculatedWheelDistance.get(i));
-			else
-				sb.append("null");
-			sb.append(", ");
-			
+			}
+			sb.append("\r\n");
 		}
 		
 		// If there is data, write it to buffer

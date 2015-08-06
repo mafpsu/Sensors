@@ -64,18 +64,12 @@ public class AntDeviceBikePowerRecorder extends AntDeviceRecorder implements
 
     private long estTimestamp;
 
-    private ArrayList<BigDecimal> calculatedPower = new ArrayList<BigDecimal>();
-    private ArrayList<BigDecimal> calculatedTorque = new ArrayList<BigDecimal>();
-    private ArrayList<BigDecimal> calculatedCrankCadence = new ArrayList<BigDecimal>();
-    private ArrayList<BigDecimal> calculatedWheelSpeed = new ArrayList<BigDecimal>();
-	synchronized public void addCalculatedWheelSpeed(BigDecimal calculatedWheelSpeed) {
-		this.calculatedWheelSpeed.add(calculatedWheelSpeed);
-	}
-	ArrayList<BigDecimal> calculatedWheelDistance = new ArrayList<BigDecimal>();
-    synchronized public void addCalculatedWheelDistance(BigDecimal calculatedWheelDistance) {
-		this.calculatedWheelDistance.add(calculatedWheelDistance);
-	}
-
+    private ArrayList<BigDecimal> calculatedPowers = new ArrayList<BigDecimal>();
+    private ArrayList<BigDecimal> calculatedTorques = new ArrayList<BigDecimal>();
+    private ArrayList<BigDecimal> calculatedCrankCadences = new ArrayList<BigDecimal>();
+    private ArrayList<BigDecimal> calculatedWheelSpeeds = new ArrayList<BigDecimal>();
+	private ArrayList<BigDecimal> calculatedWheelDistances = new ArrayList<BigDecimal>();
+    
     private int instantaneousCadence;
     private long powerOnlyUpdateEventCount;
     private int instantaneousPower;
@@ -275,6 +269,7 @@ public class AntDeviceBikePowerRecorder extends AntDeviceRecorder implements
 				final DataSource dataSource,
 				final BigDecimal calculatedWheelSpeed) {
 			
+			Log.v(MODULE_TAG, "onNewCalculatedWheelSpeed: " + calculatedWheelSpeed);
 			//AntDeviceBikePowerRecorder.this.setEstTimestamp(estTimestamp);
 			AntDeviceBikePowerRecorder.this.addCalculatedWheelSpeed(calculatedWheelSpeed);
 
@@ -310,6 +305,16 @@ public class AntDeviceBikePowerRecorder extends AntDeviceRecorder implements
 		}
 	}
 	
+	synchronized public void addCalculatedWheelSpeed(BigDecimal calculatedWheelSpeed) {
+		Log.v(MODULE_TAG, "addCalculatedWheelSpeed: " + calculatedWheelSpeed);
+		this.calculatedWheelSpeeds.add(calculatedWheelSpeed);
+	}
+
+	synchronized public void addCalculatedWheelDistance(BigDecimal calculatedWheelDistance) {
+		Log.v(MODULE_TAG, "addCalculatedWheelDistance: " + calculatedWheelDistance);
+		this.calculatedWheelDistances.add(calculatedWheelDistance);
+	}
+
 	@Override
 	synchronized public void onNewInstantaneousCadence(final long estTimestamp,
 			final EnumSet<EventFlag> eventFlags,
@@ -612,7 +617,8 @@ public class AntDeviceBikePowerRecorder extends AntDeviceRecorder implements
 			final BigDecimal calculatedCrankCadence) {
 		
 		try {
-			this.calculatedCrankCadence.add(calculatedCrankCadence);
+			Log.v(MODULE_TAG, "onNewCalculatedCrankCadence: " + calculatedCrankCadence);
+			this.calculatedCrankCadences.add(calculatedCrankCadence);
 	
 			String source;
 	
@@ -666,7 +672,8 @@ public class AntDeviceBikePowerRecorder extends AntDeviceRecorder implements
 			final DataSource dataSource, final BigDecimal calculatedTorque) {
 		
 		try {
-			this.calculatedTorque.add(calculatedTorque);
+			Log.v(MODULE_TAG, "onNewCalculatedTorque: " + calculatedTorque);
+			this.calculatedTorques.add(calculatedTorque);
 	
 			String source;
 	
@@ -723,7 +730,8 @@ public class AntDeviceBikePowerRecorder extends AntDeviceRecorder implements
 			final DataSource dataSource, final BigDecimal calculatedPower) {
 		
 		try {
-			this.calculatedPower.add(calculatedPower);
+			Log.v(MODULE_TAG, "onNewCalculatedPower: " + calculatedPower);
+			this.calculatedPowers.add(calculatedPower);
 	
 			String source;
 	
@@ -793,39 +801,39 @@ public class AntDeviceBikePowerRecorder extends AntDeviceRecorder implements
 		
 		try {
 			// Calculate averages and sum square differences
-			if (calculatedPower.size() > 0) {
-				avgCalcPower = MyMath.getAverageValueBD(calculatedPower);
-				ssdCalcPower = MyMath.getSumSquareDifferenceBD(calculatedPower, avgCalcPower);
+			if (calculatedPowers.size() > 0) {
+				avgCalcPower = MyMath.getAverageValueBD(calculatedPowers);
+				ssdCalcPower = MyMath.getSumSquareDifferenceBD(calculatedPowers, avgCalcPower);
 			}
-			if (calculatedTorque.size() > 0) {
-				avgCalcTorque = MyMath.getAverageValueBD(calculatedTorque);
-				ssdCalcTorque = MyMath.getSumSquareDifferenceBD(calculatedTorque, avgCalcTorque);
+			if (calculatedTorques.size() > 0) {
+				avgCalcTorque = MyMath.getAverageValueBD(calculatedTorques);
+				ssdCalcTorque = MyMath.getSumSquareDifferenceBD(calculatedTorques, avgCalcTorque);
 			}
-			if (calculatedCrankCadence.size() > 0) {
-				avgCalcCrankCadence = MyMath.getAverageValueBD(calculatedCrankCadence);
-				ssdCalcCrankCadence = MyMath.getSumSquareDifferenceBD(calculatedCrankCadence, avgCalcCrankCadence);
+			if (calculatedCrankCadences.size() > 0) {
+				avgCalcCrankCadence = MyMath.getAverageValueBD(calculatedCrankCadences);
+				ssdCalcCrankCadence = MyMath.getSumSquareDifferenceBD(calculatedCrankCadences, avgCalcCrankCadence);
 			}
-			if (calculatedWheelSpeed.size() > 0) {
-				avgCalcWheelSpeed = MyMath.getAverageValueBD(calculatedWheelSpeed);
-				ssdCalcWheelSpeed = MyMath.getSumSquareDifferenceBD(calculatedWheelSpeed, avgCalcWheelSpeed);
+			if (calculatedWheelSpeeds.size() > 0) {
+				avgCalcWheelSpeed = MyMath.getAverageValueBD(calculatedWheelSpeeds);
+				ssdCalcWheelSpeed = MyMath.getSumSquareDifferenceBD(calculatedWheelSpeeds, avgCalcWheelSpeed);
 			}
-			if (calculatedWheelDistance.size() > 0) {
-				avgCalcWheelDistance = MyMath.getAverageValueBD(calculatedWheelDistance);
-				ssdCalcWheelDistance = MyMath.getSumSquareDifferenceBD(calculatedWheelDistance, avgCalcWheelDistance);
+			if (calculatedWheelDistances.size() > 0) {
+				avgCalcWheelDistance = MyMath.getAverageValueBD(calculatedWheelDistances);
+				ssdCalcWheelDistance = MyMath.getSumSquareDifferenceBD(calculatedWheelDistances, avgCalcWheelDistance);
 			}
 			
 			// Save results to database
 			tripData.addBikePowerDeviceReading(currentTimeMillis, 
-					calculatedPower.size(), avgCalcPower, ssdCalcPower,
-					calculatedTorque.size(), avgCalcTorque, ssdCalcTorque,
-					calculatedCrankCadence.size(), avgCalcCrankCadence, ssdCalcCrankCadence,
-					calculatedWheelSpeed.size(), avgCalcWheelSpeed, ssdCalcWheelSpeed,
-					calculatedWheelDistance.size(), avgCalcWheelDistance, ssdCalcWheelDistance);
+					calculatedPowers.size(), avgCalcPower, ssdCalcPower,
+					calculatedTorques.size(), avgCalcTorque, ssdCalcTorque,
+					calculatedCrankCadences.size(), avgCalcCrankCadence, ssdCalcCrankCadence,
+					calculatedWheelSpeeds.size(), avgCalcWheelSpeed, ssdCalcWheelSpeed,
+					calculatedWheelDistances.size(), avgCalcWheelDistance, ssdCalcWheelDistance);
 
 			if (null != rawDataFile) {
-				rawDataFile.write(currentTimeMillis, location, calculatedPower,
-						calculatedTorque, calculatedCrankCadence, calculatedWheelSpeed, 
-						calculatedWheelDistance);
+				rawDataFile.write(currentTimeMillis, location, calculatedPowers,
+						calculatedTorques, calculatedCrankCadences, calculatedWheelSpeeds, 
+						calculatedWheelDistances);
 			}
 
 			reset();
@@ -836,10 +844,10 @@ public class AntDeviceBikePowerRecorder extends AntDeviceRecorder implements
 	}
 
 	private void reset() {
-		calculatedPower.clear();
-		calculatedTorque.clear();
-		calculatedCrankCadence.clear();
-		calculatedWheelSpeed.clear();
-		calculatedWheelDistance.clear();
+		calculatedPowers.clear();
+		calculatedTorques.clear();
+		calculatedCrankCadences.clear();
+		calculatedWheelSpeeds.clear();
+		calculatedWheelDistances.clear();
 	}
 }
