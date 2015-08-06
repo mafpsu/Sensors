@@ -165,7 +165,7 @@ public class Fragment_MainDataFiles extends Fragment {
 					return false;
 				}
 				else if (MyApplication.getInstance().getRawDataEmailAddress().equals("")) {
-					DialogEmailAddressNotSet();
+					dialogEmailAddressNotSet();
 				}
 				else {
 					// Start the email action mode
@@ -205,7 +205,7 @@ public class Fragment_MainDataFiles extends Fragment {
 			
 			Log.v(MODULE_TAG, "onItemClick (id = " + String.valueOf(id) + ", pos = " + String.valueOf(pos) + ")");
 			
-			dataFilesListAdapter.getSelectedItems();
+			// dataFilesListAdapter.getSelectedItems();
 
 			try {
 				if (actionModeDelete != null) {
@@ -330,7 +330,6 @@ public class Fragment_MainDataFiles extends Fragment {
 				Log.e(MODULE_TAG, ex.getMessage());
 			}
 		}
-
 	}
 
 	// *********************************************************************************
@@ -425,7 +424,7 @@ public class Fragment_MainDataFiles extends Fragment {
 	/**
 	 * Build dialog telling user that the GPS is not available
 	 */
-	private void DialogEmailAddressNotSet() {
+	private void dialogEmailAddressNotSet() {
 		final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 		builder.setTitle(R.string.fmdf_deans_title);
 		builder.setMessage(R.string.fmdf_deans_message);
