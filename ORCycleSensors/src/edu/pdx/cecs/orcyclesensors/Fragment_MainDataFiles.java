@@ -24,15 +24,12 @@ public class Fragment_MainDataFiles extends Fragment {
 
 	private DataFilesListAdapter dataFilesListAdapter;
 	private ListView lvDataFiles;
-	private MenuItem deleteMenuItem;
-	private MenuItem emailMenuItem;
+	private MenuItem menuDelete;
+	private MenuItem menuEmail;
 
-	private ActionMode actionModeDelete;
-	private final ActionMode.Callback actionModeDeleteCallback = new ActionModeDeleteCallback();
+	private ActionMode actionModeEdit;
+	private final ActionMode.Callback actionModeEditCallback = new ActionModeEditCallback();
 	
-	private ActionMode actionModeEmail;
-	private final ActionMode.Callback actionModeEmailCallback = new ActionModeEmailCallback();
-
 	// *********************************************************************************
 	// *                                Fragment
 	// *********************************************************************************
@@ -133,7 +130,7 @@ public class Fragment_MainDataFiles extends Fragment {
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 		try {
 			// Inflate the menu items for use in the action bar
-			// inflater.inflate(R.menu.saved_devices, menu);
+			inflater.inflate(R.menu.edit, menu);
 			super.onCreateOptionsMenu(menu, inflater);
 		}
 		catch(Exception ex) {
@@ -149,30 +146,9 @@ public class Fragment_MainDataFiles extends Fragment {
 		try {
 			switch (item.getItemId()) {
 
-			case R.id.action_delete_data_files:
-				// edit
-				if (actionModeDelete != null) {
-					return false;
-				}
-
-				// Start the CAB using the ActionMode.Callback defined above
-				actionModeDelete = getActivity().startActionMode(actionModeDeleteCallback);
-				return true;
-
-			case R.id.action_email_data_files:
-				// edit
-				if (actionModeEmail != null) {
-					return false;
-				}
-				else if (MyApplication.getInstance().getRawDataEmailAddress().equals("")) {
-					dialogEmailAddressNotSet();
-				}
-				else {
-					// Start the email action mode
-					actionModeEmail = getActivity().startActionMode(actionModeEmailCallback);
-				}
-				return true;
-
+			case R.id.action_edit:
+				return startActionModeEdit();
+				
 			default:
 				return super.onOptionsItemSelected(item);
 			}
@@ -183,6 +159,19 @@ public class Fragment_MainDataFiles extends Fragment {
 		return false;
 	}
 
+	/**
+	 * Starts the edit action mode.
+	 * @return true if new action mode was started, false otherwise.
+	 */
+	private boolean startActionModeEdit() {
+		if (actionModeEdit != null) {
+			return false;
+		}
+		// Start the CAB using the ActionMode.Callback defined above
+		actionModeEdit = getActivity().startActionMode(actionModeEditCallback);
+		return true;
+	}
+	
 	private void clearSelections() {
 		
 		int numListViewItems = lvDataFiles.getChildCount();
@@ -208,7 +197,7 @@ public class Fragment_MainDataFiles extends Fragment {
 			// dataFilesListAdapter.getSelectedItems();
 
 			try {
-				if (actionModeDelete != null) {
+				if (actionModeEdit != null) {
 					
 					// toggle selection
 					dataFilesListAdapter.toggleSelection(id);
@@ -219,24 +208,10 @@ public class Fragment_MainDataFiles extends Fragment {
 					}
 
 					// If there are devices to delete, enable delete menu item
-					deleteMenuItem.setEnabled(dataFilesListAdapter.numSelectedItems() > 0);
+					menuDelete.setEnabled(dataFilesListAdapter.numSelectedItems() > 0);
+					menuEmail.setEnabled(dataFilesListAdapter.numSelectedItems() > 0);
 
-					actionModeDelete.setTitle(dataFilesListAdapter.numSelectedItems() + " Selected");
-				}
-				else if (actionModeEmail != null) {
-
-					// toggle selection
-					dataFilesListAdapter.toggleSelection(id);
-					if (dataFilesListAdapter.isSelected(id)) {
-						v.setBackgroundColor(getResources().getColor(R.color.pressed_color));
-					} else {
-						v.setBackgroundColor(getResources().getColor(R.color.default_color));
-					}
-
-					// If there are devices to delete, enable delete menu item
-					emailMenuItem.setEnabled(dataFilesListAdapter.numSelectedItems() > 0);
-
-					actionModeEmail.setTitle(dataFilesListAdapter.numSelectedItems() + " Selected");
+					actionModeEdit.setTitle(dataFilesListAdapter.numSelectedItems() + " Selected");
 				}
 				else {
 					//transitionToSensorDetailActivity(sensor.getName());
@@ -252,14 +227,14 @@ public class Fragment_MainDataFiles extends Fragment {
 	// *                              Delete Action Mode
 	// *********************************************************************************
 
-	private final class ActionModeDeleteCallback implements ActionMode.Callback {
+	private final class ActionModeEditCallback implements ActionMode.Callback {
 		// Called when the action mode is created; startActionMode() was called
 		@Override
 		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
 			try {
 			// Inflate a menu resource providing context menu items
 			MenuInflater inflater = mode.getMenuInflater();
-			inflater.inflate(R.menu.data_files_delete_menu, menu);
+			inflater.inflate(R.menu.data_files_context_menu, menu);
 			}
 			catch(Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());
@@ -273,11 +248,12 @@ public class Fragment_MainDataFiles extends Fragment {
 		@Override
 		public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
 			try {
-				Log.v(MODULE_TAG, "onPrepareActionMode");
-				deleteMenuItem = menu.getItem(0);
-				deleteMenuItem.setEnabled(false);
-
+				menuDelete = menu.findItem(R.id.action_delete_data_files);
+				menuDelete.setEnabled(false);
+				menuEmail = menu.findItem(R.id.action_email_data_files);
+				menuEmail.setEnabled(false);
 				mode.setTitle(dataFilesListAdapter.getSelectedItems().size() + " Selected");
+				return true;
 				}
 			catch(Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());
@@ -292,9 +268,18 @@ public class Fragment_MainDataFiles extends Fragment {
 			try {
 				switch (item.getItemId()) {
 
-				case R.id.action_delete_data_file:
-					// delete selected notes
-					actionDeleteSelectedFiles(dataFilesListAdapter.getSelectedDataFileInfos());
+				case R.id.action_delete_data_files:
+					actionDeleteSelectedFiles();
+					mode.finish(); // Action picked, so close the CAB
+					return true;
+					
+				case R.id.action_email_data_files:
+					if (MyApplication.getInstance().getRawDataEmailAddress().equals("")) {
+						dialogEmailAddressNotSet();
+					}
+					else {
+						actionEmailSelectedDataFiles();
+					}
 					mode.finish(); // Action picked, so close the CAB
 					return true;
 					
@@ -312,7 +297,7 @@ public class Fragment_MainDataFiles extends Fragment {
 		@Override
 		public void onDestroyActionMode(ActionMode mode) {
 			try {
-				actionModeDelete = null;
+				actionModeEdit = null;
 				clearSelections();
 			}
 			catch(Exception ex) {
@@ -320,9 +305,13 @@ public class Fragment_MainDataFiles extends Fragment {
 			}
 		}
 
-		private void actionDeleteSelectedFiles(ArrayList<DataFileInfo> dataFileInfos) {
+		/**
+		 * Delete selected data files
+		 * @param dataFileInfos
+		 */
+		private void actionDeleteSelectedFiles() {
 			try {
-				MyApplication.getInstance().deleteDataFiles(dataFileInfos);
+				MyApplication.getInstance().deleteDataFiles(dataFilesListAdapter.getSelectedDataFileInfos());
 				lvDataFiles.invalidate();
 				populateFileList();
 			}
@@ -330,79 +319,7 @@ public class Fragment_MainDataFiles extends Fragment {
 				Log.e(MODULE_TAG, ex.getMessage());
 			}
 		}
-	}
 
-	// *********************************************************************************
-	// *                              Email Action Mode
-	// *********************************************************************************
-
-	private final class ActionModeEmailCallback implements ActionMode.Callback {
-		// Called when the action mode is created; startActionMode() was called
-		@Override
-		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-			try {
-			// Inflate a menu resource providing context menu items
-			MenuInflater inflater = mode.getMenuInflater();
-			inflater.inflate(R.menu.data_files_email_menu, menu);
-			}
-			catch(Exception ex) {
-				Log.e(MODULE_TAG, ex.getMessage());
-			}
-			return true;
-		}
-
-		// Called each time the action mode is shown. Always called after
-		// onCreateActionMode, but
-		// may be called multiple times if the mode is invalidated.
-		@Override
-		public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-			try {
-				Log.v(MODULE_TAG, "onPrepareActionMode");
-				emailMenuItem = menu.getItem(0);
-				emailMenuItem.setEnabled(false);
-
-				mode.setTitle(dataFilesListAdapter.getSelectedItems().size() + " Selected");
-				}
-			catch(Exception ex) {
-				Log.e(MODULE_TAG, ex.getMessage());
-			}
-			return false; // Return false if nothing is done
-		}
-
-		// Called when the user selects a contextual menu item
-		@Override
-		public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-
-			try {
-				switch (item.getItemId()) {
-
-				case R.id.action_email_data_file:
-					actionEmailSelectedDataFiles();
-					mode.finish(); // Action picked, so close the CAB
-					return true;
-					
-				default:
-					return false;
-				}
-			}
-			catch(Exception ex) {
-				Log.e(MODULE_TAG, ex.getMessage());
-			}
-			return false;
-		}
-
-		// Called when the user exits the action mode
-		@Override
-		public void onDestroyActionMode(ActionMode mode) {
-			try {
-				actionModeEmail = null;
-				clearSelections();
-			}
-			catch(Exception ex) {
-				Log.e(MODULE_TAG, ex.getMessage());
-			}
-		}
-		
 		/**
 		 * Email selected data files
 		 */

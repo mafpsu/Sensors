@@ -54,9 +54,9 @@ public class Fragment_MainTrips extends Fragment {
 
 	private SavedTripsAdapter savedTripsAdapter;
 	private ListView lvSavedTrips;
-	private MenuItem saveMenuItemDelete;
-	private MenuItem saveMenuItemUpload;
-	private boolean resumeActionMode;
+	private MenuItem menuDelete;
+	private MenuItem menuUpload;
+	private boolean resumeActionModeEdit;
 	private long[] savedActionModeItems;
 
 	private ActionMode actionModeEdit;
@@ -84,13 +84,13 @@ public class Fragment_MainTrips extends Fragment {
 			Log.v(MODULE_TAG, "Cycle: onCreate()");
 	
 			if (null != savedInstanceState) {
-				resumeActionMode = savedInstanceState.getBoolean(EXTRA_ACTION_MODE_EDIT, false);
+				resumeActionModeEdit = savedInstanceState.getBoolean(EXTRA_ACTION_MODE_EDIT, false);
 				if (null == (savedActionModeItems = savedInstanceState.getLongArray(EXTRA_ACTION_MODE_SELECTED_ITEMS))) {
 					savedActionModeItems = new long[0];
 				}
 			}
 			else {
-				resumeActionMode = false;
+				resumeActionModeEdit = false;
 				savedActionModeItems = new long[0];
 			}
 		}
@@ -120,8 +120,8 @@ public class Fragment_MainTrips extends Fragment {
 
 			lvSavedTrips = (ListView) rootView.findViewById(R.id.listViewSavedTrips);
 			lvSavedTrips.setOnItemClickListener(new SavedTrips_OnItemClickListener());
-
-			registerForContextMenu(lvSavedTrips);
+			
+			//registerForContextMenu(lvSavedTrips);
 
 			if (null != (intent = getActivity().getIntent())) {
 				if (null != (extras = intent.getExtras())) {
@@ -144,8 +144,8 @@ public class Fragment_MainTrips extends Fragment {
 		try {
 			Log.v(MODULE_TAG, "Cycle: SavedTrips onResume");
 			populateTripList();
-			if (resumeActionMode) {
-				startActionMode();
+			if (resumeActionModeEdit) {
+				startActionModeEdit();
 			}
 		}
 		catch(Exception ex) {
@@ -205,7 +205,7 @@ public class Fragment_MainTrips extends Fragment {
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 		try {
 		// Inflate the menu items for use in the action bar
-		inflater.inflate(R.menu.saved_trips, menu);
+		inflater.inflate(R.menu.edit, menu);
 		super.onCreateOptionsMenu(menu, inflater);
 		}
 		catch(Exception ex) {
@@ -219,13 +219,10 @@ public class Fragment_MainTrips extends Fragment {
 		try {
 			// Handle presses on the action bar items
 			switch (item.getItemId()) {
-			case R.id.action_edit_saved_trips:
-				// edit
-				if (actionModeEdit != null) {
-					return false;
-				}
-				startActionMode();
-				return true;
+			
+			case R.id.action_edit:
+				return startActionModeEdit();
+				
 			default:
 				return super.onOptionsItemSelected(item);
 			}
@@ -236,9 +233,17 @@ public class Fragment_MainTrips extends Fragment {
 		return false;
 	}
 	
-	private void startActionMode() {
+	/**
+	 * Starts the edit action mode.
+	 * @return true if new action mode was started, false otherwise.
+	 */
+	private boolean startActionModeEdit() {
+		if (actionModeEdit != null) {
+			return false;
+		}
 		// Start the CAB using the ActionMode.Callback defined above
 		actionModeEdit = getActivity().startActionMode(mActionModeCallback);
+		return true;
 	}
 
 	// *********************************************************************************
@@ -355,7 +360,7 @@ public class Fragment_MainTrips extends Fragment {
 						v.setBackgroundColor(getResources().getColor(R.color.default_color));
 					}
 
-					saveMenuItemDelete.setEnabled(savedTripsAdapter.numSelectedItems() > 0);
+					menuDelete.setEnabled(savedTripsAdapter.numSelectedItems() > 0);
 					actionModeEdit.setTitle(savedTripsAdapter.numSelectedItems() + " Selected");
 				}
 			} catch (Exception ex) {
@@ -391,11 +396,11 @@ public class Fragment_MainTrips extends Fragment {
 		@Override
 		public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
 			try {
-				Log.v(MODULE_TAG, "Prepare");
-				saveMenuItemDelete = menu.getItem(0);
-				saveMenuItemDelete.setEnabled(savedTripsAdapter.getSelectedItems().size() > 0);
-				saveMenuItemUpload = menu.getItem(1);
+				menuDelete = menu.findItem(R.id.action_delete_saved_trips);
+				menuDelete.setEnabled(savedTripsAdapter.getSelectedItems().size() > 0);
+				menuUpload = menu.findItem(R.id.action_upload_saved_trips);
 
+				// determine upload status
 				int flag = 1;
 				for (int i = 0; i < lvSavedTrips.getCount(); i++) {
 					cursorTrips.moveToPosition(i);
@@ -407,15 +412,11 @@ public class Fragment_MainTrips extends Fragment {
 						break;
 					}
 				}
-				if (flag == 1) {
-					saveMenuItemUpload.setEnabled(false);
-				} else {
-					saveMenuItemUpload.setEnabled(true);
-				}
+				menuUpload.setEnabled(flag != 1);
 
 				mode.setTitle(savedTripsAdapter.numSelectedItems() + " Selected");
 				
-				return false; // Return false if nothing is done
+				return true;
 			}
 			catch(Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());

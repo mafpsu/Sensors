@@ -150,7 +150,7 @@ public class Fragment_MainSensors extends Fragment {
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 		try {
 			// Inflate the menu items for use in the action bar
-			// inflater.inflate(R.menu.saved_devices, menu);
+			inflater.inflate(R.menu.edit, menu);
 			super.onCreateOptionsMenu(menu, inflater);
 		}
 		catch(Exception ex) {
@@ -165,7 +165,7 @@ public class Fragment_MainSensors extends Fragment {
 			// Handle presses on the action bar items
 			switch (item.getItemId()) {
 
-			case R.id.action_edit_sensors:
+			case R.id.action_edit:
 				transitionToSelectSensorActivity();
 				return true;
 

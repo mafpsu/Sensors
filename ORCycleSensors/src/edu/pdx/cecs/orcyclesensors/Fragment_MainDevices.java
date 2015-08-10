@@ -1,6 +1,7 @@
 package edu.pdx.cecs.orcyclesensors;
 
 import java.util.ArrayList;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -22,10 +23,12 @@ public class Fragment_MainDevices extends Fragment {
 	public static final String ARG_SECTION_NUMBER = "section_number";
 
 	private ListView lvAntDevices;
-	private ActionMode actionModeEdit;
 	private ArrayList<Long> devicesToDelete = new ArrayList<Long>();
-	private MenuItem deleteMenuItem;
+	private MenuItem menuDelete;
 	private ArrayList<AntDeviceInfo> antDeviceInfos;
+
+	private ActionMode actionModeEdit;
+	private final ActionMode.Callback mActionModeCallback = new ActionModeEditCallback();
 
 	private final class AdapterView_OnItemClickListener implements AdapterView.OnItemClickListener {
 		
@@ -47,9 +50,9 @@ public class Fragment_MainDevices extends Fragment {
 
 					// If there are devices to delete, enable delete menu item
 					if (devicesToDelete.size() == 0) {
-						deleteMenuItem.setEnabled(false);
+						menuDelete.setEnabled(false);
 					} else {
-						deleteMenuItem.setEnabled(true);
+						menuDelete.setEnabled(true);
 					}
 
 					actionModeEdit.setTitle(devicesToDelete.size() + " Selected");
@@ -100,84 +103,6 @@ public class Fragment_MainDevices extends Fragment {
 
 		return rootView;
 	}
-
-	private final ActionMode.Callback mActionModeCallbackNote = new ActionMode.Callback() {
-
-		// Called when the action mode is created; startActionMode() was called
-		@Override
-		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-			try {
-			// Inflate a menu resource providing context menu items
-			MenuInflater inflater = mode.getMenuInflater();
-			inflater.inflate(R.menu.saved_devices_context_menu, menu);
-			}
-			catch(Exception ex) {
-				Log.e(MODULE_TAG, ex.getMessage());
-			}
-			return true;
-		}
-
-		// Called each time the action mode is shown. Always called after
-		// onCreateActionMode, but
-		// may be called multiple times if the mode is invalidated.
-		@Override
-		public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-			try {
-				Log.v(MODULE_TAG, "onPrepareActionMode");
-				deleteMenuItem = menu.getItem(0);
-				deleteMenuItem.setEnabled(false);
-
-				mode.setTitle(devicesToDelete.size() + " Selected");
-				}
-			catch(Exception ex) {
-				Log.e(MODULE_TAG, ex.getMessage());
-			}
-			return false; // Return false if nothing is done
-		}
-
-		// Called when the user selects a contextual menu item
-		@Override
-		public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-
-			try {
-				switch (item.getItemId()) {
-
-				case R.id.action_delete_saved_device:
-					// delete selected notes
-					for (int i = 0; i < devicesToDelete.size(); i++) {
-						deleteDevice(devicesToDelete.get(i));
-					}
-					mode.finish(); // Action picked, so close the CAB
-					return true;
-					
-				default:
-					return false;
-				}
-			}
-			catch(Exception ex) {
-				Log.e(MODULE_TAG, ex.getMessage());
-			}
-			return false;
-		}
-
-		// Called when the user exits the action mode
-		@Override
-		public void onDestroyActionMode(ActionMode mode) {
-			try {
-				int numListViewItems = lvAntDevices.getChildCount();
-				actionModeEdit = null;
-				devicesToDelete.clear();
-
-				// Reset all list items to their normal color
-				for (int i = 0; i < numListViewItems; i++) {
-					lvAntDevices.getChildAt(i).setBackgroundColor(getResources().getColor(R.color.pressed_color));
-				}
-			}
-			catch(Exception ex) {
-				Log.e(MODULE_TAG, ex.getMessage());
-			}
-		}
-	};
 
 	void populateDeviceList(ListView lv) {
 		try {
@@ -251,7 +176,7 @@ public class Fragment_MainDevices extends Fragment {
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 		try {
 			// Inflate the menu items for use in the action bar
-			// inflater.inflate(R.menu.saved_devices, menu);
+			inflater.inflate(R.menu.edit, menu);
 			super.onCreateOptionsMenu(menu, inflater);
 		}
 		catch(Exception ex) {
@@ -267,20 +192,9 @@ public class Fragment_MainDevices extends Fragment {
 		try {
 			switch (item.getItemId()) {
 
-			case R.id.action_add_device:
-				transitionToAddDeviceActivity();
-				return true;
-
-			case R.id.action_delete_devices:
-				// edit
-				if (actionModeEdit != null) {
-					return false;
-				}
-
-				// Start the CAB using the ActionMode.Callback defined above
-				actionModeEdit = getActivity().startActionMode(mActionModeCallbackNote);
-				return true;
-
+			case R.id.action_edit:
+				return startActionModeEdit();
+				
 			default:
 				return super.onOptionsItemSelected(item);
 			}
@@ -290,6 +204,108 @@ public class Fragment_MainDevices extends Fragment {
 		}
 		return false;
 	}
+
+	// *********************************************************************************
+	// *                              Edit Action Mode
+	// *********************************************************************************
+
+	/**
+	 * Starts the edit action mode.
+	 * @return true if new action mode was started, false otherwise.
+	 */
+	private boolean startActionModeEdit() {
+		if (actionModeEdit != null) {
+			return false;
+		}
+		// Start the CAB using the ActionMode.Callback defined above
+		actionModeEdit = getActivity().startActionMode(mActionModeCallback);
+		return true;
+	}
+
+	private final class ActionModeEditCallback implements ActionMode.Callback {
+		// Called when the action mode is created; startActionMode() was called
+		@Override
+		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+			try {
+			// Inflate a menu resource providing context menu items
+			MenuInflater inflater = mode.getMenuInflater();
+			inflater.inflate(R.menu.saved_devices_context_menu, menu);
+			}
+			catch(Exception ex) {
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
+			return true;
+		}
+
+		// Called each time the action mode is shown. Always called after
+		// onCreateActionMode, but
+		// may be called multiple times if the mode is invalidated.
+		@Override
+		public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+			try {
+				menuDelete = menu.getItem(0);
+				menuDelete.setEnabled(false);
+
+				mode.setTitle(devicesToDelete.size() + " Selected");
+				return true;
+				}
+			catch(Exception ex) {
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
+			return false;
+		}
+
+		// Called when the user selects a contextual menu item
+		@Override
+		public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+
+			try {
+				switch (item.getItemId()) {
+
+				case R.id.action_add_devices:
+					transitionToAddDeviceActivity();
+					return true;
+
+				case R.id.action_delete_saved_devices:
+					// delete selected notes
+					for (int i = 0; i < devicesToDelete.size(); i++) {
+						deleteDevice(devicesToDelete.get(i));
+					}
+					mode.finish(); // Action picked, so close the CAB
+					return true;
+					
+				default:
+					return false;
+				}
+			}
+			catch(Exception ex) {
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
+			return false;
+		}
+
+		// Called when the user exits the action mode
+		@Override
+		public void onDestroyActionMode(ActionMode mode) {
+			try {
+				int numListViewItems = lvAntDevices.getChildCount();
+				actionModeEdit = null;
+				devicesToDelete.clear();
+
+				// Reset all list items to their normal color
+				for (int i = 0; i < numListViewItems; i++) {
+					lvAntDevices.getChildAt(i).setBackgroundColor(getResources().getColor(R.color.pressed_color));
+				}
+			}
+			catch(Exception ex) {
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
+		}
+	}
+
+	// *********************************************************************************
+	// *                                       Transitions
+	// *********************************************************************************
 
 	/**
 	 * Launches Activity_AddDevice

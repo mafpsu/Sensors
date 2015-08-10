@@ -195,63 +195,6 @@ public class Activity_Main extends FragmentActivity implements
 	}
 
 	@Override
-	public boolean onPrepareOptionsMenu(Menu menu) {
-
-		MenuItem addDevice = menu.findItem(R.id.action_add_device);
-		MenuItem deleteDevice = menu.findItem(R.id.action_delete_devices);
-		MenuItem editSensors = menu.findItem(R.id.action_edit_sensors);
-		MenuItem deleteDataFiles = menu.findItem(R.id.action_delete_data_files);
-		MenuItem emailDataFiles = menu.findItem(R.id.action_email_data_files);
-
-		if ((null != deleteDevice) && (null != editSensors)) {
-			
-			switch (tabIndex) {
-			
-			case FRAG_INDEX_RECORD:
-				addDevice.setVisible(false);
-				deleteDevice.setVisible(false);
-				editSensors.setVisible(false);
-				deleteDataFiles.setVisible(false);
-				emailDataFiles.setVisible(false);
-				break;
-				
-			case FRAG_INDEX_TRIPS:
-				addDevice.setVisible(false);
-				deleteDevice.setVisible(false);
-				editSensors.setVisible(false);
-				deleteDataFiles.setVisible(false);
-				emailDataFiles.setVisible(false);
-				break;
-				
-			case FRAG_INDEX_DEVICES:
-				addDevice.setVisible(true);
-				deleteDevice.setVisible(MyApplication.getInstance().getAppDevices().size() > 0);
-				editSensors.setVisible(false);
-				deleteDataFiles.setVisible(false);
-				emailDataFiles.setVisible(false);
-				break;
-				
-			case FRAG_INDEX_SENSORS:
-				addDevice.setVisible(false);
-				deleteDevice.setVisible(false);
-				editSensors.setVisible(true);
-				deleteDataFiles.setVisible(false);
-				emailDataFiles.setVisible(false);
-				break;
-				
-			case FRAG_INDEX_DATA_FILES:
-				addDevice.setVisible(false);
-				deleteDevice.setVisible(false);
-				editSensors.setVisible(false);
-				deleteDataFiles.setVisible(true); //TODO:  DEPENDS ON #OF FILES > 0
-				emailDataFiles.setVisible(true);
-				break;
-			}
-		}
-		return true;
-	}
-	
-	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// Handle action bar item clicks here. The action bar will
 		// automatically handle clicks on the Home/Up button, so long
