@@ -30,7 +30,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.SQLException;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -49,11 +48,16 @@ import android.widget.Toast;
 public class Fragment_MainTrips extends Fragment {
 
 	private static final String MODULE_TAG = "Fragment_MainTrips";
+	
+	private static final String EXTRA_ACTION_MODE_EDIT = "EXTRA_ACTION_MODE_EDIT";
+	private static final String EXTRA_ACTION_MODE_SELECTED_ITEMS = "EXTRA_ACTION_MODE_SELECTED_ITEMS";
 
 	private SavedTripsAdapter savedTripsAdapter;
 	private ListView lvSavedTrips;
 	private MenuItem saveMenuItemDelete;
 	private MenuItem saveMenuItemUpload;
+	private boolean resumeActionMode;
+	private long[] savedActionModeItems;
 
 	private ActionMode actionModeEdit;
 	private final ActionMode.Callback mActionModeCallback = new ActionModeEditCallback();
@@ -69,6 +73,36 @@ public class Fragment_MainTrips extends Fragment {
 	public Fragment_MainTrips() {
 	}
 
+	/**
+	 * Called to do the initial creation of the fragment
+	 */
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+
+		try {
+			Log.v(MODULE_TAG, "Cycle: onCreate()");
+	
+			if (null != savedInstanceState) {
+				resumeActionMode = savedInstanceState.getBoolean(EXTRA_ACTION_MODE_EDIT, false);
+				if (null == (savedActionModeItems = savedInstanceState.getLongArray(EXTRA_ACTION_MODE_SELECTED_ITEMS))) {
+					savedActionModeItems = new long[0];
+				}
+			}
+			else {
+				resumeActionMode = false;
+				savedActionModeItems = new long[0];
+			}
+		}
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+	}
+
+	/**
+	 * Called once the fragment has been created in order for it
+	 * to create it's user interface.
+	 */
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
@@ -78,13 +112,16 @@ public class Fragment_MainTrips extends Fragment {
 		View rootView = null;
 		Intent intent;
 		Bundle extras;
-
+		
 		try {
 			rootView = inflater.inflate(R.layout.activity_saved_trips, null);
+
 			setHasOptionsMenu(true);
 
 			lvSavedTrips = (ListView) rootView.findViewById(R.id.listViewSavedTrips);
-			populateTripList();
+			lvSavedTrips.setOnItemClickListener(new SavedTrips_OnItemClickListener());
+
+			registerForContextMenu(lvSavedTrips);
 
 			if (null != (intent = getActivity().getIntent())) {
 				if (null != (extras = intent.getExtras())) {
@@ -107,12 +144,40 @@ public class Fragment_MainTrips extends Fragment {
 		try {
 			Log.v(MODULE_TAG, "Cycle: SavedTrips onResume");
 			populateTripList();
+			if (resumeActionMode) {
+				startActionMode();
+			}
 		}
 		catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}
 	}
 
+	/**
+	 * Save UI state changes to the savedInstanceState variable.
+	 * This bundle will be passed to onCreate, onCreateView, and
+	 * onCreateView if the parent activity is killed and restarted
+	 */
+	@Override
+	public void onSaveInstanceState(Bundle savedInstanceState) {
+		try {
+			if (actionModeEdit != null) {
+				// record action mode state
+				savedInstanceState.putBoolean(EXTRA_ACTION_MODE_EDIT, true);
+				if (null != savedTripsAdapter) {
+					long[] selectedItems = savedTripsAdapter.getSelectedItemsArray();
+					if(selectedItems.length > 0) {
+						savedInstanceState.putLongArray(EXTRA_ACTION_MODE_SELECTED_ITEMS, selectedItems);
+					}
+				}
+			}
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		super.onSaveInstanceState(savedInstanceState);
+	}
+	
 	@Override
 	public void onPause() {
 		super.onPause();
@@ -159,9 +224,7 @@ public class Fragment_MainTrips extends Fragment {
 				if (actionModeEdit != null) {
 					return false;
 				}
-
-				// Start the CAB using the ActionMode.Callback defined above
-				actionModeEdit = getActivity().startActionMode(mActionModeCallback);
+				startActionMode();
 				return true;
 			default:
 				return super.onOptionsItemSelected(item);
@@ -171,6 +234,11 @@ public class Fragment_MainTrips extends Fragment {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}
 		return false;
+	}
+	
+	private void startActionMode() {
+		// Start the CAB using the ActionMode.Callback defined above
+		actionModeEdit = getActivity().startActionMode(mActionModeCallback);
 	}
 
 	// *********************************************************************************
@@ -197,9 +265,6 @@ public class Fragment_MainTrips extends Fragment {
 		}
 		mDb.close();
 
-		lvSavedTrips.setOnItemClickListener(new SavedTrips_OnItemClickListener());
-
-		registerForContextMenu(lvSavedTrips);
 	}
 
 	private void cleanTrips() {
@@ -311,6 +376,7 @@ public class Fragment_MainTrips extends Fragment {
 				// Inflate a menu resource providing context menu items
 				MenuInflater inflater = mode.getMenuInflater();
 				inflater.inflate(R.menu.saved_trips_context_menu, menu);
+				savedTripsAdapter.setSelectedItems(savedActionModeItems);
 				return true;
 			}
 			catch(Exception ex) {
@@ -327,7 +393,7 @@ public class Fragment_MainTrips extends Fragment {
 			try {
 				Log.v(MODULE_TAG, "Prepare");
 				saveMenuItemDelete = menu.getItem(0);
-				saveMenuItemDelete.setEnabled(false);
+				saveMenuItemDelete.setEnabled(savedTripsAdapter.getSelectedItems().size() > 0);
 				saveMenuItemUpload = menu.getItem(1);
 
 				int flag = 1;
@@ -348,6 +414,7 @@ public class Fragment_MainTrips extends Fragment {
 				}
 
 				mode.setTitle(savedTripsAdapter.numSelectedItems() + " Selected");
+				
 				return false; // Return false if nothing is done
 			}
 			catch(Exception ex) {

@@ -79,6 +79,24 @@ public class SavedTripsAdapter extends SimpleCursorAdapter {
 		return selectedItems;
 	}
 	
+	public long[] getSelectedItemsArray() {
+		
+		long[] selectedItemsArray = new long[selectedItems.size()];
+
+		for(int i = 0; i < selectedItems.size(); ++i) {
+			selectedItemsArray[i] = selectedItems.get(i);
+		}
+		
+		return selectedItemsArray;
+	}
+	
+	public void setSelectedItems(long[] selectedItemsArray) {
+		selectedItems.clear();
+		for (long tripId: selectedItemsArray) {
+			selectedItems.add(tripId);
+		}
+	}
+	
 	public boolean isSelected(long id) {
 		return selectedItems.indexOf(id) >= 0;
 	}
