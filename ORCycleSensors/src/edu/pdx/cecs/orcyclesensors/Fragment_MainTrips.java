@@ -67,7 +67,7 @@ public class Fragment_MainTrips extends Fragment {
 	private Cursor cursorTrips;
 
 	// *********************************************************************************
-	// *                                Fragment
+	// *                          Fragment Life Cycle
 	// *********************************************************************************
 
 	public Fragment_MainTrips() {
@@ -116,11 +116,11 @@ public class Fragment_MainTrips extends Fragment {
 		try {
 			rootView = inflater.inflate(R.layout.activity_saved_trips, null);
 
-			setHasOptionsMenu(true);
-
 			lvSavedTrips = (ListView) rootView.findViewById(R.id.listViewSavedTrips);
 			lvSavedTrips.setOnItemClickListener(new SavedTrips_OnItemClickListener());
 			
+			setHasOptionsMenu(true);
+
 			//registerForContextMenu(lvSavedTrips);
 
 			if (null != (intent = getActivity().getIntent())) {
@@ -142,7 +142,7 @@ public class Fragment_MainTrips extends Fragment {
 	public void onResume() {
 		super.onResume();
 		try {
-			Log.v(MODULE_TAG, "Cycle: SavedTrips onResume");
+			Log.v(MODULE_TAG, "Cycle: onResume");
 			populateTripList();
 			if (resumeActionModeEdit) {
 				startActionModeEdit();
@@ -178,29 +178,9 @@ public class Fragment_MainTrips extends Fragment {
 		super.onSaveInstanceState(savedInstanceState);
 	}
 	
-	@Override
-	public void onPause() {
-		super.onPause();
-		try {
-			Log.v(MODULE_TAG, "Cycle: SavedTrips onPause");
-		}
-		catch(Exception ex) {
-			Log.e(MODULE_TAG, ex.getMessage());
-		}
-	}
-
-	@Override
-	public void onDestroyView() {
-		super.onDestroyView();
-		try {
-			Log.v(MODULE_TAG, "Cycle: SavedTrips onDestroyView");
-		}
-		catch(Exception ex) {
-			Log.e(MODULE_TAG, ex.getMessage());
-		}
-	}
-
-	/* Creates the menu items */
+	/**
+	 * Creates menu items
+	 */
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 		try {
@@ -213,7 +193,9 @@ public class Fragment_MainTrips extends Fragment {
 		}
 	}
 
-	/* Handles item selections */
+	/**
+	 * Handles menu item selections
+	 */
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		try {
@@ -233,25 +215,13 @@ public class Fragment_MainTrips extends Fragment {
 		return false;
 	}
 	
-	/**
-	 * Starts the edit action mode.
-	 * @return true if new action mode was started, false otherwise.
-	 */
-	private boolean startActionModeEdit() {
-		if (actionModeEdit != null) {
-			return false;
-		}
-		// Start the CAB using the ActionMode.Callback defined above
-		actionModeEdit = getActivity().startActionMode(mActionModeCallback);
-		return true;
-	}
-
 	// *********************************************************************************
 	// *                             Fragment Actions
 	// *********************************************************************************
 
 	private void populateTripList() {
-		// Get list from the real phone database. W00t!
+		
+		// Get data source
 		final DbAdapter mDb = new DbAdapter(getActivity());
 		mDb.open();
 
@@ -264,12 +234,13 @@ public class Fragment_MainTrips extends Fragment {
 					getResources().getColor(R.color.pressed_color));
 
 			lvSavedTrips.setAdapter(savedTripsAdapter);
+			lvSavedTrips.invalidate();
 			
 		} catch (SQLException ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
+		} finally {
+			mDb.close();
 		}
-		mDb.close();
-
 	}
 
 	private void cleanTrips() {
@@ -317,7 +288,6 @@ public class Fragment_MainTrips extends Fragment {
 		finally {
 			mDbHelper.close();
 		}
-		lvSavedTrips.invalidate();
 		populateTripList();
 	}
 
@@ -373,8 +343,24 @@ public class Fragment_MainTrips extends Fragment {
 	// *                              Edit Action Mode
 	// *********************************************************************************
 
+	/**
+	 * Starts the edit action mode.
+	 * @return true if new action mode was started, false otherwise.
+	 */
+	private boolean startActionModeEdit() {
+		if (actionModeEdit != null) {
+			return false;
+		}
+		// Start the CAB using the ActionMode.Callback defined above
+		actionModeEdit = getActivity().startActionMode(mActionModeCallback);
+		return true;
+	}
+
 	private final class ActionModeEditCallback implements ActionMode.Callback {
-		// Called when the action mode is created; startActionMode() was called
+		
+		/**
+		 * Called when the action mode is created; startActionMode() was called
+		 */
 		@Override
 		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
 			try {
@@ -390,9 +376,11 @@ public class Fragment_MainTrips extends Fragment {
 			return false;
 		}
 
-		// Called each time the action mode is shown. Always called after
-		// onCreateActionMode, but
-		// may be called multiple times if the mode is invalidated.
+		/**
+		 * Called each time the action mode is shown. Always
+		 * called after onCreateActionMode, but may be called
+		 * multiple times if the mode is invalidated.
+		 */
 		@Override
 		public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
 			try {
@@ -424,16 +412,20 @@ public class Fragment_MainTrips extends Fragment {
 			return false; // Return false if nothing is done
 		}
 
-		// Called when the user selects a contextual menu item
+		/**
+		 * Called when the user selects a contextual menu item
+		 */
 		@Override
 		public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
 			try {
 				switch (item.getItemId()) {
+				
 				case R.id.action_delete_saved_trips:
 					// delete selected trips
 					actionDeleteSelectedTrips(savedTripsAdapter.getSelectedItems());
 					mode.finish(); // Action picked, so close the CAB
 					return true;
+
 				case R.id.action_upload_saved_trips:
 					// upload selected trips
 					// for (int i = 0; i < tripIdArray.size(); i++) {
@@ -448,6 +440,7 @@ public class Fragment_MainTrips extends Fragment {
 					}
 					mode.finish(); // Action picked, so close the CAB
 					return true;
+				
 				default:
 					return false;
 				}
@@ -458,7 +451,9 @@ public class Fragment_MainTrips extends Fragment {
 			return false;
 		}
 
-		// Called when the user exits the action mode
+		/**
+		 * Called when the user exits the action mode
+		 */
 		@Override
 		public void onDestroyActionMode(ActionMode mode) {
 			try {
@@ -487,7 +482,6 @@ public class Fragment_MainTrips extends Fragment {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}
 	}
-
 
 	// *********************************************************************************
 	// *                            Dialog Trip not Uploaded
@@ -547,6 +541,9 @@ public class Fragment_MainTrips extends Fragment {
 	// *                                       Transitions
 	// *********************************************************************************
 
+	/**
+	 * Launches Activity_TripMap
+	 */
 	private void transitionToTripMapActivity(long tripId) {
 		Intent intent = new Intent(getActivity(), Activity_TripMap.class);
 		intent.putExtra(Controller.EXTRA_TRIP_ID, tripId);

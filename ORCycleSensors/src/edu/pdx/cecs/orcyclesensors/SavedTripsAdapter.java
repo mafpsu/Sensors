@@ -48,19 +48,19 @@ public class SavedTripsAdapter extends SimpleCursorAdapter {
 	private final static SimpleDateFormat sdfStart = new SimpleDateFormat("MMMM d, y  h:mm a");
 	private final static SimpleDateFormat sdfDuration = new SimpleDateFormat("HH:mm:ss");
 
-	private static class ViewHolder {
+	private final class ViewHolder {
 		public TextView tvStartTime;
 		public TextView tvTripId;
 		public TextView tvTripDuration;
 		public ImageView ivIcon;
 	}
 
-	private final Context context;
 	private final Cursor cursor;
 	private final int listItemLayout;
-	private final ArrayList<Long> selectedItems = new ArrayList<Long>();
 	private final int defaultColor;
 	private final int selectedColor;
+	private final LayoutInflater layoutInflater;
+	private final ArrayList<Long> selectedItems = new ArrayList<Long>();
 
 	public SavedTripsAdapter(Context context, int listItemLayout, Cursor cursor,
 			int defaultColor, int selectedColor) {
@@ -68,11 +68,11 @@ public class SavedTripsAdapter extends SimpleCursorAdapter {
 		
 		SavedTripsAdapter.sdfDuration.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-		this.context = context;
 		this.cursor = cursor;
 		this.listItemLayout = listItemLayout;
 		this.defaultColor = defaultColor;
 		this.selectedColor = selectedColor;
+		this.layoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 	}
 	
 	public ArrayList<Long> getSelectedItems() {
@@ -138,10 +138,10 @@ public class SavedTripsAdapter extends SimpleCursorAdapter {
 	public View getView(int position, View convertView, ViewGroup parent) {
 
 		try {
-			LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-
 			// move cursor to item to be displayed 
 			cursor.moveToPosition(position);
+
+			// get item variables
 			Double startTime = cursor.getDouble(cursor.getColumnIndex(DbAdapter.K_TRIP_START));
 			String formattedStartTime = sdfStart.format(startTime);
 			long tripId = cursor.getLong(cursor.getColumnIndex(DbAdapter.K_TRIP_ROWID));
@@ -153,7 +153,7 @@ public class SavedTripsAdapter extends SimpleCursorAdapter {
 			ViewHolder holder = null;
 			if (convertView == null) { // then this is the first time this item is being drawn
 				// Inflate the list item
-				convertView = inflater.inflate(listItemLayout, null);
+				convertView = layoutInflater.inflate(listItemLayout, null);
 				
 				// Find the child views of the list item and create a reference to them
 				holder = new ViewHolder();
@@ -169,13 +169,14 @@ public class SavedTripsAdapter extends SimpleCursorAdapter {
 				holder = (ViewHolder) convertView.getTag();
 			}
 			
-			// Display item data and selection color into view
+			// Set view's data
 			holder.tvStartTime.setText(formattedStartTime);
 			holder.tvTripId.setText("ID: " + String.valueOf(tripId));
 			holder.tvTripDuration.setText(formattedDuration);
 			holder.ivIcon.setImageResource(getImageResource(status));
-			convertView.setBackgroundColor(isSelected(tripId) ? selectedColor : defaultColor);
 
+			// Set view's selection color
+			convertView.setBackgroundColor(isSelected(tripId) ? selectedColor : defaultColor);
 		}
 		catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
