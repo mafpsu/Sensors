@@ -1,3 +1,23 @@
+/**
+ *  ORcycleSensors, Copyright 2015, PSU Transportation, Technology, and People Lab.
+ *
+ *  @author Robin Murray <robin5@pdx.edu>    (code)
+ *  @author Miguel Figliozzi <figliozzi@pdx.edu> and ORcycle team (general app
+ *  design and features, report questionnaires, and features)
+ *
+ *  For more information on the project, go to
+ *  http://www.pdx.edu/transportation-lab/orcycle and http://www.pdx.edu/transportation-lab/app-development
+ *
+ *  ORcycle is free software: you can redistribute it and/or modify it under the
+ *  terms of the GNU General Public License as published by the Free Software
+ *  Foundation, either version 3 of the License, or any later version.
+ *  ORcycle is distributed in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ *  A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *  You should have received a copy of the GNU General Public License along with
+ *  ORcycle. If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 package edu.pdx.cecs.orcyclesensors;
 
 import java.util.ArrayList;
@@ -36,14 +56,22 @@ public class MyApplication extends android.app.Application {
 	private static final String SETTING_DEFAULT_FREQUENCY = "1.0";
 	private static final long DEFAULT_MIN_RECORDING_DELAY = 1000;
 
+	private static final String RAW_DATA_FILES_DIR_NAME = "data";
+
+	private static final String PREF_RECORD_RAW_DATA = "PREF_RECORD_RAW_DATA";
+	private static final boolean DEFAULT_VALUE_RECORD_RAW_DATA = false;
+
+	private static final String PREF_RAW_DATA_EMAIL_ADDRESS = "PREF_RAW_DATA_EMAIL_ADDRESS";
+	private static final String DEFAULT_RAW_DATA_EMAIL_ADDRESS = "";
+
 	private UserId userId = null;
 	private AppDevices appDevices = null;
 	private AppSensors appSensors = null;
 	private AppInfo appInfo = null;
-	
 	private RecordingService recordingService = null;
 	private long minTimeBetweenReadings = 1000; // milliseconds
-
+	private boolean recordRawData = false;
+	private String rawDataEmailAddress = "";
 	private TripData trip;
     private static final Controller_MainRecord ctrlMainRecord = new Controller_MainRecord();
     private static final Controller_TripMap ctrlTripMap = new Controller_TripMap();
@@ -84,8 +112,18 @@ public class MyApplication extends android.app.Application {
     public final void onCreate() {
         super.onCreate();
         try {
-	        ConnectRecordingService();
+    		if (!DataFileInfoManager.setDirPath(getFilesDir().getAbsolutePath(), RAW_DATA_FILES_DIR_NAME)) {
+    			Log.e(MODULE_TAG, "Could not create raw data files directory");
+    		}
+    		
+			if (!EmailManager.setAttachmentPath("edu.pdx.cecs.orcyclesensors", "email_attachments")) {
+    			Log.e(MODULE_TAG, "Could not create attachment directory.  No external drive present");
+			}
+			//EmailManager.cleanAttachmentDirectory(); // TODO:  Don't do this here because mailer might not have mailed files yet
+
+			ConnectRecordingService();
 			loadApplicationSettings();
+			
         }
         catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
@@ -109,14 +147,21 @@ public class MyApplication extends android.app.Application {
 		// setDefaultApplicationSettings();
 
 		appInfo = new AppInfo(this.getBaseContext());
-		loadMinTimeBetweenReadings();
-	}
-	
-	public void loadMinTimeBetweenReadings() {
 		
-		// shared prefs from settings screens
 		Context context = getApplicationContext();
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		loadSharedPreferences(prefs);
+	}
+	
+	public void loadSharedPreferences(SharedPreferences prefs) {
+		
+		loadMinTimeBetweenReadings(prefs);
+		recordRawData = prefs.getBoolean(PREF_RECORD_RAW_DATA, DEFAULT_VALUE_RECORD_RAW_DATA);
+		rawDataEmailAddress = prefs.getString(PREF_RAW_DATA_EMAIL_ADDRESS, DEFAULT_RAW_DATA_EMAIL_ADDRESS);
+	}
+	
+	private void loadMinTimeBetweenReadings(SharedPreferences prefs) {
+		
 		String prefsFrequency = prefs.getString(SETTING_GPS_FREQUENCY, SETTING_DEFAULT_FREQUENCY);
 		boolean isBadValue = false;
 
@@ -157,6 +202,10 @@ public class MyApplication extends android.app.Application {
 
 	public String getDeviceModel() {
 		return appInfo.getDeviceModel();
+	}
+
+	public String getRawDataEmailAddress() {
+		return rawDataEmailAddress;
 	}
 
 	// **********************************
@@ -213,6 +262,18 @@ public class MyApplication extends android.app.Application {
 
 	public ArrayList<AntDeviceInfo> getAppDevices() {
 		return appDevices.getAntDeviceInfos();
+	}
+
+	// *************************************
+	// * Interface to application data Files
+	// *************************************
+	
+	public ArrayList<DataFileInfo> getAppDataFiles(Context context) {
+		return DataFileInfoManager.getAppDataFiles();
+	}
+
+	public void deleteDataFiles(ArrayList<DataFileInfo> dataFileInfos) {
+		DataFileInfoManager.deleteAppDataFiles(dataFileInfos);
 	}
 
 	// *********************************************************************************
@@ -290,7 +351,8 @@ public class MyApplication extends android.app.Application {
 
 		case RecordingService.STATE_IDLE:
 			trip = TripData.createTrip(activity);
-			recordingService.startRecording(trip, appDevices.getAntDeviceInfos(), appSensors.getSensors(), minTimeBetweenReadings);
+			recordingService.startRecording(trip, appDevices.getAntDeviceInfos(), 
+					appSensors.getSensors(), minTimeBetweenReadings, recordRawData, DataFileInfoManager.getDirPath());
 			break;
 
 		case RecordingService.STATE_RECORDING:

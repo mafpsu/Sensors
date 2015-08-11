@@ -6,6 +6,7 @@ import com.dsi.ant.plugins.antplus.pcc.defines.RequestAccessResult;
 import com.dsi.ant.plugins.antplus.pccbase.AntPluginPcc.IDeviceStateChangeReceiver;
 
 import android.content.Context;
+import android.location.Location;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -15,6 +16,7 @@ public abstract class AntDeviceRecorder implements IDeviceStateChangeReceiver {
 
 	public enum State { IDLE, CONNECTING, RUNNING, PAUSED, FAILED };
 
+
 	// **********************************
 	// * Abstract methods
 	// **********************************
@@ -23,7 +25,7 @@ public abstract class AntDeviceRecorder implements IDeviceStateChangeReceiver {
     
     protected abstract void unregister();
     
-    protected abstract void writeResult(TripData tripData, long currentTimeMillis);
+    protected abstract void writeResult(TripData tripData, long currentTimeMillis, Location location);
     
 	// ************************************************
 	// * Protected section classes, methods & variables
@@ -34,9 +36,12 @@ public abstract class AntDeviceRecorder implements IDeviceStateChangeReceiver {
 	protected Context context;
 	
 	protected State state = State.IDLE;
+	
+	private final RawDataFile rawDataFile;
     
-	protected AntDeviceRecorder(int deviceNumber) {
+	protected AntDeviceRecorder(int deviceNumber, RawDataFile rawDataFile) {
 		this.deviceNumber = deviceNumber;
+		this.rawDataFile = rawDataFile;
 	}
 
 	protected static void showResultStatus(Context context, String deviceName, boolean supportsRssi,
@@ -90,25 +95,36 @@ public abstract class AntDeviceRecorder implements IDeviceStateChangeReceiver {
 	}
 
 	// **********************************
-	// * public interface
+	// * static interface
 	// **********************************
 	
-	public static AntDeviceRecorder create(int deviceNumber, DeviceType deviceType) throws Exception {
+	public static AntDeviceRecorder create(int deviceNumber, DeviceType deviceType, boolean recordRawData, long tripId, String dataDir) throws Exception {
+		
+		String sensorName;
 		
 		if (deviceType == DeviceType.HEARTRATE) {
-			return new AntDeviceHeartRateRecorder(deviceNumber);
+			sensorName = "HeartRate(" + String.valueOf(deviceNumber) + ")";
+			return new AntDeviceHeartRateRecorder(deviceNumber, recordRawData ? new RawDataFile_HeartRate(sensorName, tripId, dataDir) : null);
 		}
 		else if (deviceType == DeviceType.BIKE_POWER) {
-			return new AntDeviceBikePowerRecorder(deviceNumber);
+			sensorName = "BikePower(" + String.valueOf(deviceNumber) + ")";
+			return new AntDeviceBikePowerRecorder(deviceNumber, recordRawData ? new RawDataFile_BikePower(sensorName, tripId, dataDir) : null);
 		}
 
 		throw new Exception("Attempt to create unknown DeviceRecorder type.");
 	}
 	
+	// **********************************
+	// * public interface
+	// **********************************
+	
 	synchronized public void start(Context context) {
 
 		this.context = context;
 		handleReset();
+		if (null != rawDataFile) {
+			rawDataFile.open(context);
+		}
 	}
 	
 	synchronized public void pause() {
@@ -139,6 +155,12 @@ public abstract class AntDeviceRecorder implements IDeviceStateChangeReceiver {
 		unregister();
         requestAccessToPcc();
     }
+	
+	protected void closeRawDataFile() {
+		if (null != rawDataFile) {
+			rawDataFile.close();
+		}
+	}
 
 	@Override
 	synchronized public void onDeviceStateChange(

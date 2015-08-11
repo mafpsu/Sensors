@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
+import android.location.Location;
 import android.util.Log;
 
 import com.dsi.ant.plugins.antplus.pcc.AntPlusHeartRatePcc;
@@ -23,13 +24,15 @@ public class AntDeviceHeartRateRecorder extends AntDeviceRecorder implements
 	private static final String MODULE_TAG = "AntDeviceHeartRateRecorder";
 
     private final ArrayList<Integer>  heartRates = new ArrayList<Integer>(1024); 
+	private final RawDataFile_HeartRate rawDataFile;
 
 	// **************************************************************
     // *                        Constructors
     // **************************************************************
 
-    public AntDeviceHeartRateRecorder(int deviceNumber) {
-		super(deviceNumber);
+    public AntDeviceHeartRateRecorder(int deviceNumber, RawDataFile_HeartRate rawDataFile) {
+		super(deviceNumber, rawDataFile);
+		this.rawDataFile = rawDataFile;
 	}
     
 	// **************************************************************
@@ -79,6 +82,7 @@ public class AntDeviceHeartRateRecorder extends AntDeviceRecorder implements
             releaseHandle.close();
             releaseHandle = null;
         }
+        closeRawDataFile();
 	}
 
     // **************************************************************
@@ -107,7 +111,7 @@ public class AntDeviceHeartRateRecorder extends AntDeviceRecorder implements
 		}
 	}
 
-	synchronized public void writeResult(TripData tripData, long currentTimeMillis) {
+	synchronized public void writeResult(TripData tripData, long currentTimeMillis, Location location) {
 		
 		float avgHeartRate = 0.0f;
 		float ssdHeartRate = 0.0f;
@@ -118,6 +122,11 @@ public class AntDeviceHeartRateRecorder extends AntDeviceRecorder implements
 			ssdHeartRate = MyMath.getSumSquareDifferenceI(heartRates, avgHeartRate);
 		}
 		tripData.addHeartRateDeviceReading(currentTimeMillis, numSamples, avgHeartRate, ssdHeartRate);
+
+		if (null != rawDataFile) {
+			rawDataFile.write(currentTimeMillis, location, heartRates);
+		}
+
 		heartRates.clear();
 	}
 }

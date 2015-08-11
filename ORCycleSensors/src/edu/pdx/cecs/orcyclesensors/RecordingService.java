@@ -203,7 +203,8 @@ public class RecordingService extends Service
 	public void startRecording(TripData trip, 
 			ArrayList<AntDeviceInfo> antDeviceInfos, 
 			ArrayList<SensorItem> sensorItems,
-			long minTimeBetweenReadings) throws Exception {
+			long minTimeBetweenReadings,
+			boolean recordRawData, String dataFileDir) throws Exception {
 		
 		this.trip = trip;
 		this.pauseId = -1;
@@ -217,13 +218,17 @@ public class RecordingService extends Service
 		// Create a recorder for each sensor
 		for (SensorItem sensorItem: this.sensors) {
 			if (sensorItem.getRate() <= SensorManager.SENSOR_DELAY_NORMAL) {
-				sensorRecorders.put(sensorItem.getName(), SensorRecorder.create(sensorItem.getName(), sensorItem.getType(), sensorItem.getRate()));
+				sensorRecorders.put(sensorItem.getName(), 
+						SensorRecorder.create(sensorItem.getName(), 
+								sensorItem.getType(), sensorItem.getRate(), recordRawData, trip.tripid, dataFileDir));
 			}
 		}
 
 		// Create a recorder for each Ant+ device
 		for (AntDeviceInfo antDeviceInfo: this.devices) {
-			deviceRecorders.put(antDeviceInfo.getNumber(), AntDeviceRecorder.create(antDeviceInfo.getNumber(), antDeviceInfo.getDeviceType()));
+			deviceRecorders.put(antDeviceInfo.getNumber(), 
+					AntDeviceRecorder.create(antDeviceInfo.getNumber(),
+							antDeviceInfo.getDeviceType(), recordRawData, trip.tripid, dataFileDir));
 		}
 
 		// Start listening for GPS updates!
@@ -346,6 +351,13 @@ public class RecordingService extends Service
 		}
 	}
 
+    /**
+     * Called when the location has changed.
+     *
+     * <p> There are no restrictions on the use of the supplied Location object.
+     *
+     * @param location The new location, as a Location object.
+     */
 	@Override
 	public void onLocationChanged(Location location) {
 
@@ -369,12 +381,12 @@ public class RecordingService extends Service
 
 				// record sensor values
 				for (SensorRecorder sensorRecorder: sensorRecorders.values()) {
-					sensorRecorder.writeResult(trip, currentTimeMillis);
+					sensorRecorder.writeResult(trip, currentTimeMillis, location);
 				}
 
 				// record device values
 				for (AntDeviceRecorder deviceRecorder: deviceRecorders.values()) {
-					deviceRecorder.writeResult(trip, currentTimeMillis);
+					deviceRecorder.writeResult(trip, currentTimeMillis, location);
 				}
 				
 				// record location for distance measurement
@@ -386,10 +398,24 @@ public class RecordingService extends Service
 		}
 	}
 	
+    /**
+     * Called when the provider is disabled by the user. If requestLocationUpdates
+     * is called on an already disabled provider, this method is called
+     * immediately.
+     *
+     * @param provider the name of the location provider associated with this
+     * update.
+     */
 	@Override
 	public void onProviderDisabled(String arg0) {
 	}
 
+    /**
+     * Called when the provider is enabled by the user.
+     *
+     * @param provider the name of the location provider associated with this
+     * update.
+     */
 	@Override
 	public void onProviderEnabled(String arg0) {
 	}

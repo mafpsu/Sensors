@@ -94,7 +94,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 
 	private static final String MODULE_TAG = "TripUploader";
 	public static final int kSaveProtocolVersion = 3;
-	private static final String POST_URL = "http://orcycle2.cecs.pdx.edu/post/";
+	private static final String POST_URL = "http://bsensor.cecs.pdx.edu/post/";
 
 	// Saving protocol version 3
 	public static final String TRIP_COORDS_TIME = "r";
@@ -370,7 +370,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		Cursor cursor = null;
 		
 		try {
-			if (null != (cursor = mDb.fetchHeartRateDeviceValue(coordTime))) {
+			if (null != (cursor = mDb.fetchBikePowerDeviceValue(coordTime))) {
 				
 				if (!cursor.isAfterLast()) {
 

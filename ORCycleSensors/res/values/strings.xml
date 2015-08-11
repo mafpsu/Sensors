@@ -11,12 +11,15 @@
     <string name="tab_title_trips">Trips</string>
     <string name="tab_title_devices">Devices</string>
     <string name="tab_title_sensors">Sensors</string>
+    <string name="tab_title_data_files">Data Files</string>
     <string name="hello_world">Hello world!</string>
 
     <string name="action_settings">Settings</string>
     <string name="action_add_device">Add device</string>
     <string name="action_delete_devices">Delete devices</string>
     <string name="action_edit_sensors">Edit sensors</string>
+    <string name="action_delete_data_files">Delete files</string>
+    <string name="action_email_data_files">E-mail files</string>
     
 	<string name="ami_initial_elapsed_time">00:00:00</string>
 	<string name="ami_elapsed_time">Settings</string>
@@ -46,6 +49,12 @@
     <string name="fmr_dnc_title"><b>Device Connection Failed!</b></string>
     <string name="fmr_dnc_message">One or more devices failed to connect. Recording not started.</string>
     <string name="fmr_dnc_button_ok">OK</string>
+    
+    <string name="fmdf_deans_title"><b>E-mail Address Not Set!</b></string>
+    <string name="fmdf_deans_message">The e-mail address for the raw data files has not been set.  
+Would you like to go to settings, and enter an e-mail address?</string>
+    <string name="fmdf_deans_button_ok">OK</string>
+    <string name="fmdf_deans_button_cancel">Cancel</string>
     
     	<string name="btn_lbl_start">Start Trip</string>
     <string name="btn_lbl_pause">Pause</string>

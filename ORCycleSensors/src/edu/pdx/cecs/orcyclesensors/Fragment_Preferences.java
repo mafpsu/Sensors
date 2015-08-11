@@ -1,7 +1,9 @@
 package edu.pdx.cecs.orcyclesensors;
 
 import android.preference.PreferenceFragment;
+import android.preference.PreferenceManager;
 import android.util.Log;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 public class Fragment_Preferences extends PreferenceFragment{
@@ -22,6 +24,12 @@ public class Fragment_Preferences extends PreferenceFragment{
 	@Override
 	public void onStop() {
         super.onStop();
-        MyApplication.getInstance().loadMinTimeBetweenReadings();
+		try {
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+	        MyApplication.getInstance().loadSharedPreferences(prefs);
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
     }
 }

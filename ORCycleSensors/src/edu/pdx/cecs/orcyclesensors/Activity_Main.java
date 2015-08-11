@@ -34,6 +34,7 @@ public class Activity_Main extends FragmentActivity implements
 	private static final int FRAG_INDEX_TRIPS = 1;
 	private static final int FRAG_INDEX_DEVICES = 2;
 	private static final int FRAG_INDEX_SENSORS = 3;
+	private static final int FRAG_INDEX_DATA_FILES = 4;
 
 	private int fragmentToShow = FRAG_INDEX_RECORD;
 
@@ -45,6 +46,7 @@ public class Activity_Main extends FragmentActivity implements
 	private Fragment fragmentTrips;
 	private Fragment fragmentDevices;
 	private Fragment fragmentSensors;
+	private Fragment fragmentDataFiles;
 	private int tabIndex = -1;
 
 	// *********************************************************************************
@@ -61,6 +63,7 @@ public class Activity_Main extends FragmentActivity implements
 		fragmentTrips = new Fragment_MainTrips();
 		fragmentDevices = new Fragment_MainDevices();
 		fragmentSensors = new Fragment_MainSensors();
+		fragmentDataFiles = new Fragment_MainDataFiles();
 		
 		// Set up the action bar.
 		final ActionBar actionBar = getActionBar();
@@ -129,6 +132,10 @@ public class Activity_Main extends FragmentActivity implements
 			fragmentToShow = FRAG_INDEX_SENSORS;
 			break;
 		
+		case Controller.EXTRA_SHOW_FRAGMENT_DATA_FILES:
+			fragmentToShow = FRAG_INDEX_DATA_FILES;
+			break;
+		
 		default:
 			break;
 		}
@@ -188,40 +195,6 @@ public class Activity_Main extends FragmentActivity implements
 	}
 
 	@Override
-	public boolean onPrepareOptionsMenu(Menu menu) {
-
-		MenuItem addDevice = menu.findItem(R.id.action_add_device);
-		MenuItem deleteDevice = menu.findItem(R.id.action_delete_devices);
-		MenuItem editSensors = menu.findItem(R.id.action_edit_sensors);
-
-		if ((null != deleteDevice) && (null != editSensors)) {
-			switch (tabIndex) {
-			case FRAG_INDEX_RECORD:
-				addDevice.setVisible(false);
-				deleteDevice.setVisible(false);
-				editSensors.setVisible(false);
-				break;
-			case FRAG_INDEX_TRIPS:
-				addDevice.setVisible(false);
-				deleteDevice.setVisible(false);
-				editSensors.setVisible(false);
-				break;
-			case FRAG_INDEX_DEVICES:
-				addDevice.setVisible(true);
-				deleteDevice.setVisible(MyApplication.getInstance().getAppDevices().size() > 0);
-				editSensors.setVisible(false);
-				break;
-			case FRAG_INDEX_SENSORS:
-				addDevice.setVisible(false);
-				deleteDevice.setVisible(false);
-				editSensors.setVisible(true);
-				break;
-			}
-		}
-		return true;
-	}
-	
-	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// Handle action bar item clicks here. The action bar will
 		// automatically handle clicks on the Home/Up button, so long
@@ -263,6 +236,11 @@ public class Activity_Main extends FragmentActivity implements
 				actionBar.setTitle(R.string.app_name);
 				break;
 			case FRAG_INDEX_SENSORS:
+				actionBar.setDisplayShowTitleEnabled(true);
+				actionBar.setDisplayShowHomeEnabled(true);
+				actionBar.setTitle(R.string.app_name);
+				break;
+			case FRAG_INDEX_DATA_FILES:
 				actionBar.setDisplayShowTitleEnabled(true);
 				actionBar.setDisplayShowHomeEnabled(true);
 				actionBar.setTitle(R.string.app_name);
@@ -346,6 +324,8 @@ public class Activity_Main extends FragmentActivity implements
 				return fragmentDevices;
 			case FRAG_INDEX_SENSORS:
 				return fragmentSensors;
+			case FRAG_INDEX_DATA_FILES:
+				return fragmentDataFiles;
 			}
 			return null;
 		}
@@ -353,7 +333,7 @@ public class Activity_Main extends FragmentActivity implements
 		@Override
 		public int getCount() {
 			// Show 3 total pages.
-			return 4;
+			return 5;
 		}
 
 		@Override
@@ -368,6 +348,8 @@ public class Activity_Main extends FragmentActivity implements
 				return getString(R.string.tab_title_devices).toUpperCase(l);
 			case FRAG_INDEX_SENSORS:
 				return getString(R.string.tab_title_sensors).toUpperCase(l);
+			case FRAG_INDEX_DATA_FILES:
+				return getString(R.string.tab_title_data_files).toUpperCase(l);
 			}
 			return null;
 		}

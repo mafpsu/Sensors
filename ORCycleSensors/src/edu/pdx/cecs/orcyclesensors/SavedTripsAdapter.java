@@ -24,129 +24,175 @@
 package edu.pdx.cecs.orcyclesensors;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.TimeZone;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.database.Cursor;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CursorAdapter;
 import android.widget.ImageView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
+@SuppressLint("SimpleDateFormat")
 public class SavedTripsAdapter extends SimpleCursorAdapter {
 
 	private final static String MODULE_TAG = "SavedTripsAdapter";
+	
+	private final static String[] from = new String[] { DbAdapter.K_TRIP_ROWID };
+	private final static SimpleDateFormat sdfStart = new SimpleDateFormat("MMMM d, y  h:mm a");
+	private final static SimpleDateFormat sdfDuration = new SimpleDateFormat("HH:mm:ss");
 
-	private final Context context;
-	private final String[] from;
-	private final int[] to;
-	Cursor cursor;
-
-	public SavedTripsAdapter(Context context, int layout, Cursor c,
-			String[] from, int[] to, int flags) {
-		super(context, R.layout.saved_trips_list_item, c, from, to, flags);
-		this.context = context;
-		this.from = from;
-		this.to = to;
-		this.cursor = c;
+	private final class ViewHolder {
+		public TextView tvStartTime;
+		public TextView tvTripId;
+		public TextView tvTripDuration;
+		public ImageView ivIcon;
 	}
 
+	private final Cursor cursor;
+	private final int listItemLayout;
+	private final int defaultColor;
+	private final int selectedColor;
+	private final LayoutInflater layoutInflater;
+	private final ArrayList<Long> selectedItems = new ArrayList<Long>();
+
+	public SavedTripsAdapter(Context context, int listItemLayout, Cursor cursor,
+			int defaultColor, int selectedColor) {
+		super(context, listItemLayout, cursor, from, null, CursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
+		
+		SavedTripsAdapter.sdfDuration.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+		this.cursor = cursor;
+		this.listItemLayout = listItemLayout;
+		this.defaultColor = defaultColor;
+		this.selectedColor = selectedColor;
+		this.layoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+	}
+	
+	public ArrayList<Long> getSelectedItems() {
+		return selectedItems;
+	}
+	
+	public long[] getSelectedItemsArray() {
+		
+		long[] selectedItemsArray = new long[selectedItems.size()];
+
+		for(int i = 0; i < selectedItems.size(); ++i) {
+			selectedItemsArray[i] = selectedItems.get(i);
+		}
+		
+		return selectedItemsArray;
+	}
+	
+	public void setSelectedItems(long[] selectedItemsArray) {
+		selectedItems.clear();
+		for (long tripId: selectedItemsArray) {
+			selectedItems.add(tripId);
+		}
+	}
+	
+	public boolean isSelected(long id) {
+		return selectedItems.indexOf(id) >= 0;
+	}
+	
+	public void select(long id, boolean select) {
+		if (select) {
+			selectedItems.add(id);
+		}
+		else {
+			selectedItems.remove(id);
+		}
+	}
+	
+	public int numSelectedItems() {
+		return selectedItems.size();
+	}
+	
+	public void toggleSelection(long id) {
+		if (isSelected(id)) {
+			select(id, false);
+		}
+		else {
+			select(id, true);
+		}
+	}
+	
+	public void clearSelectedItems() {
+		selectedItems.clear();
+	}
+	
+	public ArrayList<Long> getSelectedTrips() {
+		
+		ArrayList<Long> selectedTripIds = new ArrayList<Long>(selectedItems);
+		
+		return selectedTripIds;
+	}
+	
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		View rowView = null;
+
 		try {
-			//Log.v(MODULE_TAG, "getView(Position): " + position);
-
-			LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-
-			rowView = inflater.inflate(R.layout.saved_trips_list_item, parent, false);
-			TextView textViewStart = (TextView) rowView.findViewById(R.id.TextViewStart);
-			TextView textViewPurpose = (TextView) rowView.findViewById(R.id.TextViewPurpose);
-			TextView textViewInfo = (TextView) rowView.findViewById(R.id.TextViewInfo);
-			ImageView imageTripPurpose = (ImageView) rowView.findViewById(R.id.ImageTripPurpose);
-			//TextView textViewCO2 = (TextView) rowView.findViewById(R.id.TextViewCO2);
-			//TextView textViewCalory = (TextView) rowView.findViewById(R.id.TextViewCalory);
-			//View llCaloryCo2 = rowView.findViewById(R.id.RelativeLayout2);
-
+			// move cursor to item to be displayed 
 			cursor.moveToPosition(position);
 
-			SimpleDateFormat sdfStart = new SimpleDateFormat("MMMM d, y  h:mm a");
-			Double startTime = cursor.getDouble(cursor.getColumnIndex("start"));
-			String start = sdfStart.format(startTime);
+			// get item variables
+			Double startTime = cursor.getDouble(cursor.getColumnIndex(DbAdapter.K_TRIP_START));
+			String formattedStartTime = sdfStart.format(startTime);
+			long tripId = cursor.getLong(cursor.getColumnIndex(DbAdapter.K_TRIP_ROWID));
+			Double endTime = cursor.getDouble(cursor.getColumnIndex(DbAdapter.K_TRIP_END));
+			String formattedDuration = sdfDuration.format(endTime - startTime);
+			int status = cursor.getInt(cursor.getColumnIndex(DbAdapter.K_TRIP_STATUS));
 
-			textViewStart.setText(start);
-			textViewPurpose.setText(cursor.getString(cursor.getColumnIndex("purp")));
-
-			SimpleDateFormat sdfDuration = new SimpleDateFormat("HH:mm:ss");
-			sdfDuration.setTimeZone(TimeZone.getTimeZone("UTC"));
-			Double endTime = cursor.getDouble(cursor.getColumnIndex("endtime"));
-			String duration = sdfDuration.format(endTime - startTime);
-
-			//Log.v(MODULE_TAG, "Duration: " + duration);
-
-			textViewInfo.setText(duration);
-
-			//Double CO2 = cursor.getFloat(cursor.getColumnIndex("distance")) * 0.0006212 * 0.93;
-			//DecimalFormat df = new DecimalFormat("0.#");
-			//String CO2String = df.format(CO2);
-			//textViewCO2.setText("CO2 Saved: " + CO2String + " lbs");
-
-			//Double calory = cursor.getFloat(cursor.getColumnIndex("distance")) * 0.0006212 * 49 - 1.69;
-			//String caloryString = df.format(calory);
-			//if (calory <= 0) {
-			//	textViewCalory.setText("Calories Burned: " + 0 + " kcal");
-			//} else {
-			//	textViewCalory
-			//			.setText("Calories Burned: " + caloryString + " kcal");
-			//}
-
-			// ----------------------------------------------------------
-			// For the moment, these elements will be invisible until we
-			// have a more accurate solution for calories burned
-			// ----------------------------------------------------------
-
-			//llCaloryCo2.setVisibility(View.GONE);
-
-			//textViewCO2.setVisibility(View.GONE);
-			//textViewCalory.setVisibility(View.GONE);
-
-			// -------------------------------------------------------
-			//
-			// -------------------------------------------------------
-
-			int status = cursor.getInt(cursor.getColumnIndex("status"));
-
-			//Log.v(MODULE_TAG, "Status: " + status);
-
-			if (status == 0){
-				//textViewPurpose.setText("In Progress");
-				rowView.setVisibility(View.GONE);
-				rowView = inflater.inflate(R.layout.saved_trips_list_item_null, parent, false);
+			// Create view holder
+			ViewHolder holder = null;
+			if (convertView == null) { // then this is the first time this item is being drawn
+				// Inflate the list item
+				convertView = layoutInflater.inflate(listItemLayout, null);
+				
+				// Find the child views of the list item and create a reference to them
+				holder = new ViewHolder();
+				holder.tvStartTime = (TextView) convertView.findViewById(R.id.tv_start_time);
+				holder.tvTripId = (TextView) convertView.findViewById(R.id.tv_trip_id);
+				holder.tvTripDuration = (TextView) convertView.findViewById(R.id.tv_trip_duration);
+				holder.ivIcon = (ImageView) convertView.findViewById(R.id.ImageTripPurpose);
+				
+				// Optimization: Tag the row with it's child views, so we don't have to   
+				// call findViewById() later when we reuse the row.
+				convertView.setTag(holder);
+			} else { // this list item's view already exist
+				holder = (ViewHolder) convertView.getTag();
 			}
-			else {
-				rowView.setVisibility(View.VISIBLE);
-			}
+			
+			// Set view's data
+			holder.tvStartTime.setText(formattedStartTime);
+			holder.tvTripId.setText("ID: " + String.valueOf(tripId));
+			holder.tvTripDuration.setText(formattedDuration);
+			holder.ivIcon.setImageResource(getImageResource(status));
 
-			int columnIndex;
-			String value;
-
-			if (status == 2) {
-				if (-1 != (columnIndex = cursor.getColumnIndex("purp"))) {
-					if (null != (value = cursor.getString(columnIndex))) {
-						imageTripPurpose.setImageResource(R.drawable.other_high);
-					}
-				}
-			} else if (status == 1) {
-				imageTripPurpose.setImageResource(R.drawable.failedupload_high);
-			}
-			return rowView;
+			// Set view's selection color
+			convertView.setBackgroundColor(isSelected(tripId) ? selectedColor : defaultColor);
 		}
 		catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}
-		return rowView;
+		return convertView;
 	}
+	
+	private int getImageResource(int status) {
+		switch(status) {
+		case 2:
+			return R.drawable.other_high;
+		case 1:
+			return R.drawable.failedupload_high;
+		default: // really 0 is the only other value which should never happen
+			return R.drawable.failedupload_high;
+		}
+	}
+	
 }

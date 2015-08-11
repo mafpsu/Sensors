@@ -2,6 +2,8 @@ package edu.pdx.cecs.orcyclesensors;
 
 import java.util.ArrayList;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -16,28 +18,28 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
-public class Fragment_MainDevices extends Fragment {
+public class Fragment_MainDataFiles extends Fragment {
 
-	private static final String MODULE_TAG = "Fragment_MainDevices";
+	private static final String MODULE_TAG = "Fragment_MainDataFiles";
 
 	private static final String EXTRA_ACTION_MODE_EDIT = "EXTRA_ACTION_MODE_EDIT";
 	private static final String EXTRA_ACTION_MODE_SELECTED_ITEMS = "EXTRA_ACTION_MODE_SELECTED_ITEMS";
 
-	public SavedDevicesAdapter savedDevicesAdapter;
-	private ListView lvSavedDevices;
+	private DataFilesAdapter dataFilesAdapter;
+	private ListView lvDataFiles;
 	private MenuItem menuDelete;
-
+	private MenuItem menuEmail;
 	private boolean resumeActionModeEdit;
 	private long[] savedActionModeItems;
 
 	private ActionMode editMode;
 	private final ActionMode.Callback editModeCallback = new EditModeCallback();
-
+	
 	// *********************************************************************************
-	// *                          Fragment Life Cycle
+	// *                                Fragment
 	// *********************************************************************************
 
-	public Fragment_MainDevices() {
+	public Fragment_MainDataFiles() {
 	}
 
 	/**
@@ -79,11 +81,11 @@ public class Fragment_MainDevices extends Fragment {
 		View rootView = null;
 
 		try {
-			if (null != (rootView = inflater.inflate(R.layout.fragment_main_devices, (ViewGroup) null))) {
-	
-				lvSavedDevices = (ListView) rootView.findViewById(R.id.listViewSavedDevices);
-				lvSavedDevices.setOnItemClickListener(new SavedDevices_OnItemClickListener());
-	
+			if ( null != (rootView = inflater.inflate(R.layout.fragment_main_data_files, (ViewGroup) null))) {
+
+				lvDataFiles = (ListView) rootView.findViewById(R.id.lv_data_files);
+				lvDataFiles.setOnItemClickListener(new DataFiles_OnItemClickListener());
+
 				setHasOptionsMenu(true);
 			}
 		}
@@ -98,8 +100,8 @@ public class Fragment_MainDevices extends Fragment {
 	public void onResume() {
 		super.onResume();
 		try {
-			Log.v(MODULE_TAG, "Cycle: onResume");
-			populateDeviceList();
+			Log.v(MODULE_TAG, "Cycle: SavedNotes onResume");
+			populateFileList();
 			if (resumeActionModeEdit) {
 				startActionModeEdit();
 			}
@@ -120,8 +122,8 @@ public class Fragment_MainDevices extends Fragment {
 			if (editMode != null) {
 				// record action mode state
 				savedInstanceState.putBoolean(EXTRA_ACTION_MODE_EDIT, true);
-				if (null != savedDevicesAdapter) {
-					long[] selectedItems = savedDevicesAdapter.getSelectedItemsArray();
+				if (null != dataFilesAdapter) {
+					long[] selectedItems = dataFilesAdapter.getSelectedItemsArray();
 					if(selectedItems.length > 0) {
 						savedInstanceState.putLongArray(EXTRA_ACTION_MODE_SELECTED_ITEMS, selectedItems);
 					}
@@ -175,17 +177,18 @@ public class Fragment_MainDevices extends Fragment {
 	// *                             Fragment Actions
 	// *********************************************************************************
 
-	private void populateDeviceList() {
+	private void populateFileList() {
 		try {
 			// Get data source
-			ArrayList<AntDeviceInfo> antDeviceInfos = MyApplication.getInstance().getAppDevices();
+			ArrayList<DataFileInfo> dataFileInfos = MyApplication.getInstance().getAppDataFiles(getActivity());
 
-			savedDevicesAdapter = new SavedDevicesAdapter(getActivity().getLayoutInflater(), antDeviceInfos,
-					getResources().getColor(R.color.default_color), 
+			dataFilesAdapter = new DataFilesAdapter(getActivity().getLayoutInflater(),
+					dataFileInfos,
+					getResources().getColor(R.color.default_color),
 					getResources().getColor(R.color.pressed_color));
 
-			lvSavedDevices.setAdapter(savedDevicesAdapter);
-			lvSavedDevices.invalidate();
+			lvDataFiles.setAdapter(dataFilesAdapter);
+			lvDataFiles.invalidate();
 		} catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}
@@ -193,13 +196,13 @@ public class Fragment_MainDevices extends Fragment {
 
 	private void clearSelections() {
 		
-		int numListViewItems = lvSavedDevices.getChildCount();
+		int numListViewItems = lvDataFiles.getChildCount();
 		
-		savedDevicesAdapter.clearSelectedItems();
+		dataFilesAdapter.clearSelectedItems();
 
 		// Reset all list items to their normal color
 		for (int i = 0; i < numListViewItems; i++) {
-			lvSavedDevices.getChildAt(i).setBackgroundColor(getResources().getColor(R.color.default_color));
+			lvDataFiles.getChildAt(i).setBackgroundColor(getResources().getColor(R.color.default_color));
 		}
 	}
 	
@@ -207,28 +210,30 @@ public class Fragment_MainDevices extends Fragment {
 	// *                           Item Click Listener
 	// *********************************************************************************
 
-	private final class SavedDevices_OnItemClickListener implements AdapterView.OnItemClickListener {
+	private final class DataFiles_OnItemClickListener implements AdapterView.OnItemClickListener {
 		
-		public void onItemClick(AdapterView<?> parent, View v, int pos, long antDeviceNumber) {
+		public void onItemClick(AdapterView<?> parent, View v, int pos, long id) {
 			
-			Log.v(MODULE_TAG, "onItemClick (id = " + String.valueOf(antDeviceNumber) + ", pos = " + String.valueOf(pos) + ")");
-
+			Log.v(MODULE_TAG, "onItemClick (id = " + String.valueOf(id) + ", pos = " + String.valueOf(pos) + ")");
+			
 			try {
 				if (editMode != null) {
 					
 					// toggle selection
-					savedDevicesAdapter.toggleSelection(antDeviceNumber);
+					dataFilesAdapter.toggleSelection(id);
 					
 					// set selection background color
-					if (savedDevicesAdapter.isSelected(antDeviceNumber)) {
+					if (dataFilesAdapter.isSelected(id)) {
 						v.setBackgroundColor(getResources().getColor(R.color.pressed_color));
 					} else {
 						v.setBackgroundColor(getResources().getColor(R.color.default_color));
 					}
 
-					// If there are devices to delete, enable delete menu item
-					menuDelete.setEnabled(savedDevicesAdapter.numSelectedItems() > 0);
-					editMode.setTitle(savedDevicesAdapter.numSelectedItems() + " Selected");
+					// If there are devices to delete, enable delete and email menu items
+					menuDelete.setEnabled(dataFilesAdapter.numSelectedItems() > 0);
+					menuEmail.setEnabled(dataFilesAdapter.numSelectedItems() > 0);
+
+					editMode.setTitle(dataFilesAdapter.numSelectedItems() + " Selected");
 				}
 				else {
 					//transitionToSensorDetailActivity(sensor.getName());
@@ -256,9 +261,9 @@ public class Fragment_MainDevices extends Fragment {
 		editMode = getActivity().startActionMode(editModeCallback);
 		return true;
 	}
-
+	
 	private final class EditModeCallback implements ActionMode.Callback {
-		
+
 		/**
 		 * Called when the action mode is created; startActionMode() was called
 		 */
@@ -267,8 +272,8 @@ public class Fragment_MainDevices extends Fragment {
 			try {
 				// Inflate a menu resource providing context menu items
 				MenuInflater inflater = mode.getMenuInflater();
-				inflater.inflate(R.menu.saved_devices_context_menu, menu);
-				savedDevicesAdapter.setSelectedItems(savedActionModeItems);
+				inflater.inflate(R.menu.data_files_context_menu, menu);
+				dataFilesAdapter.setSelectedItems(savedActionModeItems);
 			}
 			catch(Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());
@@ -284,18 +289,21 @@ public class Fragment_MainDevices extends Fragment {
 		@Override
 		public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
 			try {
-				int numSelectedItems = savedDevicesAdapter.getSelectedItems().size();
-				
-				menuDelete = menu.findItem(R.id.action_delete_saved_devices);
-				menuDelete.setEnabled(numSelectedItems > 0);
+				int numSelectedItems = dataFilesAdapter.getSelectedItems().size();
 
+				menuDelete = menu.findItem(R.id.action_delete_data_files);
+				menuDelete.setEnabled(numSelectedItems > 0);
+				
+				menuEmail = menu.findItem(R.id.action_email_data_files);
+				menuEmail.setEnabled(numSelectedItems > 0);
+				
 				mode.setTitle(numSelectedItems + " Selected");
 				return true;
 				}
 			catch(Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());
 			}
-			return false;
+			return false; // Return false if nothing is done
 		}
 
 		/**
@@ -307,16 +315,21 @@ public class Fragment_MainDevices extends Fragment {
 			try {
 				switch (item.getItemId()) {
 
-				case R.id.action_delete_saved_devices:
-					// delete selected devices
-					actionDeleteSelectedDevices();
+				case R.id.action_delete_data_files:
+					actionDeleteSelectedFiles();
 					mode.finish(); // Action picked, so close the CAB
 					return true;
 					
-				case R.id.action_add_devices:
-					transitionToAddDeviceActivity();
+				case R.id.action_email_data_files:
+					if (MyApplication.getInstance().getRawDataEmailAddress().equals("")) {
+						dialogEmailAddressNotSet();
+					}
+					else {
+						actionEmailSelectedDataFiles();
+					}
+					mode.finish(); // Action picked, so close the CAB
 					return true;
-
+					
 				default:
 					return false;
 				}
@@ -340,30 +353,70 @@ public class Fragment_MainDevices extends Fragment {
 				Log.e(MODULE_TAG, ex.getMessage());
 			}
 		}
-	
+
 		/**
 		 * Delete selected data files
 		 */
-		private void actionDeleteSelectedDevices() {
-			
-			ArrayList<Long> antDeviceNumbers = savedDevicesAdapter.getSelectedItems();
-
+		private void actionDeleteSelectedFiles() {
 			try {
-				// delete selected trips
-				for (long antDeviceNumber: antDeviceNumbers) {
-					try {
-						MyApplication.getInstance().deleteAppDevice((int)antDeviceNumber);
-					}
-					catch(Exception ex) {
-						Log.e(MODULE_TAG, ex.getMessage());
-					}
-				}
+				MyApplication.getInstance().deleteDataFiles(dataFilesAdapter.getSelectedDataFileInfos());
+				populateFileList();
 			}
 			catch(Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());
 			}
-			finally {
-				populateDeviceList();
+		}
+
+		/**
+		 * Email selected data files
+		 */
+		private void actionEmailSelectedDataFiles() {
+
+			// Create an email with the attached data files
+			Email email = new Email(MyApplication.getInstance().getRawDataEmailAddress(), 
+					dataFilesAdapter.getSelectedDataFileInfos());
+			
+			// Launch the email activity to send the email
+			transitionToEmailActivity(email);
+		}
+	}
+
+	// *********************************************************************************
+	// *                            Dialog E-mail address not set
+	// *********************************************************************************
+
+	/**
+	 * Build dialog telling user that the GPS is not available
+	 */
+	private void dialogEmailAddressNotSet() {
+		final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+		builder.setTitle(R.string.fmdf_deans_title);
+		builder.setMessage(R.string.fmdf_deans_message);
+		builder.setPositiveButton(R.string.fmdf_deans_button_ok, new DialogEmailAddressNotSet_ButtonOk());
+		builder.setNegativeButton(R.string.fmdf_deans_button_cancel, new DialogEmailAddressNotSet_ButtonCancel());
+		final AlertDialog alert = builder.create();
+		alert.show();
+	}
+
+	private final class DialogEmailAddressNotSet_ButtonOk implements DialogInterface.OnClickListener {
+		public void onClick(final DialogInterface dialog, final int id) {
+			try {
+				dialog.cancel();
+				transitionToSettingsActivity();
+			}
+			catch(Exception ex) {
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
+		}
+	}
+
+	private final class DialogEmailAddressNotSet_ButtonCancel implements DialogInterface.OnClickListener {
+		public void onClick(final DialogInterface dialog, final int id) {
+			try {
+				dialog.cancel();
+			}
+			catch(Exception ex) {
+				Log.e(MODULE_TAG, ex.getMessage());
 			}
 		}
 	}
@@ -372,13 +425,33 @@ public class Fragment_MainDevices extends Fragment {
 	// *                                       Transitions
 	// *********************************************************************************
 
-	/**
-	 * Launches Activity_AddDevice
-	 */
-	private void transitionToAddDeviceActivity() {
-		Intent intent = new Intent(getActivity(), Activity_AddDevice.class);
+	private void transitionToEmailActivity(Email email) {
+		try {
+			
+			Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+			intent.setType("text/plain");
+			intent.putExtra(Intent.EXTRA_EMAIL, email.getAddresses());
+			intent.putExtra(Intent.EXTRA_SUBJECT, email.getSubject());
+			intent.putExtra(Intent.EXTRA_TEXT, email.getText());
+		    intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, email.getAttachments());
+
+		    // launch the email chooser activity and return the result to this activity
+		    // startActivity(Intent.createChooser(intent, ""));
+
+		    // For the checkbox "Use by default for this action" will appear in
+		    // the application chooser dialog, thus user will be able to select the
+		    // default application for sending the emails with multiple attachments
+		    startActivity(intent);
+		}
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+	}
+
+	private void transitionToSettingsActivity() {
+		//Intent intent = new Intent(this, Activity_About.class);
+		Intent intent = new Intent(getActivity(), Activity_UserPreferences.class);
 		startActivity(intent);
 		getActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
-		//getActivity().finish();
 	}
 }
