@@ -26,13 +26,12 @@ public class Fragment_MainDevices extends Fragment {
 	public SavedDevicesAdapter savedDevicesAdapter;
 	private ListView lvSavedDevices;
 	private MenuItem menuDelete;
-	private ArrayList<AntDeviceInfo> antDeviceInfos;
 
 	private boolean resumeActionModeEdit;
 	private long[] savedActionModeItems;
 
-	private ActionMode actionModeEdit;
-	private final ActionMode.Callback mActionModeCallback = new ActionModeEditCallback();
+	private ActionMode editMode;
+	private final ActionMode.Callback editModeCallback = new EditModeCallback();
 
 	// *********************************************************************************
 	// *                          Fragment Life Cycle
@@ -80,12 +79,13 @@ public class Fragment_MainDevices extends Fragment {
 		View rootView = null;
 
 		try {
-			rootView = inflater.inflate(R.layout.fragment_main_devices, (ViewGroup) null);
-
-			lvSavedDevices = (ListView) rootView.findViewById(R.id.listViewSavedDevices);
-			lvSavedDevices.setOnItemClickListener(new SavedDevices_OnItemClickListener());
-
-			setHasOptionsMenu(true);
+			if (null != (rootView = inflater.inflate(R.layout.fragment_main_devices, (ViewGroup) null))) {
+	
+				lvSavedDevices = (ListView) rootView.findViewById(R.id.listViewSavedDevices);
+				lvSavedDevices.setOnItemClickListener(new SavedDevices_OnItemClickListener());
+	
+				setHasOptionsMenu(true);
+			}
 		}
 		catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
@@ -99,7 +99,6 @@ public class Fragment_MainDevices extends Fragment {
 		super.onResume();
 		try {
 			Log.v(MODULE_TAG, "Cycle: onResume");
-			// lvAntDevices.invalidate(); TODO: Remove if this proves not necessary
 			populateDeviceList();
 			if (resumeActionModeEdit) {
 				startActionModeEdit();
@@ -118,7 +117,7 @@ public class Fragment_MainDevices extends Fragment {
 	@Override
 	public void onSaveInstanceState(Bundle savedInstanceState) {
 		try {
-			if (actionModeEdit != null) {
+			if (editMode != null) {
 				// record action mode state
 				savedInstanceState.putBoolean(EXTRA_ACTION_MODE_EDIT, true);
 				if (null != savedDevicesAdapter) {
@@ -179,7 +178,7 @@ public class Fragment_MainDevices extends Fragment {
 	private void populateDeviceList() {
 		try {
 			// Get data source
-			antDeviceInfos = MyApplication.getInstance().getAppDevices();
+			ArrayList<AntDeviceInfo> antDeviceInfos = MyApplication.getInstance().getAppDevices();
 
 			savedDevicesAdapter = new SavedDevicesAdapter(getActivity().getLayoutInflater(), antDeviceInfos,
 					getResources().getColor(R.color.default_color), 
@@ -188,18 +187,6 @@ public class Fragment_MainDevices extends Fragment {
 			lvSavedDevices.setAdapter(savedDevicesAdapter);
 			lvSavedDevices.invalidate();
 		} catch(Exception ex) {
-			Log.e(MODULE_TAG, ex.getMessage());
-		}
-
-		// registerForContextMenu(lvAntDevices); TODO: Verify this isn't needed
-	}
-
-	private void deleteDevice(long deviceNumber) {
-		try {
-			MyApplication.getInstance().deleteAppDevice((int)deviceNumber);
-			populateDeviceList();
-		}
-		catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}
 	}
@@ -227,16 +214,21 @@ public class Fragment_MainDevices extends Fragment {
 			Log.v(MODULE_TAG, "onItemClick (id = " + String.valueOf(antDeviceNumber) + ", pos = " + String.valueOf(pos) + ")");
 
 			try {
-				if (actionModeEdit != null) {
+				if (editMode != null) {
+					
+					// toggle selection
 					savedDevicesAdapter.toggleSelection(antDeviceNumber);
+					
+					// set selection background color
 					if (savedDevicesAdapter.isSelected(antDeviceNumber)) {
 						v.setBackgroundColor(getResources().getColor(R.color.pressed_color));
 					} else {
 						v.setBackgroundColor(getResources().getColor(R.color.default_color));
 					}
 
+					// If there are devices to delete, enable delete menu item
 					menuDelete.setEnabled(savedDevicesAdapter.numSelectedItems() > 0);
-					actionModeEdit.setTitle(savedDevicesAdapter.numSelectedItems() + " Selected");
+					editMode.setTitle(savedDevicesAdapter.numSelectedItems() + " Selected");
 				}
 				else {
 					//transitionToSensorDetailActivity(sensor.getName());
@@ -257,15 +249,15 @@ public class Fragment_MainDevices extends Fragment {
 	 * @return true if new action mode was started, false otherwise.
 	 */
 	private boolean startActionModeEdit() {
-		if (actionModeEdit != null) {
+		if (editMode != null) {
 			return false;
 		}
 		// Start the CAB using the ActionMode.Callback defined above
-		actionModeEdit = getActivity().startActionMode(mActionModeCallback);
+		editMode = getActivity().startActionMode(editModeCallback);
 		return true;
 	}
 
-	private final class ActionModeEditCallback implements ActionMode.Callback {
+	private final class EditModeCallback implements ActionMode.Callback {
 		
 		/**
 		 * Called when the action mode is created; startActionMode() was called
@@ -273,10 +265,10 @@ public class Fragment_MainDevices extends Fragment {
 		@Override
 		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
 			try {
-			// Inflate a menu resource providing context menu items
-			MenuInflater inflater = mode.getMenuInflater();
-			inflater.inflate(R.menu.saved_devices_context_menu, menu);
-			savedDevicesAdapter.setSelectedItems(savedActionModeItems);
+				// Inflate a menu resource providing context menu items
+				MenuInflater inflater = mode.getMenuInflater();
+				inflater.inflate(R.menu.saved_devices_context_menu, menu);
+				savedDevicesAdapter.setSelectedItems(savedActionModeItems);
 			}
 			catch(Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());
@@ -292,10 +284,12 @@ public class Fragment_MainDevices extends Fragment {
 		@Override
 		public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
 			try {
+				int numSelectedItems = savedDevicesAdapter.getSelectedItems().size();
+				
 				menuDelete = menu.findItem(R.id.action_delete_saved_devices);
-				menuDelete.setEnabled(savedDevicesAdapter.getSelectedItems().size() > 0);
+				menuDelete.setEnabled(numSelectedItems > 0);
 
-				mode.setTitle(savedDevicesAdapter.numSelectedItems() + " Selected");
+				mode.setTitle(numSelectedItems + " Selected");
 				return true;
 				}
 			catch(Exception ex) {
@@ -315,7 +309,7 @@ public class Fragment_MainDevices extends Fragment {
 
 				case R.id.action_delete_saved_devices:
 					// delete selected devices
-					actionDeleteSelectedDevices(savedDevicesAdapter.getSelectedItems());
+					actionDeleteSelectedDevices();
 					mode.finish(); // Action picked, so close the CAB
 					return true;
 					
@@ -339,32 +333,41 @@ public class Fragment_MainDevices extends Fragment {
 		@Override
 		public void onDestroyActionMode(ActionMode mode) {
 			try {
-				actionModeEdit = null;
+				editMode = null;
 				clearSelections();
 			}
 			catch(Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());
 			}
 		}
-	}
+	
+		/**
+		 * Delete selected data files
+		 */
+		private void actionDeleteSelectedDevices() {
+			
+			ArrayList<Long> antDeviceNumbers = savedDevicesAdapter.getSelectedItems();
 
-	private void actionDeleteSelectedDevices(ArrayList<Long> antDeviceNumbers) {
-		try {
-			// delete selected trips
-			for (long antDeviceNumber: antDeviceNumbers) {
-				try {
-					deleteDevice(antDeviceNumber);
-				}
-				catch(Exception ex) {
-					Log.e(MODULE_TAG, ex.getMessage());
+			try {
+				// delete selected trips
+				for (long antDeviceNumber: antDeviceNumbers) {
+					try {
+						MyApplication.getInstance().deleteAppDevice((int)antDeviceNumber);
+					}
+					catch(Exception ex) {
+						Log.e(MODULE_TAG, ex.getMessage());
+					}
 				}
 			}
-		}
-		catch(Exception ex) {
-			Log.e(MODULE_TAG, ex.getMessage());
+			catch(Exception ex) {
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
+			finally {
+				populateDeviceList();
+			}
 		}
 	}
-	
+
 	// *********************************************************************************
 	// *                                       Transitions
 	// *********************************************************************************

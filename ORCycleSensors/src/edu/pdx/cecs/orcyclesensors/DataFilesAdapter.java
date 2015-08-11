@@ -9,28 +9,46 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-public class SavedDevicesAdapter extends BaseAdapter {
-
-	private final static String MODULE_TAG = "SavedDevicesAdapter";
+public class DataFilesAdapter extends BaseAdapter {
 	
+	private final static String MODULE_TAG = "DataFilesAdapter";
+	
+	private final class DataFileListItem extends DataFileInfo {
+		
+		private long id;
+		
+		public DataFileListItem(DataFileInfo d, long id) {
+			super(d.getName(), d.getPath(), d.getLength());
+			this.id = id;
+		}
+		
+		public long getId() {
+			return id;
+		}
+	}
+
 	private final class ViewHolder {
 		public TextView txtName;
 		public TextView txtNumber;
 	}
 
 	private final LayoutInflater layoutInflater;
-	private final ArrayList<AntDeviceInfo> antDeviceList;
+	private final ArrayList<DataFileListItem> dataFiles;
 	private final int defaultColor;
 	private final int selectedColor;
 	private final ArrayList<Long> selectedItems = new ArrayList<Long>();
-
-	public SavedDevicesAdapter(LayoutInflater layoutInflater, ArrayList<AntDeviceInfo> antDeviceInfos,
+	
+	public DataFilesAdapter(LayoutInflater layoutInflater, ArrayList<DataFileInfo> dataFilesInfos, 
 			int defaultColor, int selectedColor) {
-
+		
 		this.layoutInflater = layoutInflater;
 		this.defaultColor = defaultColor;
 		this.selectedColor = selectedColor;
-		this.antDeviceList = antDeviceInfos;
+		
+		this.dataFiles = new ArrayList<DataFileListItem>();
+		for (DataFileInfo d: dataFilesInfos) {
+			this.dataFiles.add(new DataFileListItem(d, dataFiles.size()));
+		}
 	}
 
 	public ArrayList<Long> getSelectedItems() {
@@ -50,8 +68,8 @@ public class SavedDevicesAdapter extends BaseAdapter {
 	
 	public void setSelectedItems(long[] selectedItemsArray) {
 		selectedItems.clear();
-		for (long tripId: selectedItemsArray) {
-			selectedItems.add(tripId);
+		for (long id: selectedItemsArray) {
+			selectedItems.add(id);
 		}
 	}
 	
@@ -85,19 +103,34 @@ public class SavedDevicesAdapter extends BaseAdapter {
 		selectedItems.clear();
 	}
 	
+	public ArrayList<DataFileInfo> getSelectedDataFileInfos() {
+		
+		ArrayList<DataFileInfo> dataFileInfos = new ArrayList<DataFileInfo>(); 
+		DataFileInfo dataFileInfo;
+		
+		for (DataFileListItem item: dataFiles) {
+			if (isSelected(item.getId())) {
+				dataFileInfo = new DataFileInfo(item.getName(), item.getPath(), item.getLength()); 
+				dataFileInfos.add(dataFileInfo);
+			}
+		}
+		
+		return dataFileInfos;
+	}
+	
 	@Override
 	public int getCount() {
-		return antDeviceList.size();
+		return dataFiles.size();
 	}
 
 	@Override
-	public AntDeviceInfo getItem(int position) {
-		return antDeviceList.get(position);
+	public DataFileInfo getItem(int position) {
+		return dataFiles.get(position);
 	}
 
 	@Override
 	public long getItemId(int position) {
-		return antDeviceList.get(position).getNumber();
+		return dataFiles.get(position).getId();
 	}
 
 	@Override
@@ -105,12 +138,12 @@ public class SavedDevicesAdapter extends BaseAdapter {
 
 		try {
 			// get current item 
-			AntDeviceInfo item = antDeviceList.get(position);
+			DataFileListItem item = dataFiles.get(position);
 	
 			// Create view holder
 			ViewHolder holder = null;
 			if (convertView == null) {
-				convertView = layoutInflater.inflate(R.layout.main_device_list_item, null);
+				convertView = layoutInflater.inflate(R.layout.main_data_file_list_item, null);
 				
 				// Find the child views of the list item and create a reference to them
 				holder = new ViewHolder();
@@ -126,10 +159,10 @@ public class SavedDevicesAdapter extends BaseAdapter {
 	
 			// Set view's data
 			holder.txtName.setText(item.getName());
-			holder.txtNumber.setText(String.valueOf(item.getNumber()));
-	
+			holder.txtNumber.setText(String.valueOf(item.getLength()));
+			
 			// Set view's selection color
-			convertView.setBackgroundColor(isSelected(getItemId(position)) ? selectedColor : defaultColor);
+			convertView.setBackgroundColor(isSelected(item.getId()) ? selectedColor : defaultColor);
 		}
 		catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());

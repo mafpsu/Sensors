@@ -59,8 +59,8 @@ public class Fragment_MainTrips extends Fragment {
 	private boolean resumeActionModeEdit;
 	private long[] savedActionModeItems;
 
-	private ActionMode actionModeEdit;
-	private final ActionMode.Callback mActionModeCallback = new ActionModeEditCallback();
+	private ActionMode editMode;
+	private final ActionMode.Callback editModeCallback = new EditModeCallback();
 
 	private Long storedID;
 
@@ -114,19 +114,18 @@ public class Fragment_MainTrips extends Fragment {
 		Bundle extras;
 		
 		try {
-			rootView = inflater.inflate(R.layout.activity_saved_trips, null);
+			if (null != (rootView = inflater.inflate(R.layout.activity_saved_trips, null))) {
+	
+				lvSavedTrips = (ListView) rootView.findViewById(R.id.listViewSavedTrips);
+				lvSavedTrips.setOnItemClickListener(new SavedTrips_OnItemClickListener());
+				
+				setHasOptionsMenu(true);
 
-			lvSavedTrips = (ListView) rootView.findViewById(R.id.listViewSavedTrips);
-			lvSavedTrips.setOnItemClickListener(new SavedTrips_OnItemClickListener());
-			
-			setHasOptionsMenu(true);
-
-			//registerForContextMenu(lvSavedTrips);
-
-			if (null != (intent = getActivity().getIntent())) {
-				if (null != (extras = intent.getExtras())) {
-					if (!extras.getBoolean(Controller.EXTRA_KEEP_ME, false)) {
-						cleanTrips();
+				if (null != (intent = getActivity().getIntent())) {
+					if (null != (extras = intent.getExtras())) {
+						if (!extras.getBoolean(Controller.EXTRA_KEEP_ME, false)) {
+							cleanTrips();
+						}
 					}
 				}
 			}
@@ -161,7 +160,7 @@ public class Fragment_MainTrips extends Fragment {
 	@Override
 	public void onSaveInstanceState(Bundle savedInstanceState) {
 		try {
-			if (actionModeEdit != null) {
+			if (editMode != null) {
 				// record action mode state
 				savedInstanceState.putBoolean(EXTRA_ACTION_MODE_EDIT, true);
 				if (null != savedTripsAdapter) {
@@ -312,7 +311,7 @@ public class Fragment_MainTrips extends Fragment {
 		public void onItemClick(AdapterView<?> parent, View v, int pos, long id) {
 			try {
 				cursorTrips.moveToPosition(pos);
-				if (actionModeEdit == null) {
+				if (editMode == null) {
 					int status = cursorTrips.getInt(cursorTrips.getColumnIndex("status"));
 					
 					if (status == 2) {
@@ -331,7 +330,7 @@ public class Fragment_MainTrips extends Fragment {
 					}
 
 					menuDelete.setEnabled(savedTripsAdapter.numSelectedItems() > 0);
-					actionModeEdit.setTitle(savedTripsAdapter.numSelectedItems() + " Selected");
+					editMode.setTitle(savedTripsAdapter.numSelectedItems() + " Selected");
 				}
 			} catch (Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());
@@ -348,15 +347,15 @@ public class Fragment_MainTrips extends Fragment {
 	 * @return true if new action mode was started, false otherwise.
 	 */
 	private boolean startActionModeEdit() {
-		if (actionModeEdit != null) {
+		if (editMode != null) {
 			return false;
 		}
 		// Start the CAB using the ActionMode.Callback defined above
-		actionModeEdit = getActivity().startActionMode(mActionModeCallback);
+		editMode = getActivity().startActionMode(editModeCallback);
 		return true;
 	}
 
-	private final class ActionModeEditCallback implements ActionMode.Callback {
+	private final class EditModeCallback implements ActionMode.Callback {
 		
 		/**
 		 * Called when the action mode is created; startActionMode() was called
@@ -384,8 +383,10 @@ public class Fragment_MainTrips extends Fragment {
 		@Override
 		public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
 			try {
+				int numSelectedItems = savedTripsAdapter.getSelectedItems().size();
+
 				menuDelete = menu.findItem(R.id.action_delete_saved_trips);
-				menuDelete.setEnabled(savedTripsAdapter.getSelectedItems().size() > 0);
+				menuDelete.setEnabled(numSelectedItems > 0);
 				menuUpload = menu.findItem(R.id.action_upload_saved_trips);
 
 				// determine upload status
@@ -402,7 +403,7 @@ public class Fragment_MainTrips extends Fragment {
 				}
 				menuUpload.setEnabled(flag != 1);
 
-				mode.setTitle(savedTripsAdapter.numSelectedItems() + " Selected");
+				mode.setTitle(numSelectedItems + " Selected");
 				
 				return true;
 			}
@@ -457,7 +458,7 @@ public class Fragment_MainTrips extends Fragment {
 		@Override
 		public void onDestroyActionMode(ActionMode mode) {
 			try {
-				actionModeEdit = null;
+				editMode = null;
 				clearSelections();
 			}
 			catch(Exception ex) {
