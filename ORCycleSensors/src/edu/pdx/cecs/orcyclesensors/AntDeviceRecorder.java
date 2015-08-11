@@ -100,12 +100,14 @@ public abstract class AntDeviceRecorder implements IDeviceStateChangeReceiver {
 	
 	public static AntDeviceRecorder create(int deviceNumber, DeviceType deviceType, boolean recordRawData, long tripId, String dataDir) throws Exception {
 		
-		String sensorName = "AntDevice-" + String.valueOf(deviceNumber);
+		String sensorName;
 		
 		if (deviceType == DeviceType.HEARTRATE) {
+			sensorName = "HeartRate(" + String.valueOf(deviceNumber) + ")";
 			return new AntDeviceHeartRateRecorder(deviceNumber, recordRawData ? new RawDataFile_HeartRate(sensorName, tripId, dataDir) : null);
 		}
 		else if (deviceType == DeviceType.BIKE_POWER) {
+			sensorName = "BikePower(" + String.valueOf(deviceNumber) + ")";
 			return new AntDeviceBikePowerRecorder(deviceNumber, recordRawData ? new RawDataFile_BikePower(sensorName, tripId, dataDir) : null);
 		}
 

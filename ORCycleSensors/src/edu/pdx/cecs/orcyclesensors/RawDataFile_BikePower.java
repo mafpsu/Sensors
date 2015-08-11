@@ -3,34 +3,24 @@ package edu.pdx.cecs.orcyclesensors;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
-
 import android.location.Location;
 import android.util.Log;
 
 public class RawDataFile_BikePower extends RawDataFile {
 
 	private static final String MODULE_TAG = "RawDataFile_BikePower";
+
 	private static final String FILE_HEADER = "Time,Latitude,Longitude,CalculatedPower,CalculatedTorque,"+
-			"CalculatedCrankCadence,CalculatedWheelSpeed,CalculatedWheelDistance\r\n";
+			"CalculatedCrankCadence,CalculatedWheelSpeed,CalculatedWheelDistance";
 	
 	public RawDataFile_BikePower(String name, long tripId, String dataDir) {
 		super(name, tripId, dataDir);
 	}
 	
-	@Override
-	public void writeHeader() {
-		try {
-			file.write(FILE_HEADER, 0, FILE_HEADER.length());
-			firstLine = false;
-		}
-		catch(IOException ex) {
-			if (!exceptionOccurred) {
-				exceptionOccurred = true;
-				Log.e(MODULE_TAG, ex.getMessage());
-			}
-		}
+	public String getHeader() {
+		return FILE_HEADER;
 	}
-
+	
 	public void write(long currentTimeMillis, Location location, 
 		List<BigDecimal> calculatedPower, 
 		List<BigDecimal> calculatedTorque, 

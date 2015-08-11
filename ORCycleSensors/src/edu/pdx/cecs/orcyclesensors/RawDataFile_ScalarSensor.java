@@ -2,18 +2,23 @@ package edu.pdx.cecs.orcyclesensors;
 
 import java.io.IOException;
 import java.util.List;
-
 import android.location.Location;
 import android.util.Log;
 
 public class RawDataFile_ScalarSensor extends RawDataFile{
 
 	private static final String MODULE_TAG = "RawDataFile_ScalarSensor";
+	
+	private static final String FILE_HEADER = "Time,Latitude,Longitude,Value";
 
 	public RawDataFile_ScalarSensor(String name, long tripId, String dataDir) {
 		super(name, tripId, dataDir);
 	}
 
+	public String getHeader() {
+		return FILE_HEADER;
+	}
+	
 	public void write(long currentTimeMillis, Location location, List<Float> readings0) {
 		
 		if (exceptionOccurred) {
@@ -28,12 +33,6 @@ public class RawDataFile_ScalarSensor extends RawDataFile{
 		
 		// for each reading
 		for (float reading: readings0) {
-			if (!firstLine) {
-				sb.append("\r\n");
-			}
-			else {
-				firstLine = false;
-			}
 			sb.append(df.format(currentTimeMillis));
 			sb.append(", ");
 			sb.append(((double)lat) / 1E6);
@@ -41,6 +40,7 @@ public class RawDataFile_ScalarSensor extends RawDataFile{
 			sb.append(((double)lgt) / 1E6);
 			sb.append(", ");
 			sb.append(reading);
+			sb.append("\r\n");
 		}
 		
 		// If there is data, write it to buffer

@@ -22,8 +22,8 @@ public abstract class RawDataFile {
 	protected BufferedWriter file;
 	protected final StringBuilder sb = new StringBuilder();
 	protected boolean exceptionOccurred = false;
-	protected boolean firstLine = true;
 	protected final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+	abstract String getHeader();
 
 	/**
 	 * Constructor for the raw data file
@@ -42,7 +42,6 @@ public abstract class RawDataFile {
 	public void open(Context context) {
 		try {
 			file = new BufferedWriter(new FileWriter(new File(dataDir, this.fileName)));
-			firstLine = true;
 			writeHeader();
 		} catch (IOException ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
@@ -63,6 +62,16 @@ public abstract class RawDataFile {
 	}
 
 	public void writeHeader() {
+		try {
+			final String header = getHeader() + "\r\n";
+			file.write(header, 0, header.length());
+		}
+		catch(IOException ex) {
+			if (!exceptionOccurred) {
+				exceptionOccurred = true;
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
+		}
 	}
 
 }
