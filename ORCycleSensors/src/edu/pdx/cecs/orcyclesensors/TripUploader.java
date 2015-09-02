@@ -634,32 +634,60 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 
 	@Override
 	protected Boolean doInBackground(Long... tripid) {
-		// First, send the trip user asked for:
 		Boolean result = true;
-		if (tripid.length != 0) {
-			result = uploadOneTrip(tripid[0]);
-		}
-
-		// Then, automatically try and send previously-completed trips
-		// that were not sent successfully.
-		Vector<Long> unsentTrips = new Vector<Long>();
-
-		mDb.openReadOnly();
-		Cursor cur = mDb.fetchUnsentTrips();
-		if (cur != null && cur.getCount() > 0) {
-			// pd.setMessage("Sent. You have previously unsent trips; submitting those now.");
-			while (!cur.isAfterLast()) {
-				unsentTrips.add(Long.valueOf(cur.getLong(0)));
-				cur.moveToNext();
+		try {
+			// First, send the trip user asked for:
+			if (tripid.length != 0) {
+				result = uploadOneTrip(tripid[0]);
+				Thread.sleep(250);
 			}
-			cur.close();
 		}
-		mDb.close();
-
-		for (Long trip : unsentTrips) {
-			result &= uploadOneTrip(trip);
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+			result = false;
 		}
+	
+		// Send all previously-completed trips
+		// that were not sent successfully.
+		Vector<Long> unsentTrips = getUnsentTrips();
+			for (Long trip : unsentTrips) {
+				try {
+					result &= uploadOneTrip(trip);
+					Thread.sleep(250);
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+					result = false;
+				}
+			}
 		return result;
+	}
+	
+	/**
+	 * Returns a vector containing the trip IDs of unsent trips
+	 * @return
+	 */
+	private Vector<Long> getUnsentTrips() {
+		
+		Vector<Long> unsentTrips = new Vector<Long>();
+		mDb.openReadOnly();
+		try {
+			Cursor cur = mDb.fetchUnsentTrips();
+			if (cur != null && cur.getCount() > 0) {
+				while (!cur.isAfterLast()) {
+					unsentTrips.add(Long.valueOf(cur.getLong(0)));
+					cur.moveToNext();
+				}
+				cur.close();
+			}
+		}
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		finally {
+			mDb.close();
+		}
+		return unsentTrips;
 	}
 
 	@Override
@@ -667,14 +695,6 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		Toast.makeText(mCtx.getApplicationContext(),
 				"Submitting. Thanks for using ORcycle!",
 				Toast.LENGTH_LONG).show();
-	}
-
-	private SavedTripsAdapter mSavedTripsAdapter;
-
-	public SavedTripsAdapter setSavedTripsAdapter(
-			SavedTripsAdapter mSavedTripsAdapter) {
-		this.mSavedTripsAdapter = mSavedTripsAdapter;
-		return mSavedTripsAdapter;
 	}
 
 	private Fragment_MainTrips fragmentMainTrips;
@@ -685,16 +705,12 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		return fragmentMainTrips;
 	}
 
-	private ListView listSavedTrips;
-
-	public ListView setListView(ListView listSavedTrips) {
-		this.listSavedTrips = listSavedTrips;
-		return listSavedTrips;
-	}
-
 	@Override
 	protected void onPostExecute(Boolean result) {
 		try {
+			if (fragmentMainTrips != null) {
+				fragmentMainTrips.populateTripList();
+			}
 			if (result) {
 				Toast.makeText(mCtx.getApplicationContext(),
 						"Trip uploaded successfully.", Toast.LENGTH_SHORT)
