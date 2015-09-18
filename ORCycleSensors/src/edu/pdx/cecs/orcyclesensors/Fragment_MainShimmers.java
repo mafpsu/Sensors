@@ -36,8 +36,8 @@ public class Fragment_MainShimmers extends Fragment {
 	// Local Bluetooth adapter
 	private BluetoothAdapter mBluetoothAdapter = null;
 
-	public SavedDevicesAdapter savedDevicesAdapter;
-	private ListView lvSavedDevices;
+	public SavedShimmersAdapter savedShimmersAdapter;
+	private ListView lvSavedShimmers;
 	private MenuItem menuDelete;
 
 	private boolean resumeActionModeEdit;
@@ -94,8 +94,8 @@ public class Fragment_MainShimmers extends Fragment {
 		try {
 			if (null != (rootView = inflater.inflate(R.layout.fragment_main_shimmers, (ViewGroup) null))) {
 	
-				lvSavedDevices = (ListView) rootView.findViewById(R.id.list_shimmer_sensors);
-				lvSavedDevices.setOnItemClickListener(new SavedDevices_OnItemClickListener());
+				lvSavedShimmers = (ListView) rootView.findViewById(R.id.list_shimmer_sensors);
+				lvSavedShimmers.setOnItemClickListener(new SavedShimmers_OnItemClickListener());
 	
 				setHasOptionsMenu(true);
 			}
@@ -151,8 +151,8 @@ public class Fragment_MainShimmers extends Fragment {
 			if (editMode != null) {
 				// record action mode state
 				savedInstanceState.putBoolean(EXTRA_ACTION_MODE_EDIT, true);
-				if (null != savedDevicesAdapter) {
-					long[] selectedItems = savedDevicesAdapter.getSelectedItemsArray();
+				if (null != savedShimmersAdapter) {
+					long[] selectedItems = savedShimmersAdapter.getSelectedItemsArray();
 					if(selectedItems.length > 0) {
 						savedInstanceState.putLongArray(EXTRA_ACTION_MODE_SELECTED_ITEMS, selectedItems);
 					}
@@ -223,6 +223,9 @@ public class Fragment_MainShimmers extends Fragment {
 	            if (resultCode == Activity.RESULT_OK) {
 	                String address = data.getExtras().getString(Activity_ShimmerDeviceList.EXTRA_DEVICE_ADDRESS);
 	                Log.d("ShimmerActivity",address);
+	                
+	                MyApplication.getInstance().addShimmerDevice(address, "");
+	                
 	          		/*mService.connectShimmer(address, "Device");
 	          		mBluetoothAddress = address;
 	          		mService.setGraphHandler(mHandler);*/
@@ -306,14 +309,14 @@ public class Fragment_MainShimmers extends Fragment {
 	private void populateDeviceList() {
 		try {
 			// Get data source
-			ArrayList<AntDeviceInfo> antDeviceInfos = MyApplication.getInstance().getAppDevices();
+			ArrayList<ShimmerDeviceInfo> shimmerDeviceInfos = MyApplication.getInstance().getAppShimmers();
 
-			savedDevicesAdapter = new SavedDevicesAdapter(getActivity().getLayoutInflater(), antDeviceInfos,
+			savedShimmersAdapter = new SavedShimmersAdapter(getActivity().getLayoutInflater(), shimmerDeviceInfos,
 					getResources().getColor(R.color.default_color), 
 					getResources().getColor(R.color.pressed_color));
 
-			lvSavedDevices.setAdapter(savedDevicesAdapter);
-			lvSavedDevices.invalidate();
+			lvSavedShimmers.setAdapter(savedShimmersAdapter);
+			lvSavedShimmers.invalidate();
 		} catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}
@@ -321,13 +324,13 @@ public class Fragment_MainShimmers extends Fragment {
 
 	private void clearSelections() {
 		
-		int numListViewItems = lvSavedDevices.getChildCount();
+		int numListViewItems = lvSavedShimmers.getChildCount();
 		
-		savedDevicesAdapter.clearSelectedItems();
+		savedShimmersAdapter.clearSelectedItems();
 
 		// Reset all list items to their normal color
 		for (int i = 0; i < numListViewItems; i++) {
-			lvSavedDevices.getChildAt(i).setBackgroundColor(getResources().getColor(R.color.default_color));
+			lvSavedShimmers.getChildAt(i).setBackgroundColor(getResources().getColor(R.color.default_color));
 		}
 	}
 	
@@ -335,7 +338,7 @@ public class Fragment_MainShimmers extends Fragment {
 	// *                           Item Click Listener
 	// *********************************************************************************
 
-	private final class SavedDevices_OnItemClickListener implements AdapterView.OnItemClickListener {
+	private final class SavedShimmers_OnItemClickListener implements AdapterView.OnItemClickListener {
 		
 		public void onItemClick(AdapterView<?> parent, View v, int pos, long antDeviceNumber) {
 			
@@ -345,18 +348,18 @@ public class Fragment_MainShimmers extends Fragment {
 				if (editMode != null) {
 					
 					// toggle selection
-					savedDevicesAdapter.toggleSelection(antDeviceNumber);
+					savedShimmersAdapter.toggleSelection(antDeviceNumber);
 					
 					// set selection background color
-					if (savedDevicesAdapter.isSelected(antDeviceNumber)) {
+					if (savedShimmersAdapter.isSelected(antDeviceNumber)) {
 						v.setBackgroundColor(getResources().getColor(R.color.pressed_color));
 					} else {
 						v.setBackgroundColor(getResources().getColor(R.color.default_color));
 					}
 
 					// If there are devices to delete, enable delete menu item
-					menuDelete.setEnabled(savedDevicesAdapter.numSelectedItems() > 0);
-					editMode.setTitle(savedDevicesAdapter.numSelectedItems() + " Selected");
+					menuDelete.setEnabled(savedShimmersAdapter.numSelectedItems() > 0);
+					editMode.setTitle(savedShimmersAdapter.numSelectedItems() + " Selected");
 				}
 				else {
 					//transitionToSensorDetailActivity(sensor.getName());
@@ -396,7 +399,7 @@ public class Fragment_MainShimmers extends Fragment {
 				// Inflate a menu resource providing context menu items
 				MenuInflater inflater = mode.getMenuInflater();
 				inflater.inflate(R.menu.saved_devices_context_menu, menu);
-				savedDevicesAdapter.setSelectedItems(savedActionModeItems);
+				savedShimmersAdapter.setSelectedItems(savedActionModeItems);
 			}
 			catch(Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());
@@ -412,7 +415,7 @@ public class Fragment_MainShimmers extends Fragment {
 		@Override
 		public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
 			try {
-				int numSelectedItems = savedDevicesAdapter.getSelectedItems().size();
+				int numSelectedItems = savedShimmersAdapter.getSelectedItems().size();
 				
 				menuDelete = menu.findItem(R.id.action_delete_saved_devices);
 				menuDelete.setEnabled(numSelectedItems > 0);
@@ -479,13 +482,14 @@ public class Fragment_MainShimmers extends Fragment {
 		 */
 		private void actionDeleteSelectedDevices() {
 			
-			ArrayList<Long> antDeviceNumbers = savedDevicesAdapter.getSelectedItems();
+			ArrayList<Long> indexes = savedShimmersAdapter.getSelectedItems();
 
 			try {
 				// delete selected trips
-				for (long antDeviceNumber: antDeviceNumbers) {
+				for (long index: indexes) {
 					try {
-						MyApplication.getInstance().deleteAppDevice((int)antDeviceNumber);
+						ShimmerDeviceInfo info = savedShimmersAdapter.getItem((int)index);
+						MyApplication.getInstance().deleteShimmerDevice(info.getAddress());
 					}
 					catch(Exception ex) {
 						Log.e(MODULE_TAG, ex.getMessage());

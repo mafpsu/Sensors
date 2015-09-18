@@ -52,6 +52,7 @@ public class MyApplication extends android.app.Application {
 	private static final String SETTING_USER_ID = "SETTING_USER_ID";
 	private static final String SETTING_SENSORS = "SETTING_SENSORS";
 	private static final String SETTING_DEVICES = "SETTING_DEVICES";
+	private static final String SETTING_SHIMMERS = "SETTING_SHIMMERS";
 	private static final String SETTING_GPS_FREQUENCY = "PREF_GPS_FREQUENCY";
 	private static final String SETTING_DEFAULT_FREQUENCY = "1.0";
 	private static final long DEFAULT_MIN_RECORDING_DELAY = 1000;
@@ -67,6 +68,7 @@ public class MyApplication extends android.app.Application {
 	private UserId userId = null;
 	private AppDevices appDevices = null;
 	private AppSensors appSensors = null;
+	private AppShimmers appShimmers = null;
 	private AppInfo appInfo = null;
 	private RecordingService recordingService = null;
 	private long minTimeBetweenReadings = 1000; // milliseconds
@@ -143,6 +145,8 @@ public class MyApplication extends android.app.Application {
 		(appDevices = AppDevices.getInstance()).loadFrom(settings, SETTING_DEVICES);
 		
 		(appSensors = AppSensors.getInstance()).loadFrom(settings, SETTING_SENSORS);
+		
+		(appShimmers = AppShimmers.getInstance()).loadFrom(settings, SETTING_SHIMMERS);
 		
 		// setDefaultApplicationSettings();
 
@@ -262,6 +266,32 @@ public class MyApplication extends android.app.Application {
 
 	public ArrayList<AntDeviceInfo> getAppDevices() {
 		return appDevices.getAntDeviceInfos();
+	}
+
+	// **********************************
+	// * Interface to Shimmer devices
+	// **********************************
+	
+	public void addShimmerDevice(String address, String name) {
+		
+		appShimmers.addDevice(address, name);
+		
+		SharedPreferences settings = getSharedPreferences(PREFS_APPLICATION, MODE_PRIVATE);
+		
+		appShimmers.saveTo(settings, SETTING_SHIMMERS);
+	}
+	
+	public void deleteShimmerDevice(String address) {
+		
+		appShimmers.deleteDevice(address);
+		
+		SharedPreferences settings = getSharedPreferences(PREFS_APPLICATION, MODE_PRIVATE);
+		
+		appShimmers.saveTo(settings, SETTING_SHIMMERS);
+	}
+
+	public ArrayList<ShimmerDeviceInfo> getAppShimmers() {
+		return appShimmers.getShimmerDeviceInfos();
 	}
 
 	// *************************************
