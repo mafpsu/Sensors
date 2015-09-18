@@ -49,10 +49,10 @@ public class SavedTripsAdapter extends SimpleCursorAdapter {
 	private final static SimpleDateFormat sdfDuration = new SimpleDateFormat("HH:mm:ss");
 
 	private final class ViewHolder {
-		public TextView tvStartTime;
-		public TextView tvTripId;
-		public TextView tvTripDuration;
-		public ImageView ivIcon;
+		public TextView tvStartTime = null;
+		public TextView tvTripId = null;
+		public TextView tvTripDuration = null;
+		public ImageView ivIcon = null;
 	}
 
 	private final Cursor cursor;
@@ -142,16 +142,18 @@ public class SavedTripsAdapter extends SimpleCursorAdapter {
 			cursor.moveToPosition(position);
 
 			// get item variables
+			long tripId = cursor.getLong(cursor.getColumnIndex(DbAdapter.K_TRIP_ROWID));
 			Double startTime = cursor.getDouble(cursor.getColumnIndex(DbAdapter.K_TRIP_START));
 			String formattedStartTime = sdfStart.format(startTime);
-			long tripId = cursor.getLong(cursor.getColumnIndex(DbAdapter.K_TRIP_ROWID));
 			Double endTime = cursor.getDouble(cursor.getColumnIndex(DbAdapter.K_TRIP_END));
 			String formattedDuration = sdfDuration.format(endTime - startTime);
-			int status = cursor.getInt(cursor.getColumnIndex(DbAdapter.K_TRIP_STATUS));
+			int uploadStatus = cursor.getInt(cursor.getColumnIndex(DbAdapter.K_TRIP_STATUS));
+			int imageResource = getImageResource(uploadStatus);
 
 			// Create view holder
 			ViewHolder holder = null;
 			if (convertView == null) { // then this is the first time this item is being drawn
+				
 				// Inflate the list item
 				convertView = layoutInflater.inflate(listItemLayout, null);
 				
@@ -173,7 +175,13 @@ public class SavedTripsAdapter extends SimpleCursorAdapter {
 			holder.tvStartTime.setText(formattedStartTime);
 			holder.tvTripId.setText("ID: " + String.valueOf(tripId));
 			holder.tvTripDuration.setText(formattedDuration);
-			holder.ivIcon.setImageResource(getImageResource(status));
+			holder.ivIcon.setImageResource(imageResource);
+			if ((uploadStatus == TripData.STATUS_COMPLETE /* 1 */) || (uploadStatus == TripData.STATUS_SENT /* 2 */)) {
+				holder.tvTripDuration.setText(formattedDuration);
+			}
+			else {
+				holder.tvTripDuration.setText("00:00:00");
+			}
 
 			// Set view's selection color
 			convertView.setBackgroundColor(isSelected(tripId) ? selectedColor : defaultColor);
@@ -187,11 +195,11 @@ public class SavedTripsAdapter extends SimpleCursorAdapter {
 	private int getImageResource(int status) {
 		switch(status) {
 		case 2:
-			return R.drawable.other_high;
+			return R.drawable.white_check;
 		case 1:
 			return R.drawable.failedupload_high;
 		default: // really 0 is the only other value which should never happen
-			return R.drawable.failedupload_high;
+			return R.drawable.invalidtrip;
 		}
 	}
 	

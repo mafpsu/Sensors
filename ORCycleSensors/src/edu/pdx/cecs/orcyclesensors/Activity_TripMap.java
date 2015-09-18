@@ -282,6 +282,10 @@ public class Activity_TripMap extends Activity {
 				}
 			});
 
+			// ----------------
+			// Upload trip data
+			// ----------------
+
 			if ((trip.getStatus() < TripData.STATUS_SENT) && (extras != null)
 					&& isNewTrip) {
 				// And upload to the cloud database, too! W00t W00t!

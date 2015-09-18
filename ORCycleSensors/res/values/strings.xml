@@ -11,6 +11,7 @@
     <string name="tab_title_trips">Trips</string>
     <string name="tab_title_devices">Devices</string>
     <string name="tab_title_sensors">Sensors</string>
+    <string name="tab_title_shimmers">Shimmers</string>
     <string name="tab_title_data_files">Data Files</string>
     <string name="hello_world">Hello world!</string>
 
@@ -113,6 +114,13 @@ Would you like to go to settings, and enter an e-mail address?</string>
     <string name="asd_tv_default_name">MPU6500 Acceleration Sensor</string>
     <string name="asd_tv_default_type">Accelerometer</string>
     
+    <string name="fmt_dialog_title">Trip %d Pending Upload</string>
+    <string name="fmt_dialog_message_complete">Do you want to upload this trip?</string>
+    <string name="fmt_upload_button">Upload</string>
+    <string name="fmt_alt_button_skip">Skip</string>
+    <string name="fmt_dialog_message_incomplete">"This trip seems to be incomplete.  Please review trip before attempting to upload."</string>
+    <string name="fmt_alt_button_review">Review</string>
+    
     <string name="misc_longest_date_string">September 27, 2014 11:02 PM</string>
     <string name="tv_waiting_device_connect">Waiting for recording devices to connect&#8230;</string>
     
@@ -124,4 +132,14 @@ Would you like to go to settings, and enter an e-mail address?</string>
         <item>Off</item>
     </string-array>
 
+    <string name="asdl_title_paired_devices">Paired Devices</string>
+    <string name="asdl_title_other_devices">Other Available Devices</string>
+    <string name="asdl_button_scan">Scan for devices</string>
+    <string name="asdl_none_paired">No devices have been paired</string>
+    <string name="asdl_scanning">scanning for devices...</string>
+    <string name="asdl_select_device">select a Shimmer to connect</string>
+    <string name="asdl_none_found">No devices found</string>
+    
+    
+    
 </resources>

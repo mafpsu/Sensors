@@ -864,6 +864,11 @@ public class Fragment_MainRecord extends Fragment implements
 				TripData tripData = myApp.getStatus().getTripData();
 
 				if (tripData.getNumPoints() > 0) {
+					// Save the trip details to the phone database. W00t!
+					tripData.updateTrip(tripData.getStartTime(), tripData.getEndTime(),
+							tripData.getDistance(), "");
+					tripData.updateTripStatus(TripData.STATUS_COMPLETE);
+
 					controller.finish(setResult(Result.SAVE_TRIP), tripData.tripid);
 				}
 				// Otherwise, cancel and go back to main screen

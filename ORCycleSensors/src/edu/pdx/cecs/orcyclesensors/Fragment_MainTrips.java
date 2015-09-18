@@ -218,7 +218,7 @@ public class Fragment_MainTrips extends Fragment {
 	// *                             Fragment Actions
 	// *********************************************************************************
 
-	private void populateTripList() {
+	public void populateTripList() {
 		
 		// Get data source
 		final DbAdapter mDb = new DbAdapter(getActivity());
@@ -270,10 +270,9 @@ public class Fragment_MainTrips extends Fragment {
 		Fragment_MainTrips f2 = (Fragment_MainTrips) getActivity()
 				.getSupportFragmentManager().findFragmentByTag(
 						"android:switcher:" + R.id.pager + ":1");
-		uploader.setSavedTripsAdapter(savedTripsAdapter);
+
 		uploader.setFragmentMainTrips(f2);
-		uploader.setListView(lvSavedTrips);
-		uploader.execute();
+		uploader.execute(tripId);
 	}
 
 	private void deleteTrip(long tripId) {
@@ -312,14 +311,20 @@ public class Fragment_MainTrips extends Fragment {
 			try {
 				cursorTrips.moveToPosition(pos);
 				if (editMode == null) {
-					int status = cursorTrips.getInt(cursorTrips.getColumnIndex("status"));
 					
-					if (status == 2) {
+					int status = cursorTrips.getInt(cursorTrips.getColumnIndex(DbAdapter.K_TRIP_STATUS));
+					
+					String title = getActivity().getString(R.string.fmt_dialog_title, id);
+					
+					if (status == TripData.STATUS_SENT) {
 						transitionToTripMapActivity(id);
-					} else if (status == 1) {
-						dialogTripNotUploaded(id);
+					} else if (status == TripData.STATUS_COMPLETE) {
+						dialogTripNotUploaded(title, R.string.fmt_dialog_message_complete, 
+								R.string.fmt_alt_button_skip, id);
+					} else if (status == TripData.STATUS_INCOMPLETE) {
+						dialogTripNotUploaded(title, R.string.fmt_dialog_message_incomplete, 
+								R.string.fmt_alt_button_review, id);
 					}
-
 				} else {
 					
 					savedTripsAdapter.toggleSelection(id);
@@ -488,16 +493,13 @@ public class Fragment_MainTrips extends Fragment {
 	// *                            Dialog Trip not Uploaded
 	// *********************************************************************************
 
-	private void dialogTripNotUploaded(final long position) {
+	private void dialogTripNotUploaded(String title, int message, int altButton, final long tripId) {
 		try {
 			final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-			builder.setTitle("Upload Trip");
-			builder.setMessage("Do you want to upload this trip?");
-			builder.setNegativeButton("Upload",
-					new DialogTripNotUploaded_ButtonOk(position));
-
-			builder.setPositiveButton("Cancel",
-					new DialogTripNotUploaded_ButtonCancel());
+			builder.setTitle(title);
+			builder.setMessage(message);
+			builder.setNegativeButton(R.string.fmt_upload_button, new DialogTripNotUploaded_ButtonOk(tripId));
+			builder.setPositiveButton(altButton, new DialogTripNotUploaded_ButtonCancel(tripId));
 			final AlertDialog alert = builder.create();
 			alert.show();
 		}
@@ -508,18 +510,17 @@ public class Fragment_MainTrips extends Fragment {
 
 	private final class DialogTripNotUploaded_ButtonOk implements
 			DialogInterface.OnClickListener {
-		private final long position;
+		
+		private final long tripId;
 
-		private DialogTripNotUploaded_ButtonOk(long position) {
-			this.position = position;
+		private DialogTripNotUploaded_ButtonOk(long tripId) {
+			this.tripId = tripId;
 		}
 
 		public void onClick(DialogInterface dialog, int id) {
 			try {
 				dialog.cancel();
-				retryTripUpload(position);
-				// Toast.makeText(getActivity(),"Send Clicked: "+position,
-				// Toast.LENGTH_SHORT).show();
+				retryTripUpload(tripId);
 			} catch (Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());
 			}
@@ -528,9 +529,17 @@ public class Fragment_MainTrips extends Fragment {
 
 	private final class DialogTripNotUploaded_ButtonCancel implements
 			DialogInterface.OnClickListener {
+		
+		private final long tripId;
+
+		private DialogTripNotUploaded_ButtonCancel(long tripId) {
+			this.tripId = tripId;
+		}
+
 		public void onClick(DialogInterface dialog, int id) {
 			try {
 				dialog.cancel();
+				transitionToTripMapActivity(tripId);
 				// continue
 			} catch (Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());
@@ -548,7 +557,12 @@ public class Fragment_MainTrips extends Fragment {
 	private void transitionToTripMapActivity(long tripId) {
 		Intent intent = new Intent(getActivity(), Activity_TripMap.class);
 		intent.putExtra(Controller.EXTRA_TRIP_ID, tripId);
+		
+		// Usually the Activity_TripMap will try to upload the trip 
+		// unless EXTRA_IS_NEW_TRIP is set to false. In this activity, we have just
+		// tried to upload the trip, so there is no need to do it again
 		intent.putExtra(Controller.EXTRA_IS_NEW_TRIP, false);
+	
 		intent.putExtra(Controller.EXTRA_TRIP_SOURCE, Controller.EXTRA_TRIP_SOURCE_MAIN_TRIPS);
 		startActivity(intent);
 		getActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
