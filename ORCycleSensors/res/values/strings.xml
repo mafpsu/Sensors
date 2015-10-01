@@ -50,6 +50,9 @@
     <string name="fmr_dnc_title"><b>Device Connection Failed!</b></string>
     <string name="fmr_dnc_message">One or more devices failed to connect. Recording not started.</string>
     <string name="fmr_dnc_button_ok">OK</string>
+    <string name="fmr_dssf_dlg_title">Select Function</string>
+    <string name="fmr_dssf_dlg_button_edit_sensors">Edit Sensors</string>
+    <string name="fmr_dssf_dlg_button_configure_device">Configure Device</string>
     
     <string name="fmdf_deans_title"><b>E-mail Address Not Set!</b></string>
     <string name="fmdf_deans_message">The e-mail address for the raw data files has not been set.  
@@ -140,6 +143,8 @@ Would you like to go to settings, and enter an e-mail address?</string>
     <string name="asdl_select_device">select a Shimmer to connect</string>
     <string name="asdl_none_found">No devices found</string>
     
+    <string name="assl_title_not_connected">not connected</string>
+    <string name="assl_title_connected">connected</string>
     
     
 </resources>

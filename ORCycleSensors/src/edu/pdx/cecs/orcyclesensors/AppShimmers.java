@@ -38,6 +38,13 @@ public class AppShimmers {
 	}
 	
 	public void addDevice(String address, String name) {
+		
+		for (ShimmerDeviceInfo deviceInfo: devices) {
+			if (deviceInfo.getAddress().equalsIgnoreCase(address)) {
+				devices.remove(deviceInfo);
+				break;
+			}
+		}
 		devices.add(new ShimmerDeviceInfo(address, name));
 	}
 	
