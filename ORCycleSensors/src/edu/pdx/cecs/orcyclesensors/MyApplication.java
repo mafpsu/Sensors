@@ -24,6 +24,10 @@ import java.util.ArrayList;
 
 import com.dsi.ant.plugins.antplus.pcc.defines.DeviceType;
 
+import edu.pdx.cecs.orcyclesensors.ShimmerService.LocalBinder;
+import edu.pdx.cecs.orcyclesensors.shimmer.android.Shimmer;
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -71,6 +75,7 @@ public class MyApplication extends android.app.Application {
 	private AppShimmers appShimmers = null;
 	private AppInfo appInfo = null;
 	private RecordingService recordingService = null;
+	private ShimmerService mService;
 	private long minTimeBetweenReadings = 1000; // milliseconds
 	private boolean recordRawData = false;
 	private String rawDataEmailAddress = "";
@@ -124,8 +129,8 @@ public class MyApplication extends android.app.Application {
 			//EmailManager.cleanAttachmentDirectory(); // TODO:  Don't do this here because mailer might not have mailed files yet
 
 			ConnectRecordingService();
+			ConnectShimmerService();
 			loadApplicationSettings();
-			
         }
         catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
@@ -425,7 +430,73 @@ public class MyApplication extends android.app.Application {
     }
 
 	// *********************************************************************************
-	// * Recording
+	// *                             Shimmer Service
+	// *********************************************************************************
+
+    /**
+     * Connects the recording service to the Application object
+     */
+    private void ConnectShimmerService() {
+
+    	try {
+        Intent intent = new Intent(this, ShimmerService.class);
+        bindService(intent, shimmerServiceConnection, Context.BIND_AUTO_CREATE);
+    	}
+        catch(SecurityException ex) {
+			Log.d(MODULE_TAG, ex.getMessage());
+        }
+    }
+
+    private ServiceConnection shimmerServiceConnection = new ServiceConnection() {
+
+      	public void onServiceConnected(ComponentName arg0, IBinder service) {
+      		try {
+      			LocalBinder binder = null;
+
+	      		if (null != (binder = (ShimmerService.LocalBinder) service)) {
+		      		if (null != (mService = binder.getService())) {
+		      		}
+	      		}
+      		}
+    		catch (Exception ex) {
+    			Log.e(MODULE_TAG, ex.getMessage());
+    		}
+  		}
+
+      	public void onServiceDisconnected(ComponentName arg0) {
+      		try {
+	      		if (null != mService) {
+	          		mService.disconnectAllDevices();
+	      		}
+      		}
+      		catch(Exception ex) {
+    			Log.e(MODULE_TAG, ex.getMessage());
+      		}
+      		try {
+      			unbindService(this);
+      		}
+      		catch(Exception ex) {
+    			Log.e(MODULE_TAG, ex.getMessage());
+      		}
+      	}
+    };
+    
+    public ShimmerService getShimmerService() {
+    	return mService;
+    }
+
+    protected boolean isShimmerServiceRunning() {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if ("com.shimmerresearch.service.ShimmerServiceCBBC".equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+	// *********************************************************************************
+	// *                             Notification API
 	// *********************************************************************************
 
 	private static final double RESET_START_TIME = 0.0;

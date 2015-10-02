@@ -1,9 +1,9 @@
 package edu.pdx.cecs.orcyclesensors;
 
 import com.google.common.collect.BiMap;
+
 import edu.pdx.cecs.orcyclesensors.shimmer.android.Shimmer;
 import edu.pdx.cecs.orcyclesensors.shimmer.driver.ObjectCluster;
-
 import edu.pdx.cecs.orcyclesensors.ShimmerService;
 import edu.pdx.cecs.orcyclesensors.ShimmerService.LocalBinder;
 import android.app.Activity;
@@ -28,26 +28,20 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 import android.view.View;
+import android.view.Window;
 import android.view.View.OnClickListener;
 
 public class Activity_ShimmerSensorList extends ListActivity {
 	
-	private static final String MODULE_TAG = "Activity_ShimmerSensorList";
-
-	// Local Bluetooth adapter
-	private BluetoothAdapter mBluetoothAdapter = null;
-
-	static ShimmerService mService;
-	boolean mServiceBind=false;
-	protected boolean mServiceFirstTime=true;
-	String mBluetoothAddress = "";
-    long enabledSensors=0;
-    ListView listView;
-
+	public static final String MODULE_TAG = "Activity_ShimmerSensorList";
 	public static final String EXTRA_BLUETOOTH_ADDRESS = "EXTRA_BLUETOOTH_ADDRESS";
 
 	private static final int REQUEST_ENABLE_BT = 1;
-	private static final int REQUEST_CONNECT_SHIMMER = 2;
+
+	private ShimmerService mService = null;
+	private String mBluetoothAddress = "";
+    private long enabledSensors=0;
+    private ListView listView;
 
 	// *********************************************************************************
 	// *                          Fragment Life Cycle
@@ -57,11 +51,13 @@ public class Activity_ShimmerSensorList extends ListActivity {
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
 
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.activity_shimmer_sensor_view);
 
         Button mDoneButton = (Button) findViewById(R.id.buttonEnableSensors);
 		mDoneButton.setOnClickListener(new DoneButton_OnClickListener());
 
+		BluetoothAdapter mBluetoothAdapter = null;
         if(null == (mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter())) {
         	Toast.makeText(this, "Device does not support Bluetooth\nExiting...", Toast.LENGTH_LONG).show();
         	finish();
@@ -70,55 +66,56 @@ public class Activity_ShimmerSensorList extends ListActivity {
         	Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
         	startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
     	}
-        
-		if (mBluetoothAddress.equals("")) {
-			mBluetoothAddress = getIntent().getStringExtra(EXTRA_BLUETOOTH_ADDRESS);
-		} 
-		else if (null != savedInstanceState) {
-			mBluetoothAddress = savedInstanceState.getString(EXTRA_BLUETOOTH_ADDRESS, "");
-		} 
-		else {
+        else if ((null == mBluetoothAddress) || mBluetoothAddress.equals("")) {
+			if (null != savedInstanceState) {
+				mBluetoothAddress = savedInstanceState.getString(EXTRA_BLUETOOTH_ADDRESS, "");
+			}
+			else {
+				mBluetoothAddress = getIntent().getStringExtra(EXTRA_BLUETOOTH_ADDRESS);
+			}
+		}
+
+		if ((null == mBluetoothAddress) || mBluetoothAddress.equals("")) {
         	Toast.makeText(this, "Device Bluetooth address not set\nExiting...", Toast.LENGTH_LONG).show();
         	finish();
 		}
-    }
-    
-    @Override
-    public void onStart() {
-    	super.onStart();
-
-    	if (!startShimmerService()){
-			setTitle(R.string.assl_title_not_connected); // if no service is running means no devices are connected
+		else {
+	        mService = MyApplication.getInstance().getShimmerService();
+			setTitle(mBluetoothAddress + " " + getString(R.string.assl_title_connecting));
+	        setProgressBarIndeterminateVisibility(true);
 		}
-    	else {
-			setTitle(R.string.assl_title_connected); // if no service is running means no devices are connected
-    	}
-    }
-    
-    /**
-     * Start service if it has not already been started
-     * @return true if service is already running, false otherwise
-     */
-    private boolean startShimmerService() {
-        if (!isMyServiceRunning()) {
-			Intent intent = new Intent(this, ShimmerService.class);
-			ComponentName name = startService(intent);
-			
-			if (null == name) {
-				Log.e(MODULE_TAG, "Service not started: " + ShimmerService.class.toString());
-			}
-			else {
-				Log.e(MODULE_TAG, "Pending service: " + name.toString());
-				if (mServiceFirstTime == true) {
-					bindService(intent, mTestServiceConnection, Context.BIND_AUTO_CREATE);
-					mServiceFirstTime = false;
-				}
-			}
-			return false;
-        }
-        return true;
     }
 
+    /**
+     * 
+     */
+	@Override
+	public void onResume() {
+		super.onResume();
+
+		try {
+			mService.connectShimmer(mBluetoothAddress, "Device");
+	  		mService.setGraphHandler(mHandler);
+		}
+  		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+  		}
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public void onPause() {
+		super.onPause();
+		if ((null != mBluetoothAddress) && !mBluetoothAddress.equals("") && (null != mService)) {
+			mService.disconnectShimmer(mBluetoothAddress);
+		}
+	}
+    
+	/**
+	 * 
+	 */
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		
     	switch (requestCode) {
@@ -135,18 +132,6 @@ public class Activity_ShimmerSensorList extends ListActivity {
             	Toast.makeText(this, "Bluetooth not enabled\nExiting...", Toast.LENGTH_SHORT).show();
                 finish();       
             }
-            break;
-            
-    	case REQUEST_CONNECT_SHIMMER:
-    		
-            // When DeviceListActivity returns with a device to connect
-            /*if (resultCode == Activity.RESULT_OK) {
-                String address = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
-                Log.d("ShimmerActivity",address);
-          		mService.connectShimmer(address, "Device");
-          		mBluetoothAddress = address;
-          		mService.setGraphHandler(mHandler);
-            }*/
             break;
         }
 	}
@@ -193,7 +178,6 @@ public class Activity_ShimmerSensorList extends ListActivity {
 		}
 
 		listView.setOnItemClickListener(new ListView_OnClickListener(sensorBitmaptoName, sensorNames));
-
 	}
 	
 	// *********************************************************************************
@@ -238,52 +222,21 @@ public class Activity_ShimmerSensorList extends ListActivity {
 			finish();
 		}
 	}
-
-	// *********************************************************************************
-	// *                          Service Interface
-	// *********************************************************************************
-
-	protected ServiceConnection mTestServiceConnection = new ServiceConnection() {
-
-      	public void onServiceConnected(ComponentName arg0, IBinder service) {
-      		try {
-      			LocalBinder binder = null;
-      			Shimmer shimmer = null;
-
-	      		if (null != (binder = (ShimmerService.LocalBinder) service)) {
-		      		if (null != (mService = binder.getService())) {
-			      		mServiceBind = true;
-			      		mService.connectShimmer(mBluetoothAddress, "Device");
-			      		mService.setGraphHandler(mHandler);
-						if (null != (shimmer = mService.getShimmer(mBluetoothAddress))) {
-							showEnableSensors(shimmer.getListofSupportedSensors(), mService.getEnabledSensors(mBluetoothAddress));
-						}
-		      		}
-	      		}
-      		}
-    		catch (Exception ex) {
-    			Log.e(MODULE_TAG, ex.getMessage());
-    		}
-  		}
-
-      	public void onServiceDisconnected(ComponentName arg0) {
-      		// TODO Auto-generated method stub
-      		mServiceBind = false;
-      	}
-    };
-
-    protected boolean isMyServiceRunning() {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if ("com.shimmerresearch.service.ShimmerServiceCBBC".equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
-    }
+	
+	public void doSensors() {
+        setProgressBarIndeterminateVisibility(false);
+		Shimmer shimmer = null;
+		if (null != (shimmer = mService.getShimmer(mBluetoothAddress))) {
+			showEnableSensors(shimmer.getListofSupportedSensors(), mService.getEnabledSensors(mBluetoothAddress));
+			setTitle(R.string.assl_title_connected);
+		}
+		else {
+			setTitle(R.string.assl_title_not_connected);
+		}
+	}
 
 	// The Handler that gets information back from the BluetoothChatService
-    private static Handler mHandler = new Handler() {
+    private Handler mHandler = new Handler() {
    
 
 		public void handleMessage(Message msg) {
@@ -294,15 +247,19 @@ public class Activity_ShimmerSensorList extends ListActivity {
                 case Shimmer.STATE_CONNECTED:
                 	//this has been deprecated
                     break;
+                    
                 case Shimmer.MSG_STATE_FULLY_INITIALIZED:
                 	Log.d("ShimmerActivity","Message Fully Initialized Received from Shimmer driver");
-                    //mService.enableGraphingHandler(true);
+                	doSensors();
                     break;
+
                 case Shimmer.STATE_CONNECTING:
                 	Log.d("ShimmerActivity","Driver is attempting to establish connection with Shimmer device");
                     //mTitle.setText(R.string.title_connecting);
                     break;
                 case Shimmer.STATE_NONE:
+                    setProgressBarIndeterminateVisibility(false);
+        			setTitle(R.string.assl_title_not_connected);
                 	Log.d("ShimmerActivity","Shimmer No State");
                     //mTitle.setText(R.string.title_not_connected);;
                     //mBluetoothAddress=null;

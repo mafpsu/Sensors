@@ -143,8 +143,9 @@ Would you like to go to settings, and enter an e-mail address?</string>
     <string name="asdl_select_device">select a Shimmer to connect</string>
     <string name="asdl_none_found">No devices found</string>
     
-    <string name="assl_title_not_connected">not connected</string>
-    <string name="assl_title_connected">connected</string>
+    <string name="assl_title_connecting">Connecting...</string>
+    <string name="assl_title_not_connected">Shimmer connection failed!</string>
+    <string name="assl_title_connected">Select shimmer sensors</string>
     
     
 </resources>
