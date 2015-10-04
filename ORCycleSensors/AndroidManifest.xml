@@ -40,6 +40,10 @@
             android:name="edu.pdx.cecs.orcyclesensors.RecordingService"
             android:enabled="true" />
 
+	   <service
+	       android:name="edu.pdx.cecs.orcyclesensors.ShimmerService" 
+	       android:enabled="true" />
+        
         <activity
             android:name=".Activity_Main"
             android:label="@string/app_name" >
@@ -119,9 +123,16 @@
         
 		<activity android:name="edu.pdx.cecs.orcyclesensors.Activity_ShimmerDeviceList"
                   android:label="@string/asdl_select_device"
-                  android:theme="@android:style/Theme.Dialog">
-        </activity>
+                  android:theme="@android:style/Theme.Dialog"/>
         
-	</application>
+		<activity android:name="edu.pdx.cecs.orcyclesensors.Activity_ShimmerSensorList"
+                  android:label="@string/asdl_select_device"
+                  android:theme="@android:style/Theme.Dialog"/>
+        
+		<activity android:name="edu.pdx.cecs.orcyclesensors.Activity_ShimmerCommands"
+                  android:label="@string/asdl_select_device"
+                  android:theme="@android:style/Theme.Dialog"/>
+        
+					</application>
 
 </manifest>

@@ -146,6 +146,7 @@ Would you like to go to settings, and enter an e-mail address?</string>
     <string name="assl_title_connecting">Connecting...</string>
     <string name="assl_title_not_connected">Shimmer connection failed!</string>
     <string name="assl_title_connected">Select shimmer sensors</string>
+    <string name="asc_title_connected">Connected</string>
     
     
 </resources>

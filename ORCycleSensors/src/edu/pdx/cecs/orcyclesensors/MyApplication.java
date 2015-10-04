@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import com.dsi.ant.plugins.antplus.pcc.defines.DeviceType;
 
 import edu.pdx.cecs.orcyclesensors.ShimmerService.LocalBinder;
-import edu.pdx.cecs.orcyclesensors.shimmer.android.Shimmer;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.content.ComponentName;

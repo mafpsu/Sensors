@@ -593,6 +593,9 @@ public class Fragment_MainShimmers extends Fragment {
 	}
 	
 	private void transitionToShimmerConfigureDeviceActivity(String bluetoothAddress) {
-		
+		Intent intent = new Intent(getActivity(), Activity_ShimmerCommands.class);
+		intent.putExtra(Activity_ShimmerCommands.EXTRA_BLUETOOTH_ADDRESS, bluetoothAddress);
+		startActivityForResult(intent, REQUEST_COMMAND_SHIMMER);
+		getActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
 	}
 }
