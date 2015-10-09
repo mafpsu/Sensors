@@ -97,8 +97,8 @@ public class Activity_ShimmerSensorList extends ListActivity {
 		super.onResume();
 
 		try {
+	  		mService.setMessageHandler(mHandler);
 			mService.connectShimmer(mBluetoothAddress, "Device");
-	  		mService.setGraphHandler(mHandler);
 		}
   		catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());

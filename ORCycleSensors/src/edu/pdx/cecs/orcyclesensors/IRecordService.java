@@ -80,6 +80,7 @@ public interface IRecordService {
 	public void startRecording(TripData trip, 
 			ArrayList<AntDeviceInfo> devices, 
 			ArrayList<SensorItem> sensors,
+			ArrayList<ShimmerDeviceInfo> shimmerDeviceInfos,
 			long minTimeBetweenReadings,
 			boolean recordRawData, String dataFileDir) throws Exception;
 

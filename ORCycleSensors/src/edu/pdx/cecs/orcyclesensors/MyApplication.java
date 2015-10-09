@@ -385,8 +385,13 @@ public class MyApplication extends android.app.Application {
 
 		case RecordingService.STATE_IDLE:
 			trip = TripData.createTrip(activity);
-			recordingService.startRecording(trip, appDevices.getAntDeviceInfos(), 
-					appSensors.getSensors(), minTimeBetweenReadings, recordRawData, DataFileInfoManager.getDirPath());
+			recordingService.startRecording(trip,
+					appDevices.getAntDeviceInfos(), 
+					appSensors.getSensors(),
+					appShimmers.getShimmerDeviceInfos(),
+					minTimeBetweenReadings, 
+					recordRawData, 
+					DataFileInfoManager.getDirPath());
 			break;
 
 		case RecordingService.STATE_RECORDING:

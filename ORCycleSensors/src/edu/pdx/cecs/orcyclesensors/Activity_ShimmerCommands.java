@@ -231,8 +231,8 @@ public class Activity_ShimmerCommands extends Activity {
 		super.onResume();
 
 		try {
+	  		mService.setMessageHandler(shimmerMessageHandler);
 			mService.connectShimmer(mBluetoothAddress, "Device");
-	  		mService.setGraphHandler(shimmerMessageHandler);
 		}
   		catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
