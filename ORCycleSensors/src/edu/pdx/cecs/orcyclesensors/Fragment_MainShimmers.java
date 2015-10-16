@@ -210,7 +210,9 @@ public class Fragment_MainShimmers extends Fragment {
 		
 		try {
 	    	switch (requestCode) {
+	    	
 	    	case REQUEST_ENABLE_BT:
+	    		
 	            // When the request to enable Bluetooth returns
 	            if (resultCode == Activity.RESULT_OK) {
 	            	
@@ -222,84 +224,24 @@ public class Fragment_MainShimmers extends Fragment {
 	                //finish();       
 	            }
 	            break;
+	            
 	    	case REQUEST_CONNECT_SHIMMER:
-	            // When DeviceListActivity returns with a device to connect
+	    		
+	            // DeviceListActivity returns with a shimmer device to connect
 	            if (resultCode == Activity.RESULT_OK) {
-	                String address = data.getExtras().getString(Activity_ShimmerDeviceList.EXTRA_DEVICE_ADDRESS);
-	                Log.d("ShimmerActivity",address);
-	                
-	                MyApplication.getInstance().addShimmerDevice(address, "");
-	                
-	          		// mService.connectShimmer(address, "Device");
-	          		mBluetoothAddress = address;
-	          		// mService.setGraphHandler(mHandler);
+	                String bluetoothAddress = data.getExtras().getString(Activity_ShimmerDeviceList.EXTRA_BLUETOOTH_ADDRESS);
+	                MyApplication.getInstance().addShimmerDevice(bluetoothAddress, "Shimmer");
 	            }
 	            break;
-	    	case REQUEST_COMMAND_SHIMMER:
-	    		/*
-	    		if (resultCode == Activity.RESULT_OK) {
-		    		if(data.getExtras().getBoolean("ToggleLED",false) == true)
-		    		{
-		    			mService.toggleAllLEDS();
-		    		}
-		    		
-		    		if(data.getExtras().getDouble("SamplingRate",-1) != -1)
-		    		{
-		    			mService.writeSamplingRate(mBluetoothAddress, data.getExtras().getDouble("SamplingRate",-1));
-		    			Log.d("ShimmerActivity",Double.toString(data.getExtras().getDouble("SamplingRate",-1)));
-		    			mGraphSubSamplingCount=0;
-		    		}
-		    		
-		    		if(data.getExtras().getInt("AccelRange",-1) != -1)
-		    		{
-		    			mService.writeAccelRange(mBluetoothAddress, data.getExtras().getInt("AccelRange",-1));
-		    		}
-		    		
-		    		if(data.getExtras().getInt("GyroRange",-1) != -1)
-		    		{
-		    			mService.writeGyroRange(mBluetoothAddress, data.getExtras().getInt("GyroRange",-1));
-		    		}
-		    		
-		    		if(data.getExtras().getInt("PressureResolution",-1) != -1)
-		    		{
-		    			mService.writePressureResolution(mBluetoothAddress, data.getExtras().getInt("PressureResolution",-1));
-		    		}
-		    		
-		    		if(data.getExtras().getInt("MagRange",-1) != -1)
-		    		{
-		    			mService.writeMagRange(mBluetoothAddress, data.getExtras().getInt("MagRange",-1));
-		    		}
-		    		
-		    		if(data.getExtras().getInt("GSRRange",-1) != -1)
-		    		{
-		    			mService.writeGSRRange(mBluetoothAddress,data.getExtras().getInt("GSRRange",-1));
-		    		}
-		    		if(data.getExtras().getDouble("BatteryLimit",-1) != -1)
-		    		{
-		    			mService.setBattLimitWarning(mBluetoothAddress, data.getExtras().getDouble("BatteryLimit",-1));
-		    		}
-		    		
-	    		}*/
+	            
+	    	case REQUEST_CONFIGURE_VIEW_SENSOR:
+	    		
+	            if (resultCode == Activity.RESULT_OK) {
+	                String bluetoothAddress = data.getExtras().getString(Activity_ShimmerSensorList.EXTRA_BLUETOOTH_ADDRESS);
+	                MyApplication.getInstance().addShimmerDevice(bluetoothAddress, "Shimmer");
+	            }
 	    		break;
-	    	case REQUEST_LOGFILE_SHIMMER:
-	    		/*if (resultCode == Activity.RESULT_OK) {
-	    			mEnableLogging = data.getExtras().getBoolean("LogFileEnableLogging");
-	    			if (mEnableLogging==true){
-	    				mService.setEnableLogging(mEnableLogging);
-	    			}
-	    			//set the filename in the LogFile
-	    			mFileName=data.getExtras().getString("LogFileName");
-	    			mService.setLoggingName(mFileName);
-	    			
-	    			if (mEnableLogging==false){
-	    	        	mTitleLogging.setText("Logging Disabled");
-	    	        } else if (mEnableLogging==true){
-	    	        	mTitleLogging.setText("Logging Enabled");
-	    	        }
-	    			
-	    		}*/
-	    		break;
-	        }
+	    	}
 		}
 		catch (Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());

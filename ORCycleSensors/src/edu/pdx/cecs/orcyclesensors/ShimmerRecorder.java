@@ -1,29 +1,27 @@
 package edu.pdx.cecs.orcyclesensors;
 
-import edu.pdx.cecs.orcyclesensors.AntDeviceRecorder.State;
 import edu.pdx.cecs.orcyclesensors.shimmer.android.Shimmer;
-import edu.pdx.cecs.orcyclesensors.shimmer.driver.ObjectCluster;
-import edu.pdx.cecs.orcyclesensors.shimmer.driver.ShimmerVerDetails;
 import edu.pdx.cecs.orcyclesensors.shimmer.driver.Configuration;
 import edu.pdx.cecs.orcyclesensors.shimmer.driver.Configuration.Shimmer2;
+import edu.pdx.cecs.orcyclesensors.shimmer.driver.Configuration.Shimmer2.ObjectClusterSensorName;
+import edu.pdx.cecs.orcyclesensors.shimmer.driver.ObjectCluster;
 import edu.pdx.cecs.orcyclesensors.shimmer.driver.FormatCluster;
 import edu.pdx.cecs.orcyclesensors.shimmer.driver.Configuration.Shimmer3;
-import edu.pdx.cecs.orcyclesensors.shimmer.tools.Logging;
+import edu.pdx.cecs.orcyclesensors.shimmer.driver.ShimmerVerDetails;
 
-import java.math.BigDecimal;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+
+import com.google.common.collect.BiMap;
+import com.google.common.collect.Multimap;
 
 import android.content.Context;
 import android.location.Location;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.view.View;
 
 public class ShimmerRecorder {
 
@@ -34,55 +32,49 @@ public class ShimmerRecorder {
 	private ShimmerService mService = null;
 	private State state = State.IDLE;
 	private int shimmerVersion = -1;
+	private boolean recordRawData;
+	private long tripId;
+	private String dataDir;
 	private final String bluetoothAddress;
-	private final RawDataFile rawDataFile;
+	private RawDataFile_Shimmer summaryDataFile;
+	private Context context;
+	private final HashMap<String, RawDataFile_ShimmerSensor> sensorDataFiles = new  HashMap<String, RawDataFile_ShimmerSensor>();
+	private String[] enabledSensors;
 	// The Handler that gets information back from the BluetoothChatService
     private Handler shimmerMessageHandler = new ShimmerMessageHandler();
     
-    // Shimmer readings
-    private ArrayList<Double[]> accelReadings = new ArrayList<Double[]>();
-    private ArrayList<Double[]> accelLowNoiseReadings = new ArrayList<Double[]>();
-    private ArrayList<Double[]> accelWideRangeReadings = new ArrayList<Double[]>();
-    private ArrayList<Double[]> gyroscopeReadings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> magnetometerReadings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> gsrReadings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> emgReadings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> ecgReadings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> bridgeAmpReadings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> heartRateReadings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> expBoardA0Readings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> expBoardA7Readings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> batteryVoltageReadings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> timestampReadings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> adcA7Readings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> adcA6Readings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> adcA15Readings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> adcA1Readings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> adcA12Readings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> adcA13Readings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> adcA14Readings = new ArrayList<Double[]>();
-	private ArrayList<Double[]> pressureReadings = new ArrayList<Double[]>();
+	HashMap<String, ArrayList<Double>> signalReadings = new HashMap<String, ArrayList<Double>>();
+	
+	public class CalcReading {
+		public String signalName;
+		public int size;
+		public double avg;
+		public double ssd;
+		
+		public CalcReading(String signalName, int size, double avg, double ssd) {
+			this.signalName = signalName;
+			this.size = size;
+			this.avg = avg;
+			this.ssd = ssd;
+		}
+	}
 
-    // ---------------------------------------------------------
-
-	private static String mSensorView = ""; //The sensor device which should be viewed on the graph
-    
-    
     // ---------------------------------------------------------
 	
-	public ShimmerRecorder(String bluetoothAddress, RawDataFile rawDataFile) {
+	public ShimmerRecorder(Context context, String bluetoothAddress, boolean recordRawData, long tripId, String dataDir) {
+		this.context = context;
 		this.bluetoothAddress = bluetoothAddress;
-		this.rawDataFile = rawDataFile;
+		this.recordRawData = recordRawData;
+		this.tripId = tripId;
+		this.dataDir = dataDir;
 	}
 
 	// **********************************
 	// * static interface
 	// **********************************
 	
-	public static ShimmerRecorder create(String bluetoothAddress, boolean recordRawData, long tripId, String dataDir) {
-
-		String sensorName = "Shimmer(" + String.valueOf(bluetoothAddress) + ")";
-		return new ShimmerRecorder(bluetoothAddress, recordRawData ? new RawDataFile_Shimmer(sensorName, tripId, dataDir) : null);
+	public static ShimmerRecorder create(Context context, String bluetoothAddress, boolean recordRawData, long tripId, String dataDir) {
+		return new ShimmerRecorder(context, bluetoothAddress, recordRawData, tripId, dataDir);
 	}
 
 	// **********************************
@@ -91,15 +83,11 @@ public class ShimmerRecorder {
 	
 	synchronized public void start(Context context) {
 
-		//handleReset();
         mService = MyApplication.getInstance().getShimmerService();
   		mService.setMessageHandler(shimmerMessageHandler);
 		mService.enableGraphingHandler(true);
+		mService.setEnableLogging(true);
 		mService.connectShimmer(bluetoothAddress, "Device");
-  		
-		if (null != rawDataFile) {
-			rawDataFile.open(context);
-		}
     	state = State.CONNECTING;
 	}
 	
@@ -126,26 +114,332 @@ public class ShimmerRecorder {
 	}
 	
 	protected void closeRawDataFile() {
-		if (null != rawDataFile) {
-			rawDataFile.close();
+		if (null != summaryDataFile) {
+			try {
+				summaryDataFile.close();
+			}
+			catch(Exception ex) {
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
+			for (String key: sensorDataFiles.keySet()) {
+				try {
+					sensorDataFiles.get(key).close();
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+			}
 		}
 	}
 
 	synchronized public void unregister() {
-        /*if(releaseHandle != null) {
-            releaseHandle.close();
-            releaseHandle = null;
-        }*/
 		mService.stopStreaming(bluetoothAddress);
 		mService.enableGraphingHandler(false);
 		mService.disconnectShimmer(bluetoothAddress);
         closeRawDataFile();
+        signalReadings.clear();
 	}
 
+	public class SignalGroup {
+		public String sensorName;
+		private String[] signalNames = new String[0];
+		
+		public SignalGroup(String sensorName, String signalName0, String signalName1, String signalName2) {
+			this.sensorName = sensorName;
+			signalNames = new String[3];
+			this.signalNames[0] = signalName0;
+			this.signalNames[1] = signalName1;
+			this.signalNames[2] = signalName2;
+		}
+		public SignalGroup(String sensorName, String signalName0, String signalName1) {
+			this.sensorName = sensorName;
+			signalNames = new String[2];
+			this.signalNames[0] = signalName0;
+			this.signalNames[1] = signalName1;
+		}
+		public SignalGroup(String sensorName, String signalName0) {
+			this.sensorName = sensorName;
+			signalNames = new String[1];
+			this.signalNames[0] = signalName0;
+		}
+	}
+	
+	/**
+	 * Return a SignalGroup object which specifies what group of signals specify a sensor
+	 * @param sensorName
+	 * @return a SignalGroup object which specifies what group of signals specify a sensor
+	 */
+	private SignalGroup getSignalGroup(String sensorName) {
+		
+		SignalGroup signalGroup = null;
+
+		if (sensorName.equals("Accelerometer")) {
+			
+			signalGroup = new SignalGroup(sensorName, 
+					Configuration.Shimmer2.ObjectClusterSensorName.ACCEL_X,
+					Configuration.Shimmer2.ObjectClusterSensorName.ACCEL_Y,
+					Configuration.Shimmer2.ObjectClusterSensorName.ACCEL_Z);
+			
+		} else if (sensorName.equals("Low Noise Accelerometer")) {
+			
+			signalGroup = new SignalGroup(sensorName, 
+					Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_LN_X,
+					Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_LN_Y,
+					Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_LN_Z);
+			
+		} else if (sensorName.equals("Wide Range Accelerometer")) {
+			
+			signalGroup = new SignalGroup(sensorName, 
+					"Wide Range Accelerometer X",
+					"Wide Range Accelerometer Y",
+					"Wide Range Accelerometer Z");
+			
+		} else if (sensorName.equals("Gyroscope")) {
+			
+			signalGroup = new SignalGroup(sensorName,
+					"Gyroscope X",
+					"Gyroscope Y",
+					"Gyroscope Z");
+			
+		} else if (sensorName.equals("Magnetometer")) {
+			
+			signalGroup = new SignalGroup(sensorName,
+					"Magnetometer X",
+					"Magnetometer Y",
+					"Magnetometer Z");
+			
+		} else if (sensorName.equals("GSR")) {
+			
+			signalGroup = new SignalGroup(sensorName,"GSR");
+			
+		} else if (sensorName.equals("EMG")) {
+			
+			signalGroup = new SignalGroup(sensorName,"EMG");
+			
+		} else if (sensorName.equals("ECG")) {
+			
+			if (shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_2 || shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_2R) {
+				signalGroup = new SignalGroup(sensorName, "ECG RA-LL", "ECG LA-LL");
+			}
+			
+		} else if (sensorName.equals("EXG1") || sensorName.equals("EXG2") || sensorName.equals("EXG1 16Bit") || sensorName.equals("EXG2 16Bit")) {
+
+				if (shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_3) {
+					if (mService.getShimmer(bluetoothAddress).isEXGUsingECG24Configuration() ||
+						mService.getShimmer(bluetoothAddress).isEXGUsingECG16Configuration()) {
+
+						// same name for both 16 and 24 bit
+						signalGroup = new SignalGroup(sensorName, 
+								Shimmer3.ObjectClusterSensorName.ECG_LL_RA_24BIT,
+								Shimmer3.ObjectClusterSensorName.ECG_LA_RA_24BIT,
+								Shimmer3.ObjectClusterSensorName.ECG_VX_RL_24BIT);
+						
+					} else if (mService.getShimmer(bluetoothAddress).isEXGUsingEMG24Configuration() ||
+							mService.getShimmer(bluetoothAddress).isEXGUsingEMG16Configuration()) {
+						
+						// same name for both 16 and 24 bit
+						signalGroup = new SignalGroup(sensorName, 
+								Shimmer3.ObjectClusterSensorName.EMG_CH1_24BIT,
+								Shimmer3.ObjectClusterSensorName.EMG_CH2_24BIT);
+
+					} else if (mService.getShimmer(bluetoothAddress).isEXGUsingTestSignal24Configuration()) {
+
+						signalGroup = new SignalGroup(sensorName, 
+								Shimmer3.ObjectClusterSensorName.EXG1_CH1_24BIT,
+								Shimmer3.ObjectClusterSensorName.EXG1_CH2_24BIT,
+								Shimmer3.ObjectClusterSensorName.EXG2_CH1_24BIT);
+
+					} else if (mService.getShimmer(bluetoothAddress).isEXGUsingTestSignal16Configuration()) {
+
+						signalGroup = new SignalGroup(sensorName, 
+								Shimmer3.ObjectClusterSensorName.EXG1_CH1_16BIT,
+								Shimmer3.ObjectClusterSensorName.EXG1_CH2_16BIT,
+								Shimmer3.ObjectClusterSensorName.EXG2_CH1_16BIT);
+
+					} else {
+
+						if (sensorName.equals("EXG1 16Bit") || sensorName.equals("EXG2 16Bit")) {
+							
+							signalGroup = new SignalGroup(sensorName, 
+								Shimmer3.ObjectClusterSensorName.EXG1_CH1_16BIT,
+								Shimmer3.ObjectClusterSensorName.EXG1_CH2_16BIT,
+								Shimmer3.ObjectClusterSensorName.EXG2_CH1_16BIT);
+							
+						} else {
+							
+							signalGroup = new SignalGroup(sensorName, 
+									Shimmer3.ObjectClusterSensorName.EXG1_CH1_24BIT,
+									Shimmer3.ObjectClusterSensorName.EXG1_CH2_24BIT,
+									Shimmer3.ObjectClusterSensorName.EXG2_CH1_24BIT);
+						}
+					}
+				}
+
+		} else if (sensorName.equals("Bridge Amplifier")) {
+
+			signalGroup = new SignalGroup(sensorName, 
+					"Bridge Amplifier High",
+					"Bridge Amplifier Low");
+
+		} else if (sensorName.equals("Heart Rate")) {
+
+			signalGroup = new SignalGroup(sensorName, "Heart Rate");
+
+		} else if (sensorName.equals("ExpBoard A0")) {
+
+			signalGroup = new SignalGroup(sensorName, Shimmer2.ObjectClusterSensorName.EXP_BOARD_A0);
+
+		} else if (sensorName.equals("ExpBoard A7")) {
+
+			signalGroup = new SignalGroup(sensorName, Shimmer2.ObjectClusterSensorName.EXP_BOARD_A7);
+
+		} else if (sensorName.equals("Battery Voltage")) {
+
+			signalGroup = new SignalGroup(sensorName, "VSenseReg", "VSenseBatt");
+
+		} else if (sensorName.equals("Timestamp")) {
+
+			signalGroup = new SignalGroup(sensorName, "Timestamp");
+
+		} else if (sensorName.equals("External ADC A7")) {
+
+			if (shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_3) {
+				signalGroup = new SignalGroup(sensorName, Shimmer3.ObjectClusterSensorName.EXT_EXP_A7);
+			} else {
+				signalGroup = new SignalGroup(sensorName, Shimmer2.ObjectClusterSensorName.EXT_EXP_A7);
+			}
+
+		} else if (sensorName.equals("External ADC A6")) {
+
+			Shimmer shmr = mService.getShimmer(bluetoothAddress);
+			if (shmr != null) {
+				if (shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_3) {
+					signalGroup = new SignalGroup(sensorName, Shimmer3.ObjectClusterSensorName.EXT_EXP_A6);
+				} else {
+					signalGroup = new SignalGroup(sensorName, Shimmer2.ObjectClusterSensorName.EXT_EXP_A6);
+				}
+			}
+
+		} else if (sensorName.equals("External ADC A15")) {
+
+			signalGroup = new SignalGroup(sensorName, "External ADC A15");
+
+		} else if (sensorName.equals("Internal ADC A1")) {
+
+			signalGroup = new SignalGroup(sensorName, "Internal ADC A1");
+
+		} else if (sensorName.equals("Internal ADC A12")) {
+
+			signalGroup = new SignalGroup(sensorName, "Internal ADC A12");
+
+		} else if (sensorName.equals("Internal ADC A13")) {
+
+			signalGroup = new SignalGroup(sensorName, "Internal ADC A13");
+
+		} else if (sensorName.equals("Internal ADC A14")) {
+
+			signalGroup = new SignalGroup(sensorName, "Internal ADC A14");
+
+		} else if (sensorName.equals("Pressure")) {
+
+			signalGroup = new SignalGroup(sensorName, "Pressure", "Temperature");
+
+		}
+		
+		return signalGroup;
+	}
+	
+	/**
+	 * Write the result for each enabled sensor/group of enabled sensor signals
+	 * @param tripData
+	 * @param currentTimeMillis
+	 * @param location
+	 */
 	synchronized public void writeResult(TripData tripData, long currentTimeMillis, Location location) {
-		// TODO:
+
+		HashMap<String, CalcReading> results = new HashMap<String, CalcReading>();
+		RawDataFile_ShimmerSensor sensorDataFile;
+		ArrayList<Double> signal0 = null;
+		ArrayList<Double> signal1 = null;
+		ArrayList<Double> signal2 = null;
+
+
+		try {
+			for (String sensorName: enabledSensors) {
+				
+				// For now, we are not going to record the sensor's timestamp
+				if (sensorName.equalsIgnoreCase("timestamp")) {
+					continue;
+				}
+				
+				// Get the group of signals for the specified sensor
+				SignalGroup signalGroup = getSignalGroup(sensorName);
+
+				// Calculate the average and standard deviation results for each signal
+				if ((signalGroup.signalNames.length > 0) && (signalGroup.signalNames[0] != null)) {
+					signal0 = signalReadings.get(signalGroup.signalNames[0]);
+					results.put(signalGroup.signalNames[0], calculateResult(signalGroup.signalNames[0], signal0));
+				}
+				else {
+					signal0 = null;
+				}
+				
+				if ((signalGroup.signalNames.length > 1) && (signalGroup.signalNames[1] != null)) {
+					signal1 = signalReadings.get(signalGroup.signalNames[1]);
+					results.put(signalGroup.signalNames[1], calculateResult(signalGroup.signalNames[1], signal1));
+				}
+				else {
+					signal1 = null;
+				}
+				
+				if ((signalGroup.signalNames.length > 2) && (signalGroup.signalNames[2] != null)) {
+					signal2 = signalReadings.get(signalGroup.signalNames[2]);
+					results.put(signalGroup.signalNames[2], calculateResult(signalGroup.signalNames[2], signal2));
+				}
+				else {
+					signal2 = null;
+				}
+
+				// Copy the readings to the sensor data file
+				if (recordRawData) {
+					if (null != (sensorDataFile = sensorDataFiles.get(sensorName))) {
+						sensorDataFile.write(currentTimeMillis, location, signal0, signal1, signal2);
+					}
+				}
+			}
+
+			tripData.addShimmerReading(currentTimeMillis, results);
+
+			// Copy the result readings (average and variance) to the summary data file
+			if (null != summaryDataFile) {
+				summaryDataFile.write(currentTimeMillis, location, results);
+			}
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		finally {
+			reset();
+		}
 	}
 
+	private CalcReading calculateResult(String signalName, ArrayList<Double> readings) {
+		double avg_readings;
+		double ssd_readings;
+		CalcReading calcReading = null;
+		if (readings.size() > 0) {
+			avg_readings = MyMath.getAverageValueD(readings);
+			ssd_readings = MyMath.getSumSquareDifferenceD(readings, avg_readings);
+			calcReading = new CalcReading(signalName, readings.size(), avg_readings, ssd_readings);
+		}
+		return calcReading;
+	}
+	
+	private void reset() {
+		for (String key: signalReadings.keySet()) {
+			signalReadings.get(key).clear();
+		}
+	}
 	// *********************************************************************************
 	// *                          Shimmer Message Handler
 	// *********************************************************************************
@@ -153,6 +447,8 @@ public class ShimmerRecorder {
 	private final class ShimmerMessageHandler extends Handler {
 		
 		public void handleMessage(Message msg) {
+			
+			String filename;
 
 			try {
 				switch (msg.what) {
@@ -165,9 +461,55 @@ public class ShimmerRecorder {
 	                    break;
 	                    
 	                case Shimmer.MSG_STATE_FULLY_INITIALIZED:
-	    				state = State.RUNNING;
-	    		        shimmerVersion = mService.getShimmerVersion(bluetoothAddress);
-	    				mService.startStreaming(bluetoothAddress);
+	                	
+	                	if (state == State.RUNNING) 
+	                		break;
+	                	
+	                	try {
+		    				state = State.RUNNING;
+		    		        shimmerVersion = mService.getShimmerVersion(bluetoothAddress);
+		    				Shimmer shimmer = mService.getShimmer(bluetoothAddress);
+		    				String filenameRoot = "Shimmer" + "(" + String.valueOf(bluetoothAddress) + ") " + String.valueOf(tripId) + " ";
+	
+		    				// Get list of enabled sensors
+		    				List<String> tmp = shimmer.getListofEnabledSensors();
+		    				enabledSensors = new String[0];
+		    				enabledSensors = tmp.toArray(enabledSensors);
+		    				ArrayList<String> signalNames = new ArrayList<String>(); 
+
+		    				// Create arrays to hold sensor reading for each signal of each enabled sensor
+		    				for (String sensorName: enabledSensors) {
+		    					
+		    					// Get the readings for the group  of signals specified
+		    					SignalGroup signalGroup = getSignalGroup(sensorName);
+	
+		    					for (int i = 0; i < signalGroup.signalNames.length; ++i) {
+			    					signalReadings.put(signalGroup.signalNames[i], new ArrayList<Double>());
+			    					signalNames.add(signalGroup.signalNames[i]);
+		    					}
+	
+			    				// If flag is set, Create data files for writing the data
+		    					if (recordRawData) {
+			    					RawDataFile_ShimmerSensor rawDataFile = new RawDataFile_ShimmerSensor(filenameRoot + sensorName, tripId, dataDir, signalGroup.signalNames);
+			    					rawDataFile.open(context);
+			    					sensorDataFiles.put(sensorName, rawDataFile);
+			    				}
+		    				}
+		    				
+		    				// If flag is set, Create a data summary file
+		    				if ((recordRawData) && (signalReadings.size() > 0)) {
+		    					String[] arraySignalNames = new String[0];
+		    					arraySignalNames = signalNames.toArray(arraySignalNames);
+		    					summaryDataFile = new RawDataFile_Shimmer(filenameRoot + "Upload", tripId, dataDir, arraySignalNames);
+		    					summaryDataFile.open(context);
+		    				}
+	
+		    				mService.startStreaming(bluetoothAddress);
+	                	}
+	                	catch(Exception ex) {
+	                		Log.e(MODULE_TAG, ex.getMessage());
+		    				state = State.FAILED;
+	                	}
 	                    break;
 	
 	                case Shimmer.STATE_CONNECTING:
@@ -204,262 +546,17 @@ public class ShimmerRecorder {
 
 	private void writeData(ObjectCluster objectCluster){
 		
-		Collection<FormatCluster> formatClusters = objectCluster.mPropertyCluster.values();
-		Iterator<FormatCluster> iterator = formatClusters.iterator();
-		while (iterator.hasNext()) {
-			FormatCluster f = (FormatCluster) iterator.next();
-			Log.d(MODULE_TAG, "format = " + f.mFormat);
-			Log.d(MODULE_TAG, "format = " + f.mUnits);
-			if (f.mFormat.equals("")) {
-				//accelReadings.add(object);
-				
-			} else if (f.mFormat.equals("")) {
-			}
-		}
-		
-		
-		
-		
-		/*
-		double[] calibratedDataArray = new double[0];
-		String[] sensorName = new String[0];
-		String calibratedUnits = "";
-		String calibratedUnits2 = "";
+		Multimap<String, FormatCluster> propertyCluster = objectCluster.mPropertyCluster;
+		ArrayList<Double> readings;
 
-		// mSensorView determines which sensor to graph
-		// ---------------------------------------------------------------------------
-		if (mSensorView.equals("Accelerometer")) {
-			sensorName = new String[3]; // for x y and z axis
-			calibratedDataArray = new double[3];
-			sensorName[0] = Configuration.Shimmer2.ObjectClusterSensorName.ACCEL_X;
-			sensorName[1] = Configuration.Shimmer2.ObjectClusterSensorName.ACCEL_Y;
-			sensorName[2] = Configuration.Shimmer2.ObjectClusterSensorName.ACCEL_Z;
-		}
-		// ---------------------------------------------------------------------------
-		if (mSensorView.equals("Low Noise Accelerometer")) {
-			sensorName = new String[3]; // for x y and z axis
-			calibratedDataArray = new double[3];
-			sensorName[0] = Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_LN_X;
-			sensorName[1] = Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_LN_Y;
-			sensorName[2] = Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_LN_Z;
-		}
-		// ---------------------------------------------------------------------------
-		if (mSensorView.equals("Wide Range Accelerometer")) {
-			sensorName = new String[3]; // for x y and z axis
-			calibratedDataArray = new double[3];
-			sensorName[0] = "Wide Range Accelerometer X";
-			sensorName[1] = "Wide Range Accelerometer Y";
-			sensorName[2] = "Wide Range Accelerometer Z";
-		}
-		// ---------------------------------------------------------------------------
-		if (mSensorView.equals("Gyroscope")) {
-			sensorName = new String[3]; // for x y and z axis
-			calibratedDataArray = new double[3];
-			sensorName[0] = "Gyroscope X";
-			sensorName[1] = "Gyroscope Y";
-			sensorName[2] = "Gyroscope Z";
-		}
-		if (mSensorView.equals("Magnetometer")) {
-			sensorName = new String[3]; // for x y and z axis
-			calibratedDataArray = new double[3];
-			sensorName[0] = "Magnetometer X";
-			sensorName[1] = "Magnetometer Y";
-			sensorName[2] = "Magnetometer Z";
-		}
-		if (mSensorView.equals("GSR")) {
-			sensorName = new String[1];
-			calibratedDataArray = new double[1];
-			sensorName[0] = "GSR";
-		}
-		if (mSensorView.equals("EMG")) {
-			sensorName = new String[1];
-			calibratedDataArray = new double[1];
-			sensorName[0] = "EMG";
-		}
-		
-		// =======================================================================================================================
-		
-		if (mSensorView.equals("ECG")) {
-
-			calibratedDataArray = new double[2];
-			Shimmer shmr = mService.getShimmer(bluetoothAddress);
-			if (shmr != null) {
-				if (mService.getShimmer(bluetoothAddress).getShimmerVersion() == ShimmerVerDetails.HW_ID.SHIMMER_2
-						|| mService.getShimmer(bluetoothAddress).getShimmerVersion() == ShimmerVerDetails.HW_ID.SHIMMER_2R) {
-					sensorName = new String[2];
-					sensorName[0] = "ECG RA-LL";
-					sensorName[1] = "ECG LA-LL";
-				}
-			}
-		}
-		if (mSensorView.equals("EXG1") || mSensorView.equals("EXG2") || mSensorView.equals("EXG1 16Bit") || mSensorView.equals("EXG2 16Bit")) {
-			Shimmer shmr = mService.getShimmer(bluetoothAddress);
-			if (shmr != null) {
-				if (mService.getShimmer(bluetoothAddress).getShimmerVersion() == ShimmerVerDetails.HW_ID.SHIMMER_3) {
-					if (mService.getShimmer(bluetoothAddress).isEXGUsingECG24Configuration()
-							|| mService.getShimmer(bluetoothAddress).isEXGUsingECG16Configuration()) {
-						sensorName = new String[3];
-						calibratedDataArray = new double[3];
-						// same name for both 16 and 24 bit
-						sensorName[0] = Shimmer3.ObjectClusterSensorName.ECG_LL_RA_24BIT;
-						sensorName[1] = Shimmer3.ObjectClusterSensorName.ECG_LA_RA_24BIT;
-						sensorName[2] = Shimmer3.ObjectClusterSensorName.ECG_VX_RL_24BIT;
-					} else if (mService.getShimmer(bluetoothAddress).isEXGUsingEMG24Configuration()
-							|| mService.getShimmer(bluetoothAddress).isEXGUsingEMG16Configuration()) {
-						sensorName = new String[2];
-						calibratedDataArray = new double[2];
-						// same name for both 16 and 24 bit
-						sensorName[0] = Shimmer3.ObjectClusterSensorName.EMG_CH1_24BIT;
-						sensorName[1] = Shimmer3.ObjectClusterSensorName.EMG_CH2_24BIT;
-					} else if (mService.getShimmer(bluetoothAddress).isEXGUsingTestSignal24Configuration()) {
-						sensorName = new String[3];
-						calibratedDataArray = new double[3];
-						sensorName[0] = Shimmer3.ObjectClusterSensorName.EXG1_CH1_24BIT;
-						sensorName[1] = Shimmer3.ObjectClusterSensorName.EXG1_CH2_24BIT;
-						sensorName[2] = Shimmer3.ObjectClusterSensorName.EXG2_CH1_24BIT;
-					} else if (mService.getShimmer(bluetoothAddress).isEXGUsingTestSignal16Configuration()) {
-						sensorName = new String[3];
-						calibratedDataArray = new double[3];
-						sensorName[0] = Shimmer3.ObjectClusterSensorName.EXG1_CH1_16BIT;
-						sensorName[1] = Shimmer3.ObjectClusterSensorName.EXG1_CH2_16BIT;
-						sensorName[2] = Shimmer3.ObjectClusterSensorName.EXG2_CH1_16BIT;
-					} else {
-						sensorName = new String[3];
-						calibratedDataArray = new double[3];
-						if (mSensorView.equals("EXG1 16Bit") || mSensorView.equals("EXG2 16Bit")) {
-							sensorName[0] = Shimmer3.ObjectClusterSensorName.EXG1_CH1_16BIT;
-							sensorName[1] = Shimmer3.ObjectClusterSensorName.EXG1_CH2_16BIT;
-							sensorName[2] = Shimmer3.ObjectClusterSensorName.EXG2_CH1_16BIT;
-						} else {
-							sensorName[0] = Shimmer3.ObjectClusterSensorName.EXG1_CH1_24BIT;
-							sensorName[1] = Shimmer3.ObjectClusterSensorName.EXG1_CH2_24BIT;
-							sensorName[2] = Shimmer3.ObjectClusterSensorName.EXG2_CH1_24BIT;
-						}
+		for(String key : propertyCluster.keys()) {
+			for(FormatCluster f : propertyCluster.get(key)) {
+				if (f.mFormat.equalsIgnoreCase("CAL")) {
+					if (null != (readings = signalReadings.get(key))) {
+						readings.add(f.mData);
 					}
 				}
 			}
 		}
-		if (mSensorView.equals("Bridge Amplifier")) {
-			sensorName = new String[2];
-			calibratedDataArray = new double[2];
-			sensorName[0] = "Bridge Amplifier High";
-			sensorName[1] = "Bridge Amplifier Low";
-		}
-		if (mSensorView.equals("Heart Rate")) {
-			sensorName = new String[1];
-			calibratedDataArray = new double[1];
-			sensorName[0] = "Heart Rate";
-		}
-		if (mSensorView.equals("ExpBoard A0")) {
-			sensorName = new String[1];
-			calibratedDataArray = new double[1];
-			sensorName[0] = Shimmer2.ObjectClusterSensorName.EXP_BOARD_A0;
-
-		}
-		if (mSensorView.equals("ExpBoard A7")) {
-			sensorName = new String[1];
-			calibratedDataArray = new double[1];
-			sensorName[0] = Shimmer2.ObjectClusterSensorName.EXP_BOARD_A7;
-		}
-		if (mSensorView.equals("Battery Voltage")) {
-			sensorName = new String[2];
-			calibratedDataArray = new double[2];
-			sensorName[0] = "VSenseReg";
-			sensorName[1] = "VSenseBatt";
-		}
-		if (mSensorView.equals("Timestamp")) {
-			sensorName = new String[1];
-			calibratedDataArray = new double[1];
-			sensorName[0] = "Timestamp";
-		}
-		if (mSensorView.equals("External ADC A7")) {
-			sensorName = new String[1];
-			calibratedDataArray = new double[1];
-			Shimmer shmr = mService.getShimmer(bluetoothAddress);
-			if (shmr != null) {
-				if (mService.getShimmer(bluetoothAddress).getShimmerVersion() == ShimmerVerDetails.HW_ID.SHIMMER_3) {
-					sensorName[0] = Shimmer3.ObjectClusterSensorName.EXT_EXP_A7;
-				} else {
-					sensorName[0] = Shimmer2.ObjectClusterSensorName.EXT_EXP_A7;
-				}
-			}
-		}
-		if (mSensorView.equals("External ADC A6")) {
-			sensorName = new String[1];
-			calibratedDataArray = new double[1];
-			Shimmer shmr = mService.getShimmer(bluetoothAddress);
-			if (shmr != null) {
-				if (mService.getShimmer(bluetoothAddress).getShimmerVersion() == ShimmerVerDetails.HW_ID.SHIMMER_3) {
-					sensorName[0] = Shimmer3.ObjectClusterSensorName.EXT_EXP_A6;
-				} else {
-					sensorName[0] = Shimmer2.ObjectClusterSensorName.EXT_EXP_A6;
-				}
-			}
-		}
-		if (mSensorView.equals("External ADC A15")) {
-			sensorName = new String[1];
-			calibratedDataArray = new double[1];
-			sensorName[0] = "External ADC A15";
-		}
-		if (mSensorView.equals("Internal ADC A1")) {
-			sensorName = new String[1];
-			calibratedDataArray = new double[1];
-			sensorName[0] = "Internal ADC A1";
-		}
-		if (mSensorView.equals("Internal ADC A12")) {
-			sensorName = new String[1];
-			calibratedDataArray = new double[1];
-			sensorName[0] = "Internal ADC A12";
-		}
-		if (mSensorView.equals("Internal ADC A13")) {
-			sensorName = new String[1];
-			calibratedDataArray = new double[1];
-			sensorName[0] = "Internal ADC A13";
-		}
-		if (mSensorView.equals("Internal ADC A14")) {
-			sensorName = new String[1];
-			calibratedDataArray = new double[1];
-			sensorName[0] = "Internal ADC A14";
-		}
-		if (mSensorView.equals("Pressure")) {
-			sensorName = new String[2];
-			calibratedDataArray = new double[2];
-			sensorName[0] = "Pressure";
-			sensorName[1] = "Temperature";
-		}
-
-		// ******************************************************************************************
-		// *
-		// ******************************************************************************************
-		
-		if (sensorName.length != 0) { // Device 1 is the assigned user id, see constructor of the Shimmer
-			if (sensorName.length > 0) {
-				//
-				Collection<FormatCluster> ofFormats = objectCluster.mPropertyCluster.get(sensorName[0]); // first retrieve all the possible formats for the current sensor device
-				FormatCluster formatCluster = ((FormatCluster) ObjectCluster.returnFormatCluster(ofFormats, "CAL"));
-				if (formatCluster != null) {
-					// //Obtain data for text view
-					calibratedDataArray[0] = formatCluster.mData;
-					calibratedUnits = formatCluster.mUnits;
-				}
-			}
-		}
-		if (sensorName.length > 1) {
-			Collection<FormatCluster> ofFormats = objectCluster.mPropertyCluster.get(sensorName[1]); // first retrieve all
-			FormatCluster formatCluster = ((FormatCluster) ObjectCluster.returnFormatCluster(ofFormats, "CAL"));
-			if (formatCluster != null) {
-				calibratedDataArray[1] = formatCluster.mData;
-				calibratedUnits2 = formatCluster.mUnits;
-			}
-		}
-		if (sensorName.length > 2) {
-
-			Collection<FormatCluster> ofFormats = objectCluster.mPropertyCluster.get(sensorName[2]); // first retrieve all
-			FormatCluster formatCluster = ((FormatCluster) ObjectCluster.returnFormatCluster(ofFormats, "CAL"));
-			if (formatCluster != null) {
-				calibratedDataArray[2] = formatCluster.mData;
-				data.add(formatCluster.mData);
-			}
-		}
-	*/}
+	}
 }

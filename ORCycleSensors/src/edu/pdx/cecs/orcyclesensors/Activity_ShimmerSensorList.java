@@ -31,7 +31,9 @@ public class Activity_ShimmerSensorList extends ListActivity {
 
 	private ShimmerService mService = null;
 	private String mBluetoothAddress = "";
-    private long enabledSensors=0;
+    private long mEnabledSensors = -1;
+    private int mShimmerVersion = -1;
+    
     private ListView listView;
     private Button buttonDone;
     private Button buttonTryAgain;
@@ -52,6 +54,9 @@ public class Activity_ShimmerSensorList extends ListActivity {
 		// Set window features
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.activity_shimmer_sensor_view);
+
+        // Set result CANCELED in case the user backs out
+        setResult(Activity.RESULT_CANCELED);
 
         buttonDone = (Button) findViewById(R.id.assl_btn_done);
 		buttonDone.setText("Cancel");
@@ -190,7 +195,10 @@ public class Activity_ShimmerSensorList extends ListActivity {
 		public void onClick(View arg0) {
 			// TODO Auto-generated method stub
 			if (null != mService) {
-				mService.setEnabledSensors(enabledSensors, mBluetoothAddress);
+				mService.setEnabledSensors(mEnabledSensors, mBluetoothAddress);
+	            Intent intent = new Intent();
+	            intent.putExtra(EXTRA_BLUETOOTH_ADDRESS, mBluetoothAddress);
+	            setResult(Activity.RESULT_OK, intent);              // Set result and finish this Activity
 			}
 			finish();
 		}
@@ -215,9 +223,10 @@ public class Activity_ShimmerSensorList extends ListActivity {
 	                    break;
 	                    
 	                case Shimmer.MSG_STATE_FULLY_INITIALIZED:
+	                    setProgressBarIndeterminateVisibility(false);
 	            		buttonDone.setText("Done");
 	        			buttonTryAgain.setVisibility(View.GONE);
-	                	doSensors();
+	        			showEnableSensors();
 	                    break;
 	
 	                case Shimmer.STATE_CONNECTING:
@@ -252,35 +261,55 @@ public class Activity_ShimmerSensorList extends ListActivity {
 		}
 	}
 
-	// *********************************************************************************
-	// *                                   Misc
-	// *********************************************************************************
-
-	public void showEnableSensors(final String[] sensorNames, long enabledSensors) {
-
-		this.enabledSensors = enabledSensors;
-
-		listView = (ListView) findViewById(android.R.id.list);
-		listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-		ArrayAdapter<String> adapterSensorNames = new ArrayAdapter<String>(
-				this, 
-				android.R.layout.simple_list_item_multiple_choice,
-				android.R.id.text1, 
-				sensorNames);
-		listView.setAdapter(adapterSensorNames);
+	/**
+	 * Display the list of enabled sensors
+	 */
+	private void showEnableSensors() {
 		
-		final BiMap<String, String> sensorBitmaptoName;
-		sensorBitmaptoName = Shimmer.generateBiMapSensorIDtoSensorName(mService.getShimmerVersion(mBluetoothAddress));
-		for (int i = 0; i < sensorNames.length; i++) {
-			int iDBMValue = Integer.parseInt(sensorBitmaptoName.inverse().get(sensorNames[i]));
-			if ((iDBMValue & enabledSensors) > 0) {
-				listView.setItemChecked(i, true);
-			}
-		}
+		Shimmer shimmer;
 
-		listView.setOnItemClickListener(new ListView_OnClickListener(sensorBitmaptoName, sensorNames));
+		// the displayed list depends on the shimmer version
+		mShimmerVersion = mService.getShimmerVersion(mBluetoothAddress);
+
+		// get the shimmer object
+		if (null != (shimmer = mService.getShimmer(mBluetoothAddress))) {
+			
+			// get the list of sensor names
+			final String[] sensorNames = shimmer.getListofSupportedSensors();
+			
+			// get the bit field value corresponding to the enabled sensors
+			mEnabledSensors = mService.getEnabledSensors(mBluetoothAddress);
+			
+			// get the list GUI elements
+			listView = (ListView) findViewById(android.R.id.list);
+			listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+			ArrayAdapter<String> adapterSensorNames = new ArrayAdapter<String>(
+					this, 
+					android.R.layout.simple_list_item_multiple_choice,
+					android.R.id.text1, 
+					sensorNames);
+			listView.setAdapter(adapterSensorNames);
+			
+			// translate the bit field value to specific sensor names to be displayed
+			final BiMap<String, String> sensorBitmaptoName;
+			sensorBitmaptoName = Shimmer.generateBiMapSensorIDtoSensorName(mShimmerVersion);
+
+			for (int i = 0; i < sensorNames.length; i++) {
+				// get the bit mask for the given sensor name
+				int bitMask = Integer.parseInt(sensorBitmaptoName.inverse().get(sensorNames[i]));
+				if ((bitMask & mEnabledSensors) > 0) {
+					listView.setItemChecked(i, true);
+				}
+			}
+
+			listView.setOnItemClickListener(new ListView_OnClickListener(sensorBitmaptoName, sensorNames));
+			setTitle(R.string.assl_title_connected);
+		}
+		else {
+			setTitle(R.string.assl_title_not_connected);
+		}
 	}
-	
+
 	// *********************************************************************************
 	// *                          ListView
 	// *********************************************************************************
@@ -300,28 +329,16 @@ public class Activity_ShimmerSensorList extends ListActivity {
 			int sensorIdentifier = Integer.parseInt(sensorBitmaptoName.inverse().get(sensorNames[clickIndex]));
 			// check and remove any old daughter boards (sensors) which will
 			// cause a conflict with sensorIdentifier
-			enabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, enabledSensors, sensorIdentifier);
+			mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors, sensorIdentifier);
 			// update the checkbox accordingly
 			for (int i = 0; i < sensorNames.length; i++) {
 				int iDBMValue = Integer.parseInt(sensorBitmaptoName.inverse().get(sensorNames[i]));
-				if ((iDBMValue & enabledSensors) > 0) {
+				if ((iDBMValue & mEnabledSensors) > 0) {
 					listView.setItemChecked(i, true);
 				} else {
 					listView.setItemChecked(i, false);
 				}
 			}
-		}
-	}
-
-	private void doSensors() {
-        setProgressBarIndeterminateVisibility(false);
-		Shimmer shimmer = null;
-		if (null != (shimmer = mService.getShimmer(mBluetoothAddress))) {
-			showEnableSensors(shimmer.getListofSupportedSensors(), mService.getEnabledSensors(mBluetoothAddress));
-			setTitle(R.string.assl_title_connected);
-		}
-		else {
-			setTitle(R.string.assl_title_not_connected);
 		}
 	}
 }

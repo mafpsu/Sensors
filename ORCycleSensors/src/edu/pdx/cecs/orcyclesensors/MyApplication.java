@@ -38,6 +38,7 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.widget.Toast;
 
 /**
  * This class extends the <code>Application<code/> class, and implements it as a singleton.
@@ -275,7 +276,7 @@ public class MyApplication extends android.app.Application {
 	// **********************************
 	// * Interface to Shimmer devices
 	// **********************************
-	
+
 	public void addShimmerDevice(String address, String name) {
 		
 		appShimmers.addDevice(address, name);
@@ -380,10 +381,14 @@ public class MyApplication extends android.app.Application {
      * startRecording
      * @throws Exception 
      */
-    public void startRecording(FragmentActivity activity) throws Exception {
-		switch (recordingService.getState()) {
+    public boolean startRecording(FragmentActivity activity) throws Exception {
+		
+    	boolean recordingStarted = false;
+    	
+    	switch (recordingService.getState()) {
 
 		case RecordingService.STATE_IDLE:
+			
 			trip = TripData.createTrip(activity);
 			recordingService.startRecording(trip,
 					appDevices.getAntDeviceInfos(), 
@@ -392,17 +397,22 @@ public class MyApplication extends android.app.Application {
 					minTimeBetweenReadings, 
 					recordRawData, 
 					DataFileInfoManager.getDirPath());
+			recordingStarted = true;
 			break;
 
 		case RecordingService.STATE_RECORDING:
 			long id = recordingService.getCurrentTripID();
 			trip = TripData.fetchTrip(activity, id);
+			recordingStarted = true;
 			break;
 		}
 
-		startRecordingNotification(lastTripStartTime = trip.getStartTime());
+    	if (recordingStarted) {
+    		startRecordingNotification(lastTripStartTime = trip.getStartTime());
+    	}
+    	return recordingStarted;
     }
-
+    
     /**
      * finishRecording
      */

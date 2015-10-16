@@ -7,7 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.List;
-
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.location.Location;
 import android.util.Log;
@@ -22,6 +22,7 @@ public abstract class RawDataFile {
 	protected BufferedWriter file;
 	protected final StringBuilder sb = new StringBuilder();
 	protected boolean exceptionOccurred = false;
+	@SuppressLint("SimpleDateFormat")
 	protected final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 	abstract String getHeader();
 
@@ -31,9 +32,9 @@ public abstract class RawDataFile {
 	 * @param tripId The trip number being recorded (which is appended to file name)
 	 * @param dataDir The data directory where raw data files are placed
 	 */
-	public RawDataFile(String name, long tripId, String dataDir) {
+	public RawDataFile(String fileName, long tripId, String dataDir) {
 		this.dataDir = dataDir;
-		this.fileName = name + " " + String.valueOf(tripId);
+		this.fileName = fileName;
 	}
 	
 	/**
@@ -62,9 +63,13 @@ public abstract class RawDataFile {
 	}
 
 	public void writeHeader() {
+		final String newline = "\r\n";
 		try {
-			final String header = getHeader() + "\r\n";
-			file.write(header, 0, header.length());
+			final String header = getHeader();
+			if (null != header) {
+				file.write(header, 0, header.length());
+				file.write(newline, 0, newline.length());
+			}
 		}
 		catch(IOException ex) {
 			if (!exceptionOccurred) {

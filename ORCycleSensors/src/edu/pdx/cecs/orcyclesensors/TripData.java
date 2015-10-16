@@ -60,8 +60,10 @@ package edu.pdx.cecs.orcyclesensors;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.TimeZone;
 
+import edu.pdx.cecs.orcyclesensors.ShimmerRecorder.CalcReading;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.database.Cursor;
@@ -536,5 +538,11 @@ public class TripData {
 
 	public int getStatus() {
 		return status;
+	}
+
+	public void addShimmerReading(long currentTimeMillis,
+			HashMap<String, CalcReading> results) {
+		// TODO Auto-generated method stub
+		
 	}
 }

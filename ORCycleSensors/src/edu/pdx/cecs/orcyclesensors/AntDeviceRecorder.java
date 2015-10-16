@@ -101,14 +101,17 @@ public abstract class AntDeviceRecorder implements IDeviceStateChangeReceiver {
 	public static AntDeviceRecorder create(int deviceNumber, DeviceType deviceType, boolean recordRawData, long tripId, String dataDir) throws Exception {
 		
 		String sensorName;
+		String filename;
 		
 		if (deviceType == DeviceType.HEARTRATE) {
 			sensorName = "HeartRate(" + String.valueOf(deviceNumber) + ")";
-			return new AntDeviceHeartRateRecorder(deviceNumber, recordRawData ? new RawDataFile_HeartRate(sensorName, tripId, dataDir) : null);
+			filename = sensorName + " " + String.valueOf(tripId);
+			return new AntDeviceHeartRateRecorder(deviceNumber, recordRawData ? new RawDataFile_HeartRate(filename, tripId, dataDir) : null);
 		}
 		else if (deviceType == DeviceType.BIKE_POWER) {
 			sensorName = "BikePower(" + String.valueOf(deviceNumber) + ")";
-			return new AntDeviceBikePowerRecorder(deviceNumber, recordRawData ? new RawDataFile_BikePower(sensorName, tripId, dataDir) : null);
+			filename = sensorName + " " + String.valueOf(tripId);
+			return new AntDeviceBikePowerRecorder(deviceNumber, recordRawData ? new RawDataFile_BikePower(filename, tripId, dataDir) : null);
 		}
 
 		throw new Exception("Attempt to create unknown DeviceRecorder type.");

@@ -13,6 +13,8 @@ import android.util.Log;
 public class AppShimmers {
 
 	private static final String MODULE_TAG = "AppShimmers";
+	private static final String SHIMMER_SETTING_NAME = "name";
+	private static final String SHIMMER_SETTING_ADDRESS = "address";
 
 	/**
      * Reference to single instance
@@ -73,8 +75,8 @@ public class AppShimmers {
 		for (ShimmerDeviceInfo deviceInfo: pairedDevices) {
 			try {
 				JSONObject o = new JSONObject();
-				o.put("name", deviceInfo.getName());
-				o.put("address", deviceInfo.getAddress());
+				o.put(SHIMMER_SETTING_NAME, deviceInfo.getName());
+				o.put(SHIMMER_SETTING_ADDRESS, deviceInfo.getAddress());
 				list.put(o);
 			}
 			catch (Exception ex) {
@@ -93,12 +95,14 @@ public class AppShimmers {
 				JSONObject o;
 				String address;
 				String name;
+				int shimmerVersion;
+				long enabledSensors;
 		
 				for (int i = 0; i < a.length(); ++i) {
 					try {
 						o = a.getJSONObject(i);
-						address = o.getString("address");
-						name = o.getString("name");
+						address = o.getString(SHIMMER_SETTING_ADDRESS);
+						name = o.getString(SHIMMER_SETTING_NAME);
 						devices.add(new ShimmerDeviceInfo(address, name));
 					}
 					catch(Exception ex) {

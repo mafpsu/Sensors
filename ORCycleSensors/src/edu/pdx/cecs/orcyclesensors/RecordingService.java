@@ -107,6 +107,8 @@ public class RecordingService extends Service
 	private ArrayList<ShimmerDeviceInfo> shimmerDeviceInfos;
 	private Map<String, ShimmerRecorder> shimmerRecorders = new HashMap<String, ShimmerRecorder>();
 	
+	private long minTimeBetweenReadings;
+	
 	private final MyServiceBinder myServiceBinder = new MyServiceBinder();
 
 	// *********************************************************************************
@@ -217,6 +219,7 @@ public class RecordingService extends Service
 		this.antDeviceRecorders.clear();
 		this.shimmerDeviceInfos = shimmerDeviceInfos;
 		this.shimmerRecorders.clear();
+		this.minTimeBetweenReadings = minTimeBetweenReadings;
 		
 		// Create a recorder for each sensor
 		for (SensorItem sensorItem: this.sensors) {
@@ -237,11 +240,11 @@ public class RecordingService extends Service
 		// Create a recorder for each Shimmer device
 		for (ShimmerDeviceInfo shimmerDeviceInfo: this.shimmerDeviceInfos) {
 			shimmerRecorders.put(shimmerDeviceInfo.getAddress(), 
-					ShimmerRecorder.create(shimmerDeviceInfo.getAddress(), recordRawData, trip.tripid, dataFileDir));
+					ShimmerRecorder.create(this, shimmerDeviceInfo.getAddress(), recordRawData, trip.tripid, dataFileDir));
 		}
 
 		// Start listening for GPS updates!
-		registerLocationUpdates(minTimeBetweenReadings);
+		// registerLocationUpdates(minTimeBetweenReadings);
 
 		// Start listening for device updates!
 		startDeviceRecorders();
@@ -255,15 +258,18 @@ public class RecordingService extends Service
 		if (null == speedMonitor) {
 			speedMonitor = new SpeedMonitor(this);
 		}
-		speedMonitor.start();
+		//speedMonitor.start();
 
+		this.state = STATE_WAITING_FOR_DEVICE_CONNECT;
+		
 		// Initialize recording state
+		/*
 		if ((this.antDeviceInfos.size() > 0) || (this.shimmerDeviceInfos.size() > 0)) {
 			this.state = STATE_WAITING_FOR_DEVICE_CONNECT;
 		}
 		else {
 			this.state = STATE_RECORDING;
-		}
+		}*/
 	}
 
 	/**
@@ -351,7 +357,7 @@ public class RecordingService extends Service
 	// *                     LocationListener Implementation
 	// *********************************************************************************
 
-	private void registerLocationUpdates(long minTimeBetweenReadings) {
+	private void startLocationUpdates() {
 
 		LocationManager lm;
 		if (null != (lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE))) {
@@ -379,7 +385,8 @@ public class RecordingService extends Service
 	public void onLocationChanged(Location location) {
 
 		try {
-			if (state == STATE_WAITING_FOR_DEVICE_CONNECT) {
+			if ((state == STATE_WAITING_FOR_DEVICE_CONNECT) || 
+				(state == STATE_DEVICE_CONNECT_FAILED)) {
 				return;
 			}
 
@@ -637,6 +644,9 @@ public class RecordingService extends Service
 			return DEVICES_STATE_NOT_ALL_CONNECTED;
 		}
 		else {
+			speedMonitor.start();
+			// Start listening for GPS updates!
+			startLocationUpdates();
 			return DEVICES_STATE_ALL_CONNECTED;
 		}
 	}

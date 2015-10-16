@@ -167,6 +167,47 @@ public class DbAdapter {
 	public static final String K_BP_CALC_WHEEL_DISTANCE_AVG = "calc_wheel_distance_avg";
 	public static final String K_BP_CALC_WHEEL_DISTANCE_SSD = "calc_wheel_distance_ssd";
 	
+	public static final String K_SHIMMER_="";
+    public static final String K_SHIMMER_ACCEL_LN_X = "";
+    public static final String K_SHIMMER_ACCEL_LN_Y = "";
+    public static final String K_SHIMMER_ACCEL_LN_Z = "";
+    public static final String K_SHIMMER_ACCEL_WR_X = "";
+    public static final String K_SHIMMER_ACCEL_WR_Y = "";
+    public static final String K_SHIMMER_ACCEL_WR_Z = "";
+    public static final String K_SHIMMER_GYRO_X = "";
+    public static final String K_SHIMMER_GYRO_Y = "";
+    public static final String K_SHIMMER_GYRO_Z = "";
+    public static final String K_SHIMMER_MAG_X = "";
+    public static final String K_SHIMMER_MAG_Y = "";
+    public static final String K_SHIMMER_MAG_Z = "";
+	public static final String K_SHIMMER_GSR = "";
+	public static final String K_SHIMMER_EMG_CH1_24 = "";
+	public static final String K_SHIMMER_EMG_CH2_24 = "";
+	public static final String K_SHIMMER_EMG_CH1_16 = "";
+	public static final String K_SHIMMER_EMG_CH2_16 = "";
+	public static final String K_SHIMMER_ECG_LL_RA_24 = "";
+	public static final String K_SHIMMER_ECG_LA_RA_24 = "";
+	public static final String K_SHIMMER_ECG_LL_RA_16 = "";
+	public static final String K_SHIMMER_ECG_LA_RA_16 = "";
+	public static final String K_SHIMMER_BRIDGE_AMP_HIGH = "";
+	public static final String K_SHIMMER_BRIDGE_AMP_LOW = "";
+	public static final String K_SHIMMER_HEART_RATE = "";
+	public static final String K_SHIMMER_EXP_BOARD_A0 = "";
+	public static final String K_SHIMMER_EXP_BOARD_A7 = "";
+	public static final String K_SHIMMER_BATTERY = "";
+	public static final String K_SHIMMER_TIMESTAMP = "";
+	public static final String K_SHIMMER_EXT_EXP_A7 = "";
+	public static final String K_SHIMMER_EXT_EXP_A6 = "";
+	public static final String K_SHIMMER_EXT_EXP_A15 = "";
+	public static final String K_SHIMMER_INT_EXP_A1 = "";
+	public static final String K_SHIMMER_INT_EXP_A12 = "";
+	public static final String K_SHIMMER_INT_EXP_A13 = "";
+	public static final String K_SHIMMER_INT_EXP_A14 = "";
+	public static final String K_SHIMMER_PRESSURE = "";
+	
+	
+	
+	
 	private static final String SQL_CREATE_TABLE_CMD = "create table";
 	
 	private static final String TABLE_CREATE_TRIPS = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_TRIPS + " ("

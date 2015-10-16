@@ -623,8 +623,7 @@ public class Fragment_MainRecord extends Fragment implements
 			// Alert user GPS not available
 			dialogNoGps();
 		}
-		else {
-			myApp.startRecording(getActivity());
+		else if (myApp.startRecording(getActivity())) {
 			scheduleDeviceConnect();
 		}
 	}

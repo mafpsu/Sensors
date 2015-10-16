@@ -29,6 +29,14 @@ public class MyMath {
 		return sum / (float) readings.size();
 	}
 
+	public static double getAverageValueD(ArrayList<Double> readings) {
+		double sum = 0.0f;
+		for (Double reading : readings) {
+			sum = sum + reading.doubleValue();
+		}
+		return sum / (double) readings.size();
+	}
+
 	public static float getSumSquareDifferenceI(ArrayList<Integer> values, float average) {
 
 		float sum = 0.0f;
@@ -60,6 +68,18 @@ public class MyMath {
 
 		for (BigDecimal value : values) {
 			diff = value.floatValue() - average;
+			sum += (diff * diff);
+		}
+		return sum;
+	}
+
+	public static double getSumSquareDifferenceD(ArrayList<Double> values, double average) {
+
+		double sum = 0.0f;
+		double diff;
+
+		for (Double value : values) {
+			diff = value.doubleValue() - average;
 			sum += (diff * diff);
 		}
 		return sum;
