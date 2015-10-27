@@ -95,17 +95,17 @@ final public class ObjectCluster implements Cloneable,Serializable{
 	 * @return FormatCluster
 	 */
 	public static FormatCluster returnFormatCluster(Collection<FormatCluster> collectionFormatCluster, String format){
+		
 		Iterator<FormatCluster> iFormatCluster=collectionFormatCluster.iterator();
 		FormatCluster formatCluster;
-		FormatCluster returnFormatCluster = null;
 
 		while(iFormatCluster.hasNext()){
 			formatCluster=(FormatCluster)iFormatCluster.next();
 			if (formatCluster.mFormat.equals(format)){
-				returnFormatCluster=formatCluster;
+				 return formatCluster;
 			}
 		}
-		return returnFormatCluster;
+		return null;
 	}
 
 	/**

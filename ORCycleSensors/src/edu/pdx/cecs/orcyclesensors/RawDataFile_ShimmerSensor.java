@@ -66,17 +66,15 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 		// Note: it is possible to not have an equal number of readings, so
 		// in order to include only complete rows of values
 		int numReadings = 0;
-		if (null != readings0) {
+
+		if ((null != readings0) && (numReadings < readings0.size())) {
 			numReadings = readings0.size();
 		}
-		if ((null != readings1) && (readings1.size() < numReadings)) {
+		if ((null != readings1) && (numReadings < readings1.size())) {
 			numReadings = readings1.size();
 		}
-		if ((null != readings2) && (readings2.size() < numReadings)) {
+		if ((null != readings2) && (numReadings < readings2.size())) {
 			numReadings = readings2.size();
-		}
-		if (numReadings == 0) {
-			return;
 		}
 		
 		long lat = (int) (location.getLatitude() * 1E6);
@@ -85,31 +83,42 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 
 		// Write the data to file
 		try {
-			for (int i = 0; i < numReadings; ++i) {
-				// Clear previous string output
+			if (numReadings == 0) {
 				row.append(timestamp);
 				row.append(COMMA);
 				row.append(((double)lat) / 1E6);
 				row.append(COMMA);
 				row.append(((double)lgt) / 1E6);
-				if (null != readings0) {
+				row.append(NEWLINE);
+				return;
+			}
+			else {
+				for (int i = 0; i < numReadings; ++i) {
+					// Clear previous string output
+					row.append(timestamp);
 					row.append(COMMA);
-					row.append(readings0.get(i));
-					if (null != readings1) {
+					row.append(((double)lat) / 1E6);
+					row.append(COMMA);
+					row.append(((double)lgt) / 1E6);
+					if (null != readings0) {
 						row.append(COMMA);
-						row.append(readings1.get(i));
+						row.append(readings0.get(i));
 						if (null != readings1) {
 							row.append(COMMA);
-							row.append(readings2.get(i));
+							row.append(readings1.get(i));
+							if (null != readings2) {
+								row.append(COMMA);
+								row.append(readings2.get(i));
+							}
 						}
 					}
+					row.append(NEWLINE);
 				}
-				row.append(NEWLINE);
-			}
-		
-			// If there is data, write it to buffer
-			if (row.length() > 0) {
-				file.write(row.toString(), 0, row.length());
+			
+				// If there is data, write it to buffer
+				if (row.length() > 0) {
+					file.write(row.toString(), 0, row.length());
+				}
 			}
 		}
 		catch(IOException ex) {

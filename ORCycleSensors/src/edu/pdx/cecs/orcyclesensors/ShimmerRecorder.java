@@ -10,6 +10,7 @@ import edu.pdx.cecs.orcyclesensors.shimmer.driver.Configuration.Shimmer3;
 import edu.pdx.cecs.orcyclesensors.shimmer.driver.ShimmerVerDetails;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -39,26 +40,13 @@ public class ShimmerRecorder {
 	private RawDataFile_Shimmer summaryDataFile;
 	private Context context;
 	private final HashMap<String, RawDataFile_ShimmerSensor> sensorDataFiles = new  HashMap<String, RawDataFile_ShimmerSensor>();
-	private String[] enabledSensors;
+	private List<String> enabledSensors = null;
+	private String[] enabledSignals = null;
 	// The Handler that gets information back from the BluetoothChatService
     private Handler shimmerMessageHandler = new ShimmerMessageHandler();
     
 	HashMap<String, ArrayList<Double>> signalReadings = new HashMap<String, ArrayList<Double>>();
 	
-	public class CalcReading {
-		public String signalName;
-		public int size;
-		public double avg;
-		public double ssd;
-		
-		public CalcReading(String signalName, int size, double avg, double ssd) {
-			this.signalName = signalName;
-			this.size = size;
-			this.avg = avg;
-			this.ssd = ssd;
-		}
-	}
-
     // ---------------------------------------------------------
 	
 	public ShimmerRecorder(Context context, String bluetoothAddress, boolean recordRawData, long tripId, String dataDir) {
@@ -140,30 +128,6 @@ public class ShimmerRecorder {
         signalReadings.clear();
 	}
 
-	public class SignalGroup {
-		public String sensorName;
-		private String[] signalNames = new String[0];
-		
-		public SignalGroup(String sensorName, String signalName0, String signalName1, String signalName2) {
-			this.sensorName = sensorName;
-			signalNames = new String[3];
-			this.signalNames[0] = signalName0;
-			this.signalNames[1] = signalName1;
-			this.signalNames[2] = signalName2;
-		}
-		public SignalGroup(String sensorName, String signalName0, String signalName1) {
-			this.sensorName = sensorName;
-			signalNames = new String[2];
-			this.signalNames[0] = signalName0;
-			this.signalNames[1] = signalName1;
-		}
-		public SignalGroup(String sensorName, String signalName0) {
-			this.sensorName = sensorName;
-			signalNames = new String[1];
-			this.signalNames[0] = signalName0;
-		}
-	}
-	
 	/**
 	 * Return a SignalGroup object which specifies what group of signals specify a sensor
 	 * @param sensorName
@@ -190,27 +154,27 @@ public class ShimmerRecorder {
 		} else if (sensorName.equals("Wide Range Accelerometer")) {
 			
 			signalGroup = new SignalGroup(sensorName, 
-					"Wide Range Accelerometer X",
-					"Wide Range Accelerometer Y",
-					"Wide Range Accelerometer Z");
+					Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_WR_X,
+					Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_WR_Y,
+					Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_WR_Z);
 			
 		} else if (sensorName.equals("Gyroscope")) {
 			
 			signalGroup = new SignalGroup(sensorName,
-					"Gyroscope X",
-					"Gyroscope Y",
-					"Gyroscope Z");
+					Configuration.Shimmer3.ObjectClusterSensorName.GYRO_X,
+					Configuration.Shimmer3.ObjectClusterSensorName.GYRO_Y,
+					Configuration.Shimmer3.ObjectClusterSensorName.GYRO_Z);
 			
 		} else if (sensorName.equals("Magnetometer")) {
 			
 			signalGroup = new SignalGroup(sensorName,
-					"Magnetometer X",
-					"Magnetometer Y",
-					"Magnetometer Z");
+					Configuration.Shimmer3.ObjectClusterSensorName.MAG_X,
+					Configuration.Shimmer3.ObjectClusterSensorName.MAG_Y,
+					Configuration.Shimmer3.ObjectClusterSensorName.MAG_Z);
 			
 		} else if (sensorName.equals("GSR")) {
 			
-			signalGroup = new SignalGroup(sensorName,"GSR");
+			signalGroup = new SignalGroup(sensorName,Configuration.Shimmer3.ObjectClusterSensorName.GSR);
 			
 		} else if (sensorName.equals("EMG")) {
 			
@@ -295,6 +259,11 @@ public class ShimmerRecorder {
 
 		} else if (sensorName.equals("Battery Voltage")) {
 
+			//signalGroup = new SignalGroup(sensorName, "VSenseReg", "VSenseBatt");
+			signalGroup = new SignalGroup(sensorName, Shimmer3.ObjectClusterSensorName.BATTERY);
+
+		} else if (sensorName.equals("Battery")) {
+
 			signalGroup = new SignalGroup(sensorName, "VSenseReg", "VSenseBatt");
 
 		} else if (sensorName.equals("Timestamp")) {
@@ -342,8 +311,9 @@ public class ShimmerRecorder {
 
 		} else if (sensorName.equals("Pressure")) {
 
-			signalGroup = new SignalGroup(sensorName, "Pressure", "Temperature");
-
+			signalGroup = new SignalGroup(sensorName,
+					Shimmer3.ObjectClusterSensorName.PRESSURE_BMP180, 
+					Shimmer3.ObjectClusterSensorName.TEMPERATURE_BMP180);
 		}
 		
 		return signalGroup;
@@ -359,61 +329,77 @@ public class ShimmerRecorder {
 
 		HashMap<String, CalcReading> results = new HashMap<String, CalcReading>();
 		RawDataFile_ShimmerSensor sensorDataFile;
+		ArrayList<Double> signalReading = null;
 		ArrayList<Double> signal0 = null;
 		ArrayList<Double> signal1 = null;
 		ArrayList<Double> signal2 = null;
 
-
+		CalcReading result;
 		try {
-			for (String sensorName: enabledSensors) {
+			for (String signalName: enabledSignals) {
 				
 				// For now, we are not going to record the sensor's timestamp
-				if (sensorName.equalsIgnoreCase("timestamp")) {
+				if (signalName.equalsIgnoreCase("timestamp")) {
 					continue;
 				}
 				
-				// Get the group of signals for the specified sensor
-				SignalGroup signalGroup = getSignalGroup(sensorName);
+				signalReading = signalReadings.get(signalName);
+				if (null != (result = calculateResult(signalName, signalReading))) {
+					results.put(signalName, result);
+				}
+			}
 
-				// Calculate the average and standard deviation results for each signal
-				if ((signalGroup.signalNames.length > 0) && (signalGroup.signalNames[0] != null)) {
-					signal0 = signalReadings.get(signalGroup.signalNames[0]);
-					results.put(signalGroup.signalNames[0], calculateResult(signalGroup.signalNames[0], signal0));
-				}
-				else {
-					signal0 = null;
-				}
+			// Copy the readings to the sensor data file
+			if (recordRawData) {
 				
-				if ((signalGroup.signalNames.length > 1) && (signalGroup.signalNames[1] != null)) {
-					signal1 = signalReadings.get(signalGroup.signalNames[1]);
-					results.put(signalGroup.signalNames[1], calculateResult(signalGroup.signalNames[1], signal1));
-				}
-				else {
-					signal1 = null;
-				}
+				SignalGroup signalGroup;
 				
-				if ((signalGroup.signalNames.length > 2) && (signalGroup.signalNames[2] != null)) {
-					signal2 = signalReadings.get(signalGroup.signalNames[2]);
-					results.put(signalGroup.signalNames[2], calculateResult(signalGroup.signalNames[2], signal2));
-				}
-				else {
-					signal2 = null;
-				}
-
-				// Copy the readings to the sensor data file
-				if (recordRawData) {
-					if (null != (sensorDataFile = sensorDataFiles.get(sensorName))) {
-						sensorDataFile.write(currentTimeMillis, location, signal0, signal1, signal2);
+				for (String sensorName: enabledSensors) {
+					
+					// For now, we are not going to record the sensor's timestamp
+					if (sensorName.equalsIgnoreCase("timestamp")) {
+						continue;
 					}
+	
+					if (null != (sensorDataFile = sensorDataFiles.get(sensorName))) {
+						// Get the group of signals for the specified sensor
+						if (null != (signalGroup = getSignalGroup(sensorName))) {
+						
+							if ((signalGroup.signalNames.length > 0) && (signalGroup.signalNames[0] != null)) {
+								
+								signal0 = signalReadings.get(signalGroup.signalNames[0]);
+								
+								if ((signalGroup.signalNames.length > 1) && (signalGroup.signalNames[1] != null)) {
+									
+									signal1 = signalReadings.get(signalGroup.signalNames[1]);
+									
+									if ((signalGroup.signalNames.length > 2) && (signalGroup.signalNames[2] != null)) {
+										
+										signal2 = signalReadings.get(signalGroup.signalNames[2]);
+									}
+									else {
+										signal2 = null;
+									}
+								}
+								else {
+									signal1 = null;
+								}
+							}
+							else {
+								signal0 = null;
+							}
+							sensorDataFile.write(currentTimeMillis, location, signal0, signal1, signal2);
+						}
+					}
+				}
+				
+				// Copy the result readings (average and variance) to the summary data file
+				if (null != summaryDataFile) {
+					summaryDataFile.write(currentTimeMillis, location, results);
 				}
 			}
 
 			tripData.addShimmerReading(currentTimeMillis, results);
-
-			// Copy the result readings (average and variance) to the summary data file
-			if (null != summaryDataFile) {
-				summaryDataFile.write(currentTimeMillis, location, results);
-			}
 		}
 		catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
@@ -440,6 +426,47 @@ public class ShimmerRecorder {
 			signalReadings.get(key).clear();
 		}
 	}
+	
+	synchronized private void writeData(ObjectCluster objectCluster){
+		
+		Multimap<String, FormatCluster> propertyCluster = objectCluster.mPropertyCluster;
+		ArrayList<Double> readings;
+		Collection<FormatCluster> formats;
+		FormatCluster formatCluster;
+
+		// For each signal that we are recording
+		for(String signalName : signalReadings.keySet()) {
+			// get the readings data
+			if (null != (readings = signalReadings.get(signalName))) {
+				// Retrieve the object cluster containing new reading data
+				if (null != (formats = objectCluster.mPropertyCluster.get(correctedSignalName(signalName)))) {
+					// Retrieve the calibrated reading value
+					if (null != (formatCluster = ((FormatCluster)ObjectCluster.returnFormatCluster(formats, "CAL")))) {
+						readings.add(formatCluster.mData);
+					}
+	 	    	}
+			}
+		}
+	}
+	
+	/**
+	 * for some sensors, the calibrated value sensor name is the Legacy name
+	 * @param signalName
+	 * @return
+	 */
+	private String correctedSignalName(String signalName) {
+		
+		if (signalName.equals(Shimmer3.ObjectClusterSensorName.PRESSURE_BMP180)) {
+			return "Pressure";
+		}
+		else if (signalName.equals(Shimmer3.ObjectClusterSensorName.TEMPERATURE_BMP180)) {
+			return "Temperature";
+		}
+		else {
+			return signalName;
+		}
+	}
+
 	// *********************************************************************************
 	// *                          Shimmer Message Handler
 	// *********************************************************************************
@@ -448,8 +475,6 @@ public class ShimmerRecorder {
 		
 		public void handleMessage(Message msg) {
 			
-			String filename;
-
 			try {
 				switch (msg.what) {
 	            
@@ -472,38 +497,40 @@ public class ShimmerRecorder {
 		    				String filenameRoot = "Shimmer" + "(" + String.valueOf(bluetoothAddress) + ") " + String.valueOf(tripId) + " ";
 	
 		    				// Get list of enabled sensors
-		    				List<String> tmp = shimmer.getListofEnabledSensors();
-		    				enabledSensors = new String[0];
-		    				enabledSensors = tmp.toArray(enabledSensors);
+		    				enabledSignals = shimmer.getListofEnabledSensorSignals();
 		    				ArrayList<String> signalNames = new ArrayList<String>(); 
 
 		    				// Create arrays to hold sensor reading for each signal of each enabled sensor
-		    				for (String sensorName: enabledSensors) {
-		    					
-		    					// Get the readings for the group  of signals specified
-		    					SignalGroup signalGroup = getSignalGroup(sensorName);
-	
-		    					for (int i = 0; i < signalGroup.signalNames.length; ++i) {
-			    					signalReadings.put(signalGroup.signalNames[i], new ArrayList<Double>());
-			    					signalNames.add(signalGroup.signalNames[i]);
+		    				for (String signalName: enabledSignals) {
+		    					if (!signalName.equals("Timestamp")) {
+			    					signalReadings.put(signalName, new ArrayList<Double>());
+			    					signalNames.add(signalName);
 		    					}
-	
-			    				// If flag is set, Create data files for writing the data
-		    					if (recordRawData) {
-			    					RawDataFile_ShimmerSensor rawDataFile = new RawDataFile_ShimmerSensor(filenameRoot + sensorName, tripId, dataDir, signalGroup.signalNames);
-			    					rawDataFile.open(context);
-			    					sensorDataFiles.put(sensorName, rawDataFile);
-			    				}
 		    				}
 		    				
-		    				// If flag is set, Create a data summary file
-		    				if ((recordRawData) && (signalReadings.size() > 0)) {
-		    					String[] arraySignalNames = new String[0];
-		    					arraySignalNames = signalNames.toArray(arraySignalNames);
-		    					summaryDataFile = new RawDataFile_Shimmer(filenameRoot + "Upload", tripId, dataDir, arraySignalNames);
-		    					summaryDataFile.open(context);
+		    				// If flag is set, Create data files for writing the raw data
+		    				SignalGroup signalGroup;
+	    					if (recordRawData) {
+			    				enabledSensors = shimmer.getListofEnabledSensors();
+			    				for (String sensorName: enabledSensors) {
+			    					if (!sensorName.equals("Timestamp")) {
+				    					// Get the readings for the group  of signals specified
+			    						signalGroup = getSignalGroup(sensorName);
+				    					RawDataFile_ShimmerSensor rawDataFile = new RawDataFile_ShimmerSensor(filenameRoot + sensorName, tripId, dataDir, signalGroup.signalNames);
+				    					rawDataFile.open(context);
+				    					sensorDataFiles.put(sensorName, rawDataFile);
+				    				}
+		    					}
+			    				// If flag is set, Create a data summary file
+			    				if (signalReadings.size() > 0) {
+			    					String[] arraySignalNames = new String[0];
+			    					arraySignalNames = signalNames.toArray(arraySignalNames);
+			    					summaryDataFile = new RawDataFile_Shimmer(filenameRoot + "Upload", tripId, dataDir, arraySignalNames);
+			    					summaryDataFile.open(context);
+			    				}
 		    				}
-	
+	    					
+	    					// tell the shimmer device to start sending data
 		    				mService.startStreaming(bluetoothAddress);
 	                	}
 	                	catch(Exception ex) {
@@ -544,19 +571,49 @@ public class ShimmerRecorder {
 		}
 	}
 
-	private void writeData(ObjectCluster objectCluster){
-		
-		Multimap<String, FormatCluster> propertyCluster = objectCluster.mPropertyCluster;
-		ArrayList<Double> readings;
+	// *********************************************************************************
+	// *                                CalcReading
+	// *********************************************************************************
 
-		for(String key : propertyCluster.keys()) {
-			for(FormatCluster f : propertyCluster.get(key)) {
-				if (f.mFormat.equalsIgnoreCase("CAL")) {
-					if (null != (readings = signalReadings.get(key))) {
-						readings.add(f.mData);
-					}
-				}
-			}
+	public class CalcReading {
+		public String signalName;
+		public int size;
+		public double avg;
+		public double ssd;
+		
+		public CalcReading(String signalName, int size, double avg, double ssd) {
+			this.signalName = signalName;
+			this.size = size;
+			this.avg = avg;
+			this.ssd = ssd;
+		}
+	}
+
+	// *********************************************************************************
+	// *                                SignalGroup
+	// *********************************************************************************
+
+	public class SignalGroup {
+		public String sensorName;
+		private String[] signalNames = new String[0];
+		
+		public SignalGroup(String sensorName, String signalName0, String signalName1, String signalName2) {
+			this.sensorName = sensorName;
+			signalNames = new String[3];
+			this.signalNames[0] = signalName0;
+			this.signalNames[1] = signalName1;
+			this.signalNames[2] = signalName2;
+		}
+		public SignalGroup(String sensorName, String signalName0, String signalName1) {
+			this.sensorName = sensorName;
+			signalNames = new String[2];
+			this.signalNames[0] = signalName0;
+			this.signalNames[1] = signalName1;
+		}
+		public SignalGroup(String sensorName, String signalName0) {
+			this.sensorName = sensorName;
+			signalNames = new String[1];
+			this.signalNames[0] = signalName0;
 		}
 	}
 }
