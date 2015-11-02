@@ -33,6 +33,8 @@ public class ShimmerRecorder {
 	private ShimmerService mService = null;
 	private State state = State.IDLE;
 	private int shimmerVersion = -1;
+	public boolean isEXGUsingDefaultECGConfiguration;
+	public boolean isEXGUsingDefaultEMGConfiguration;
 	private boolean recordRawData;
 	private long tripId;
 	private String dataDir;
@@ -128,12 +130,230 @@ public class ShimmerRecorder {
         signalReadings.clear();
 	}
 
+	private SignalGroup getSignalGroup(String sensorName) {
+		
+		SignalGroup signalGroup = null;
+
+		// --------------------------------------------------------------------
+		//                         Shimmer 2 & 2R
+		// --------------------------------------------------------------------
+		if (shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_2 || shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_2R) {
+
+			if (sensorName.equals("Accelerometer")){
+				signalGroup = new SignalGroup(sensorName, 
+						Configuration.Shimmer2.ObjectClusterSensorName.ACCEL_X,
+						Configuration.Shimmer2.ObjectClusterSensorName.ACCEL_Y,
+						Configuration.Shimmer2.ObjectClusterSensorName.ACCEL_Z);
+			}
+			else if (sensorName.equals("Gyroscope")){
+				signalGroup = new SignalGroup(sensorName,
+						Configuration.Shimmer2.ObjectClusterSensorName.GYRO_X,
+						Configuration.Shimmer2.ObjectClusterSensorName.GYRO_Y,
+						Configuration.Shimmer2.ObjectClusterSensorName.GYRO_Z);
+			}
+			else if (sensorName.equals("Magnetometer")){
+				signalGroup = new SignalGroup(sensorName,
+						Configuration.Shimmer2.ObjectClusterSensorName.MAG_X,
+						Configuration.Shimmer2.ObjectClusterSensorName.MAG_Y,
+						Configuration.Shimmer2.ObjectClusterSensorName.MAG_Z);
+			}
+			else if (sensorName.equals("GSR")){
+				signalGroup = new SignalGroup(sensorName,
+						Configuration.Shimmer2.ObjectClusterSensorName.GSR);
+			}
+			else if (sensorName.equals("ECG")){
+				signalGroup = new SignalGroup(sensorName,
+						Configuration.Shimmer2.ObjectClusterSensorName.ECG_RA_LL,
+						Configuration.Shimmer2.ObjectClusterSensorName.ECG_LA_LL);
+			}
+			else if (sensorName.equals("EMG")){
+				signalGroup = new SignalGroup(sensorName,
+						Configuration.Shimmer2.ObjectClusterSensorName.EMG);
+			}
+			else if (sensorName.equals("Bridge Amplifier")){
+				signalGroup = new SignalGroup(sensorName,
+						Configuration.Shimmer2.ObjectClusterSensorName.BRIDGE_AMP_HIGH,
+						Configuration.Shimmer2.ObjectClusterSensorName.BRIDGE_AMP_LOW);
+			}
+			else if (sensorName.equals("Heart Rate")){
+				signalGroup = new SignalGroup(sensorName,
+						Configuration.Shimmer2.ObjectClusterSensorName.HEART_RATE);
+			}
+			else if (sensorName.equals("Exp Board A0")){ // TODO: Verify Exp Board A0
+				signalGroup = new SignalGroup(sensorName,
+						Configuration.Shimmer2.ObjectClusterSensorName.EXP_BOARD_A0);
+			}
+			else if (sensorName.equals("Exp Board A7")){ // TODO: Verify Exp Board A7
+				signalGroup = new SignalGroup(sensorName,
+						Configuration.Shimmer2.ObjectClusterSensorName.EXP_BOARD_A7);
+			}
+			else if (sensorName.equals("Battery Voltage")){
+				signalGroup = new SignalGroup(sensorName,
+						Configuration.Shimmer2.ObjectClusterSensorName.BATTERY,
+						Configuration.Shimmer2.ObjectClusterSensorName.REG);
+			}
+		}
+		// --------------------------------------------------------------------
+		//                              Shimmer 3
+		// --------------------------------------------------------------------
+		else if (shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_3) { 
+			if (sensorName.equals("Low Noise Accelerometer")){
+				signalGroup = new SignalGroup(sensorName, 
+						Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_LN_X,
+						Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_LN_Y,
+						Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_LN_Z);
+			}
+			else if (sensorName.equals("Wide Range Accelerometer")){
+				signalGroup = new SignalGroup(sensorName, 
+						Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_WR_X,
+						Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_WR_Y,
+						Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_WR_Z);
+			}
+			else if (sensorName.equals("Gyroscope")){
+				signalGroup = new SignalGroup(sensorName,
+						Configuration.Shimmer3.ObjectClusterSensorName.GYRO_X,
+						Configuration.Shimmer3.ObjectClusterSensorName.GYRO_Y,
+						Configuration.Shimmer3.ObjectClusterSensorName.GYRO_Z);
+			}
+			else if (sensorName.equals("Magnetometer")){
+				signalGroup = new SignalGroup(sensorName,
+						Configuration.Shimmer3.ObjectClusterSensorName.MAG_X,
+						Configuration.Shimmer3.ObjectClusterSensorName.MAG_Y,
+						Configuration.Shimmer3.ObjectClusterSensorName.MAG_Z);
+			}
+			else if (sensorName.equals("Battery Voltage")){
+				signalGroup = new SignalGroup(sensorName,
+						Shimmer3.ObjectClusterSensorName.BATTERY);
+			}
+			else if (sensorName.equals("External ADC A15")){
+				signalGroup = new SignalGroup(sensorName,
+						Shimmer3.ObjectClusterSensorName.EXT_EXP_A15);
+			}
+			else if (sensorName.equals("External ADC A7")){
+				signalGroup = new SignalGroup(sensorName,
+						Shimmer3.ObjectClusterSensorName.EXT_EXP_A7);
+			}
+			else if (sensorName.equals("External ADC A6")){
+				signalGroup = new SignalGroup(sensorName,
+						Shimmer3.ObjectClusterSensorName.EXT_EXP_A6);
+			}
+			else if (sensorName.equals("Internal ADC A1")){
+				signalGroup = new SignalGroup(sensorName,
+						Shimmer3.ObjectClusterSensorName.INT_EXP_A1);
+			}
+			else if (sensorName.equals("Internal ADC A12")){
+				signalGroup = new SignalGroup(sensorName,
+						Shimmer3.ObjectClusterSensorName.INT_EXP_A12);
+			}
+			else if (sensorName.equals("Internal ADC A13")){
+				signalGroup = new SignalGroup(sensorName,
+						Shimmer3.ObjectClusterSensorName.INT_EXP_A13);
+			}
+			else if (sensorName.equals("Internal ADC A14")){
+				signalGroup = new SignalGroup(sensorName,
+						Shimmer3.ObjectClusterSensorName.INT_EXP_A14);
+			}
+			else if (sensorName.equals("Pressure")){ // TODO: Verify Pressure
+				signalGroup = new SignalGroup(sensorName,
+						Shimmer3.ObjectClusterSensorName.PRESSURE_BMP180, 
+						Shimmer3.ObjectClusterSensorName.TEMPERATURE_BMP180);
+			}
+			else if (sensorName.equals("GSR")){
+				signalGroup = new SignalGroup(sensorName,
+						Configuration.Shimmer3.ObjectClusterSensorName.GSR);
+			}
+			else if (sensorName.equals("EXG1")){
+				if (isEXGUsingDefaultECGConfiguration){
+					signalGroup = new SignalGroup(sensorName,
+							Shimmer3.ObjectClusterSensorName.EXG1_STATUS,
+							Shimmer3.ObjectClusterSensorName.ECG_LL_RA_24BIT,
+							Shimmer3.ObjectClusterSensorName.ECG_LA_RA_24BIT);
+				}
+				else if (isEXGUsingDefaultEMGConfiguration){
+					signalGroup = new SignalGroup(sensorName,
+							Shimmer3.ObjectClusterSensorName.EXG1_STATUS,
+							Shimmer3.ObjectClusterSensorName.EMG_CH1_24BIT,
+							Shimmer3.ObjectClusterSensorName.EMG_CH2_24BIT);
+				} else {
+					signalGroup = new SignalGroup(sensorName,
+							Shimmer3.ObjectClusterSensorName.EXG1_STATUS,
+							Shimmer3.ObjectClusterSensorName.EXG1_CH1_24BIT,
+							Shimmer3.ObjectClusterSensorName.EXG1_CH2_24BIT);
+				}
+			}
+			else if (sensorName.equals("EXG2")){
+				if (isEXGUsingDefaultECGConfiguration){
+					signalGroup = new SignalGroup(sensorName,
+							Shimmer3.ObjectClusterSensorName.EXG2_STATUS,
+							Shimmer3.ObjectClusterSensorName.EXG2_CH1_24BIT,
+							Shimmer3.ObjectClusterSensorName.ECG_VX_RL_24BIT);
+				}
+				else if (isEXGUsingDefaultEMGConfiguration){
+					signalGroup = new SignalGroup(sensorName,
+							Shimmer3.ObjectClusterSensorName.EXG2_STATUS,
+							Shimmer3.ObjectClusterSensorName.EXG2_CH1_24BIT,
+							Shimmer3.ObjectClusterSensorName.EXG2_CH2_24BIT);
+				} else {
+					signalGroup = new SignalGroup(sensorName,
+							Shimmer3.ObjectClusterSensorName.EXG2_STATUS,
+							Shimmer3.ObjectClusterSensorName.EXG2_CH1_24BIT,
+							Shimmer3.ObjectClusterSensorName.EXG2_CH2_24BIT);
+				}
+			}
+			else if (sensorName.equals("EXG1 16Bit")){
+				if (isEXGUsingDefaultECGConfiguration){
+					signalGroup = new SignalGroup(sensorName,
+							Shimmer3.ObjectClusterSensorName.EXG1_STATUS,
+							Shimmer3.ObjectClusterSensorName.ECG_LL_RA_16BIT,
+							Shimmer3.ObjectClusterSensorName.ECG_LA_RA_16BIT);
+				}
+				else if (isEXGUsingDefaultEMGConfiguration){
+					signalGroup = new SignalGroup(sensorName,
+							Shimmer3.ObjectClusterSensorName.EXG1_STATUS,
+							Shimmer3.ObjectClusterSensorName.EMG_CH1_16BIT,
+							Shimmer3.ObjectClusterSensorName.EMG_CH2_16BIT);
+				} else {
+					signalGroup = new SignalGroup(sensorName,
+							Shimmer3.ObjectClusterSensorName.EXG1_STATUS,
+							Shimmer3.ObjectClusterSensorName.EXG1_CH1_16BIT,
+							Shimmer3.ObjectClusterSensorName.EXG1_CH2_16BIT);
+				}
+			}
+			else if (sensorName.equals("EXG2 16 Bit")){
+				if (isEXGUsingDefaultECGConfiguration){
+					signalGroup = new SignalGroup(sensorName,
+							Shimmer3.ObjectClusterSensorName.EXG2_STATUS,
+							Shimmer3.ObjectClusterSensorName.EXG2_CH1_16BIT,
+							Shimmer3.ObjectClusterSensorName.ECG_VX_RL_16BIT);
+				}
+				else if (isEXGUsingDefaultEMGConfiguration){
+					signalGroup = new SignalGroup(sensorName,
+							Shimmer3.ObjectClusterSensorName.EXG2_STATUS,
+							Shimmer3.ObjectClusterSensorName.EXG2_CH1_16BIT,
+							Shimmer3.ObjectClusterSensorName.EXG2_CH2_16BIT);
+				} else {
+					signalGroup = new SignalGroup(sensorName,
+							Shimmer3.ObjectClusterSensorName.EXG2_STATUS,
+							Shimmer3.ObjectClusterSensorName.EXG2_CH1_16BIT,
+							Shimmer3.ObjectClusterSensorName.EXG2_CH2_16BIT);
+				}
+			}
+			else if (sensorName.equals("Bridge Amplifier")){
+				signalGroup = new SignalGroup(sensorName,
+						Shimmer3.ObjectClusterSensorName.BRIDGE_AMP_HIGH, 
+						Shimmer3.ObjectClusterSensorName.BRIDGE_AMP_LOW);
+			}
+		}
+		
+		return signalGroup;
+	}
+	
 	/**
 	 * Return a SignalGroup object which specifies what group of signals specify a sensor
 	 * @param sensorName
 	 * @return a SignalGroup object which specifies what group of signals specify a sensor
 	 */
-	private SignalGroup getSignalGroup(String sensorName) {
+	private SignalGroup getSignalGroupOld(String sensorName) {
 		
 		SignalGroup signalGroup = null;
 
@@ -314,6 +534,8 @@ public class ShimmerRecorder {
 			signalGroup = new SignalGroup(sensorName,
 					Shimmer3.ObjectClusterSensorName.PRESSURE_BMP180, 
 					Shimmer3.ObjectClusterSensorName.TEMPERATURE_BMP180);
+		} else {
+			Log.e(MODULE_TAG, "getSignalGroup(): Signal name not found!");
 		}
 		
 		return signalGroup;
@@ -429,7 +651,6 @@ public class ShimmerRecorder {
 	
 	synchronized private void writeData(ObjectCluster objectCluster){
 		
-		Multimap<String, FormatCluster> propertyCluster = objectCluster.mPropertyCluster;
 		ArrayList<Double> readings;
 		Collection<FormatCluster> formats;
 		FormatCluster formatCluster;
@@ -441,14 +662,14 @@ public class ShimmerRecorder {
 				// Retrieve the object cluster containing new reading data
 				if (null != (formats = objectCluster.mPropertyCluster.get(correctedSignalName(signalName)))) {
 					// Retrieve the calibrated reading value
-					if (null != (formatCluster = ((FormatCluster)ObjectCluster.returnFormatCluster(formats, "CAL")))) {
+					if (null != (formatCluster = ((FormatCluster)ObjectCluster.returnFormatCluster(formats, calFormat(signalName))))) {
 						readings.add(formatCluster.mData);
 					}
 	 	    	}
 			}
 		}
 	}
-	
+
 	/**
 	 * for some sensors, the calibrated value sensor name is the Legacy name
 	 * @param signalName
@@ -464,6 +685,21 @@ public class ShimmerRecorder {
 		}
 		else {
 			return signalName;
+		}
+	}
+
+	/**
+	 * for some sensors, there is only a RAW value
+	 * @param signalName
+	 * @return
+	 */
+	private String calFormat(String signalName) {
+		
+		if (signalName.equals(Shimmer3.ObjectClusterSensorName.EXG1_STATUS)) {
+			return "RAW";
+		}
+		else {
+			return "CAL";
 		}
 	}
 
@@ -494,6 +730,8 @@ public class ShimmerRecorder {
 		    				state = State.RUNNING;
 		    		        shimmerVersion = mService.getShimmerVersion(bluetoothAddress);
 		    				Shimmer shimmer = mService.getShimmer(bluetoothAddress);
+		    				isEXGUsingDefaultECGConfiguration = shimmer.isEXGUsingDefaultECGConfiguration();
+		    				isEXGUsingDefaultEMGConfiguration = shimmer.isEXGUsingDefaultEMGConfiguration();
 		    				String filenameRoot = "Shimmer" + "(" + String.valueOf(bluetoothAddress) + ") " + String.valueOf(tripId) + " ";
 	
 		    				// Get list of enabled sensors

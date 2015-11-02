@@ -65,17 +65,23 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 		
 		// Note: it is possible to not have an equal number of readings, so
 		// in order to include only complete rows of values
-		int numReadings = 0;
+		int maxNumReadings = 0;
+		int numReadings0 = 0;
+		int numReadings1 = 0;
+		int numReadings2 = 0;
 
-		if ((null != readings0) && (numReadings < readings0.size())) {
-			numReadings = readings0.size();
+		if (null != readings0) {
+			numReadings0 = readings0.size();
 		}
-		if ((null != readings1) && (numReadings < readings1.size())) {
-			numReadings = readings1.size();
+		if (null != readings1) {
+			numReadings1 = readings1.size();
 		}
-		if ((null != readings2) && (numReadings < readings2.size())) {
-			numReadings = readings2.size();
+		if (null != readings2) {
+			numReadings2 = readings2.size();
 		}
+		if (numReadings0 > maxNumReadings) maxNumReadings = numReadings0;
+		if (numReadings1 > maxNumReadings) maxNumReadings = numReadings1;
+		if (numReadings2 > maxNumReadings) maxNumReadings = numReadings2;
 		
 		long lat = (int) (location.getLatitude() * 1E6);
 		long lgt = (int) (location.getLongitude() * 1E6);
@@ -83,17 +89,29 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 
 		// Write the data to file
 		try {
-			if (numReadings == 0) {
+			if (maxNumReadings == 0) {
 				row.append(timestamp);
 				row.append(COMMA);
 				row.append(((double)lat) / 1E6);
 				row.append(COMMA);
 				row.append(((double)lgt) / 1E6);
 				row.append(NEWLINE);
+				if (null != readings0) {
+					row.append(COMMA);
+					row.append("null");
+				}
+				if (null != readings1) {
+					row.append(COMMA);
+					row.append("null");
+				}
+				if (null != readings2) {
+					row.append(COMMA);
+					row.append("null");
+				}
 				return;
 			}
 			else {
-				for (int i = 0; i < numReadings; ++i) {
+				for (int i = 0; i < maxNumReadings; ++i) {
 					// Clear previous string output
 					row.append(timestamp);
 					row.append(COMMA);
@@ -102,15 +120,24 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 					row.append(((double)lgt) / 1E6);
 					if (null != readings0) {
 						row.append(COMMA);
-						row.append(readings0.get(i));
-						if (null != readings1) {
-							row.append(COMMA);
+						if (i < numReadings0)
+							row.append(readings0.get(i));
+						else
+							row.append("null");
+					}
+					if (null != readings1) {
+						row.append(COMMA);
+						if (i < numReadings1)
 							row.append(readings1.get(i));
-							if (null != readings2) {
-								row.append(COMMA);
-								row.append(readings2.get(i));
-							}
-						}
+						else
+							row.append("null");
+					}
+					if (null != readings2) {
+						row.append(COMMA);
+						if (i < numReadings2)
+							row.append(readings2.get(i));
+						else
+							row.append("null");
 					}
 					row.append(NEWLINE);
 				}
