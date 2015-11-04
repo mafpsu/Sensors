@@ -37,51 +37,87 @@ public class MyMath {
 		return sum / (double) readings.size();
 	}
 
-	public static float getSumSquareDifferenceI(ArrayList<Integer> values, float average) {
+	public static double getStandardDeviationI(ArrayList<Integer> values, float average) {
 
-		float sum = 0.0f;
-		float diff;
+		if (values.size() > 0) {
 
-		for (float value : values) {
-			diff = value - average;
-			sum += (diff * diff);
+			float num = values.size();
+			float ssd = 0.0f;
+			float diff;
+			
+			for (float value : values) {
+				diff = value - average;
+				ssd += (diff * diff);
+			}
+			return Math.sqrt(ssd / num);
 		}
-		return sum;
+		return 0.0d;
 	}
 
-	public static float getSumSquareDifferenceF(ArrayList<Float> values, float average) {
+	public static double getStandardDeviationF(ArrayList<Float> values, float average) {
 
-		float sum = 0.0f;
-		float diff;
+		if (values.size() > 0) {
+			
+			float num = values.size();
+			float ssd = 0.0f;
+			float diff;
 
-		for (float value : values) {
-			diff = value - average;
-			sum += (diff * diff);
+			for (float value : values) {
+				diff = value - average;
+				ssd += (diff * diff);
+			}
+			return Math.sqrt(ssd / num);
 		}
-		return sum;
+		return 0.0d;
 	}
 
-	public static float getSumSquareDifferenceBD(ArrayList<BigDecimal> values, float average) {
+	public static double getStandardDeviationBD(ArrayList<BigDecimal> values, float average) {
 
-		float sum = 0.0f;
-		float diff;
+		if (values.size() > 0) {
+			
+			float num = values.size();
+			float ssd = 0.0f;
+			float diff;
 
-		for (BigDecimal value : values) {
-			diff = value.floatValue() - average;
-			sum += (diff * diff);
+			for (BigDecimal value : values) {
+				diff = value.floatValue() - average;
+				ssd += (diff * diff);
+			}
+			return Math.sqrt(ssd / num);
 		}
-		return sum;
+		return 0.0d;
 	}
 
-	public static double getSumSquareDifferenceD(ArrayList<Double> values, double average) {
+	public static double getStandardDeviationD(ArrayList<Double> values, double average) {
 
-		double sum = 0.0f;
-		double diff;
-
-		for (Double value : values) {
-			diff = value.doubleValue() - average;
-			sum += (diff * diff);
+		if (values.size() > 0) {
+			
+			double num = values.size();
+			double ssd = 0.0d;
+			double diff;
+			
+			for (Double value : values) {
+				diff = value.doubleValue() - average;
+				ssd += (diff * diff);
+			}
+			return Math.sqrt(ssd / num);
 		}
-		return sum;
+		return 0.0d;
+	}
+
+	/**
+	 * Rounds double value to specified number of decimal places.
+	 * @param value to round.
+	 * @return value rounded to specified number of decimal places.
+	 */
+	public static double rnd(double value, int places) {
+
+		switch(places) {
+		case 1: return Math.round(value * 10.0) / 10.0;
+		case 2: return Math.round(value * 100.0) / 100.0;
+		case 3: return Math.round(value * 1000.0) / 1000.0;
+		case 4: return Math.round(value * 10000.0) / 10000.0;
+		default: return value;
+		}
 	}
 }

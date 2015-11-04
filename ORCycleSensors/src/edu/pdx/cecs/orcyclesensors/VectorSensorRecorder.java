@@ -43,40 +43,40 @@ public class VectorSensorRecorder extends SensorRecorder {
 	synchronized public void writeResult(TripData tripData, long currentTimeMillis, Location location) {
 		
 		float[] averageValues;
-		float[] sumSquareDifferences;
+		double[] standardDeviations;
 
 		averageValues = new float[3];
-		sumSquareDifferences = new float[3];
+		standardDeviations = new double[3];
 		
 		if (readings0.size() == 0) {
 			averageValues[0] = 0;
-			sumSquareDifferences[0] = 0;
+			standardDeviations[0] = 0;
 		}
 		else {
 			averageValues[0] = MyMath.getAverageValueF(readings0);
-			sumSquareDifferences[0] = MyMath.getSumSquareDifferenceF(readings0, averageValues[0]);
+			standardDeviations[0] = MyMath.getStandardDeviationF(readings0, averageValues[0]);
 		}
 		
 		if (readings1.size() == 0) {
 			averageValues[1] = 0;
-			sumSquareDifferences[1] = 0;
+			standardDeviations[1] = 0;
 		}
 		else {
 			averageValues[1] = MyMath.getAverageValueF(readings1);
-			sumSquareDifferences[1] = MyMath.getSumSquareDifferenceF(readings1, averageValues[1]);
+			standardDeviations[1] = MyMath.getStandardDeviationF(readings1, averageValues[1]);
 		}
 		
 		if (readings2.size() == 0) {
 			averageValues[2] = 0;
-			sumSquareDifferences[2] = 0;
+			standardDeviations[2] = 0;
 		}
 		else {
 			averageValues[2] = MyMath.getAverageValueF(readings2);
-			sumSquareDifferences[2] = MyMath.getSumSquareDifferenceF(readings2, averageValues[2]);
+			standardDeviations[2] = MyMath.getStandardDeviationF(readings2, averageValues[2]);
 		}
 		
 		tripData.addSensorReadings(currentTimeMillis, sensorName, type, numSamples,
-				averageValues, sumSquareDifferences);
+				averageValues, standardDeviations);
 
 		if (null != rawDataFile) {
 			rawDataFile.write(currentTimeMillis, location, readings0, readings1, readings2);

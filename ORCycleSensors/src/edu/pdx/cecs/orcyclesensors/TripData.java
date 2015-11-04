@@ -416,14 +416,14 @@ public class TripData {
 		return rtn;
 	}
 	
-	public void addSensorReadings(double currentTime, String sensorName, int sensorType, int numSamples, float[] averageValues, float[] sumSquareDifferences) {
+	public void addSensorReadings(double currentTime, String sensorName, int sensorType, int numSamples, float[] averageValues, double[] standardDeviations) {
 		
 		Log.i(MODULE_TAG, "Sensor(time:" + currentTime + ", name: " + sensorName + ", type: " + sensorType + ", numSamples: " + numSamples + ")");
 		
-		if ((null != averageValues) && (null != sumSquareDifferences)) {
+		if ((null != averageValues) && (null != standardDeviations)) {
 			mDb.open();
 			try {
-				mDb.addSensorReadings(currentTime, sensorName, sensorType, numSamples, averageValues, sumSquareDifferences);
+				mDb.addSensorReadings(currentTime, sensorName, sensorType, numSamples, averageValues, standardDeviations);
 			}
 			catch (Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());
@@ -435,11 +435,11 @@ public class TripData {
 	}
 
 	public void addHeartRateDeviceReading(double currentTime, 
-			int numSamples, float avgHeartRate, float ssdHeartRate) {
+			int numSamples, float avgHeartRate, double stdHeartRate) {
 
 		mDb.open();
 		try {
-			mDb.addHeartRateDeviceReading(currentTime, numSamples, avgHeartRate, ssdHeartRate);
+			mDb.addHeartRateDeviceReading(currentTime, numSamples, avgHeartRate, stdHeartRate);
 		}
 		catch (Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
@@ -450,20 +450,20 @@ public class TripData {
 	}
 
 	public void addBikePowerDeviceReading(double currentTime, 
-			int nsCalcPower, float avgCalcPower, float ssdCalcPower,
-			int nsCalcTorque, float avgCalcTorque, float ssdCalcTorque,
-			int nsCalcCrankCadence, float avgCalcCrankCadence, float ssdCalcCrankCadence,
-			int nsCalcWheelSpeed, float avgCalcWheelSpeed, float ssdCalcWheelSpeed,
-			int nsCalcWheelDistance, float avgCalcWheelDistance, float ssdCalcWheelDistance) {
+			int nsCalcPower, float avgCalcPower, double stdCalcPower,
+			int nsCalcTorque, float avgCalcTorque, double stdCalcTorque,
+			int nsCalcCrankCadence, float avgCalcCrankCadence, double stdCalcCrankCadence,
+			int nsCalcWheelSpeed, float avgCalcWheelSpeed, double stdCalcWheelSpeed,
+			int nsCalcWheelDistance, float avgCalcWheelDistance, double stdCalcWheelDistance) {
 		
 		mDb.open();
 		try {
 			mDb.addBikePowerDeviceReading(currentTime,  
-					nsCalcPower, avgCalcPower, ssdCalcPower,
-					nsCalcTorque, avgCalcTorque, ssdCalcTorque,
-					nsCalcCrankCadence, avgCalcCrankCadence, ssdCalcCrankCadence,
-					nsCalcWheelSpeed, avgCalcWheelSpeed, ssdCalcWheelSpeed,
-					nsCalcWheelDistance, avgCalcWheelDistance, ssdCalcWheelDistance);
+					nsCalcPower, avgCalcPower, stdCalcPower,
+					nsCalcTorque, avgCalcTorque, stdCalcTorque,
+					nsCalcCrankCadence, avgCalcCrankCadence, stdCalcCrankCadence,
+					nsCalcWheelSpeed, avgCalcWheelSpeed, stdCalcWheelSpeed,
+					nsCalcWheelDistance, avgCalcWheelDistance, stdCalcWheelDistance);
 		}
 		catch (Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());

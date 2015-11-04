@@ -15,9 +15,9 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 	private static final String COMMA = ",";
 	private static final String NEWLINE = "\r\n";
 	
-	private Context context = null;
 	private boolean exceptionOccurred;
 	private String header = null;
+	private int[] decimalPlaces;
 	
 	@SuppressLint("SimpleDateFormat")
 	protected final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
@@ -29,15 +29,27 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 	 * @param dataDir
 	 * @param sensorName
 	 */
-	public RawDataFile_ShimmerSensor(String name, long tripId, String dataDir, String[] signalNames) {
+	public RawDataFile_ShimmerSensor(String name, long tripId, String dataDir, String[] signalNames, int shimmerVersion) {
 		super(name, tripId, dataDir);
 		
 		StringBuilder sbHeader = new StringBuilder();
+		
+		this.decimalPlaces = new int[signalNames.length];
+		
 		sbHeader.append("Time,Latitude,Longitude");
 		for (int i = 0; i < signalNames.length; ++i) {
 			sbHeader.append(COMMA);
 			sbHeader.append(signalNames[i]);
+			this.decimalPlaces[i] = ShimmerRecorder.getSignalDecimalPlaces(signalNames[i], shimmerVersion);
 		}
+		sbHeader.append(NEWLINE);
+		sbHeader.append(",,");
+		for (int i = 0; i < signalNames.length; ++i) {
+			sbHeader.append(COMMA);
+			sbHeader.append(ShimmerRecorder.getSignalUnits(signalNames[i], shimmerVersion));
+		}
+		sbHeader.append(NEWLINE);
+
 		header = sbHeader.toString();
 	}
 	
@@ -118,24 +130,27 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 					row.append(((double)lat) / 1E6);
 					row.append(COMMA);
 					row.append(((double)lgt) / 1E6);
+					
 					if (null != readings0) {
 						row.append(COMMA);
 						if (i < numReadings0)
-							row.append(readings0.get(i));
+							row.append(MyMath.rnd(readings0.get(i), decimalPlaces[0]));
 						else
 							row.append("null");
 					}
+					
 					if (null != readings1) {
 						row.append(COMMA);
 						if (i < numReadings1)
-							row.append(readings1.get(i));
+							row.append(MyMath.rnd(readings1.get(i), decimalPlaces[1]));
 						else
 							row.append("null");
 					}
+					
 					if (null != readings2) {
 						row.append(COMMA);
 						if (i < numReadings2)
-							row.append(readings2.get(i));
+							row.append(MyMath.rnd(readings2.get(i), decimalPlaces[2]));
 						else
 							row.append("null");
 					}

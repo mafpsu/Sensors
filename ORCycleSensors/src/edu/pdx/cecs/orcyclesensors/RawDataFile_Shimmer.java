@@ -1,16 +1,9 @@
 package edu.pdx.cecs.orcyclesensors;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-
-import com.google.common.collect.BiMap;
-
 import edu.pdx.cecs.orcyclesensors.ShimmerRecorder.CalcReading;
-import edu.pdx.cecs.orcyclesensors.shimmer.android.Shimmer;
 import android.annotation.SuppressLint;
 import android.location.Location;
 import android.util.Log;
@@ -22,30 +15,47 @@ public class RawDataFile_Shimmer extends RawDataFile {
 	private static final String COMMA = ",";
 	private static final String NEWLINE = "\r\n";
 	private static final String NULL_ENTRY = ",0,NULL,NULL";
+	private final String[] signalNames;
+	private final int[] decimalPlaces;
+	private final String header;
 	private boolean exceptionOccurred;
-	private String[] signalNames;
-	@SuppressLint("SimpleDateFormat")
-	protected final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 	
-	public RawDataFile_Shimmer(String name, long tripId, String dataDir, String[] signalNames) {
+	@SuppressLint("SimpleDateFormat")
+	private final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+	
+	public RawDataFile_Shimmer(String name, long tripId, String dataDir, String[] signalNames, int shimmerVersion) {
 		super(name, tripId, dataDir);
 		this.signalNames = signalNames;
+		this.decimalPlaces = new int[signalNames.length];
+
+		final StringBuilder sbHeader = new StringBuilder();
+		sbHeader.append("Time,Latitude,Longitude");
+		for (int i = 0; i < signalNames.length; i++) {
+			sbHeader.append(COMMA);
+			sbHeader.append("Size " + signalNames[i]);
+			sbHeader.append(COMMA);
+			sbHeader.append("Avg " + signalNames[i]);
+			sbHeader.append(COMMA);
+			sbHeader.append("STD Dev " + signalNames[i]);
+			decimalPlaces[i] = ShimmerRecorder.getSignalDecimalPlaces(signalNames[i], shimmerVersion);
+		}
+		sbHeader.append(NEWLINE);
+		sbHeader.append(",,");
+		for (int i = 0; i < signalNames.length; i++) {
+			sbHeader.append(COMMA);
+			sbHeader.append("Units " );
+			sbHeader.append(COMMA);
+			sbHeader.append(ShimmerRecorder.getSignalUnits(signalNames[i], shimmerVersion));
+			sbHeader.append(COMMA);
+			sbHeader.append(ShimmerRecorder.getSignalUnits(signalNames[i], shimmerVersion));
+		}
+		sbHeader.append(NEWLINE);
+
+		header = sbHeader.toString();
 	}
 	
 	public String getHeader() {
-
-		final StringBuilder header = new StringBuilder();
-		header.append("Time,Latitude,Longitude");
-		for (int i = 0; i < signalNames.length; i++) {
-			header.append(COMMA);
-			header.append("Size " + signalNames[i]);
-			header.append(COMMA);
-			header.append("Avg " + signalNames[i]);
-			header.append(COMMA);
-			header.append("SSD " + signalNames[i]);
-		}
-		header.append(NEWLINE);
-		return header.toString();
+		return header;
 	}
 	
 	public void write(long currentTimeMillis, Location location, HashMap<String, CalcReading> results) {
@@ -78,7 +88,7 @@ public class RawDataFile_Shimmer extends RawDataFile {
 					row.append(COMMA);
 					row.append(calcReading.avg);
 					row.append(COMMA);
-					row.append(calcReading.ssd);
+					row.append(MyMath.rnd(calcReading.std, decimalPlaces[i]));
 				}
 			}
 			row.append(NEWLINE);

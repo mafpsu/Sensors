@@ -789,46 +789,46 @@ public class AntDeviceBikePowerRecorder extends AntDeviceRecorder implements
 
 		// Calculate averages and sum square differences
 		float avgCalcPower = 0.0f;
-		float ssdCalcPower = 0.0f;
+		double stdCalcPower = 0.0f;
 		float avgCalcTorque = 0.0f;
-		float ssdCalcTorque = 0.0f;
+		double stdCalcTorque = 0.0f;
 		float avgCalcCrankCadence = 0.0f;
-		float ssdCalcCrankCadence = 0.0f;
+		double stdCalcCrankCadence = 0.0f;
 		float avgCalcWheelSpeed = 0.0f;
-		float ssdCalcWheelSpeed = 0.0f;
+		double stdCalcWheelSpeed = 0.0f;
 		float avgCalcWheelDistance = 0.0f;
-		float ssdCalcWheelDistance = 0.0f;
+		double stdCalcWheelDistance = 0.0f;
 		
 		try {
 			// Calculate averages and sum square differences
 			if (calculatedPowers.size() > 0) {
 				avgCalcPower = MyMath.getAverageValueBD(calculatedPowers);
-				ssdCalcPower = MyMath.getSumSquareDifferenceBD(calculatedPowers, avgCalcPower);
+				stdCalcPower = MyMath.getStandardDeviationBD(calculatedPowers, avgCalcPower);
 			}
 			if (calculatedTorques.size() > 0) {
 				avgCalcTorque = MyMath.getAverageValueBD(calculatedTorques);
-				ssdCalcTorque = MyMath.getSumSquareDifferenceBD(calculatedTorques, avgCalcTorque);
+				stdCalcTorque = MyMath.getStandardDeviationBD(calculatedTorques, avgCalcTorque);
 			}
 			if (calculatedCrankCadences.size() > 0) {
 				avgCalcCrankCadence = MyMath.getAverageValueBD(calculatedCrankCadences);
-				ssdCalcCrankCadence = MyMath.getSumSquareDifferenceBD(calculatedCrankCadences, avgCalcCrankCadence);
+				stdCalcCrankCadence = MyMath.getStandardDeviationBD(calculatedCrankCadences, avgCalcCrankCadence);
 			}
 			if (calculatedWheelSpeeds.size() > 0) {
 				avgCalcWheelSpeed = MyMath.getAverageValueBD(calculatedWheelSpeeds);
-				ssdCalcWheelSpeed = MyMath.getSumSquareDifferenceBD(calculatedWheelSpeeds, avgCalcWheelSpeed);
+				stdCalcWheelSpeed = MyMath.getStandardDeviationBD(calculatedWheelSpeeds, avgCalcWheelSpeed);
 			}
 			if (calculatedWheelDistances.size() > 0) {
 				avgCalcWheelDistance = MyMath.getAverageValueBD(calculatedWheelDistances);
-				ssdCalcWheelDistance = MyMath.getSumSquareDifferenceBD(calculatedWheelDistances, avgCalcWheelDistance);
+				stdCalcWheelDistance = MyMath.getStandardDeviationBD(calculatedWheelDistances, avgCalcWheelDistance);
 			}
 			
 			// Save results to database
 			tripData.addBikePowerDeviceReading(currentTimeMillis, 
-					calculatedPowers.size(), avgCalcPower, ssdCalcPower,
-					calculatedTorques.size(), avgCalcTorque, ssdCalcTorque,
-					calculatedCrankCadences.size(), avgCalcCrankCadence, ssdCalcCrankCadence,
-					calculatedWheelSpeeds.size(), avgCalcWheelSpeed, ssdCalcWheelSpeed,
-					calculatedWheelDistances.size(), avgCalcWheelDistance, ssdCalcWheelDistance);
+					calculatedPowers.size(), avgCalcPower, stdCalcPower,
+					calculatedTorques.size(), avgCalcTorque, stdCalcTorque,
+					calculatedCrankCadences.size(), avgCalcCrankCadence, stdCalcCrankCadence,
+					calculatedWheelSpeeds.size(), avgCalcWheelSpeed, stdCalcWheelSpeed,
+					calculatedWheelDistances.size(), avgCalcWheelDistance, stdCalcWheelDistance);
 
 			if (null != rawDataFile) {
 				rawDataFile.write(currentTimeMillis, location, calculatedPowers,
