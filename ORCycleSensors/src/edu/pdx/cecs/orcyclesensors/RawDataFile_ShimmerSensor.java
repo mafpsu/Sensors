@@ -40,13 +40,13 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 		for (int i = 0; i < signalNames.length; ++i) {
 			sbHeader.append(COMMA);
 			sbHeader.append(signalNames[i]);
-			this.decimalPlaces[i] = ShimmerRecorder.getSignalDecimalPlaces(signalNames[i], shimmerVersion);
+			this.decimalPlaces[i] = ShimmerFormat.getSignalDecimalPlaces(signalNames[i], shimmerVersion);
 		}
 		sbHeader.append(NEWLINE);
 		sbHeader.append(",,");
 		for (int i = 0; i < signalNames.length; ++i) {
 			sbHeader.append(COMMA);
-			sbHeader.append(ShimmerRecorder.getSignalUnits(signalNames[i], shimmerVersion));
+			sbHeader.append(ShimmerFormat.getSignalUnits(signalNames[i], shimmerVersion));
 		}
 		sbHeader.append(NEWLINE);
 

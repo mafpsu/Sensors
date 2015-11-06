@@ -88,8 +88,9 @@ public class DbAdapter {
 	private static final int DATABASE_VERSION_SENSOR_VALUES_TABLE = 2;
 	private static final int DATABASE_VERSION_HEART_RATE_TABLE = 3;
 	private static final int DATABASE_VERSION_BIKE_POWER_TABLE = 4;
+	private static final int DATABASE_VERSION_SHIMMER_VALUES_TABLE = 5;
 	
-	private static final int DATABASE_VERSION = DATABASE_VERSION_BIKE_POWER_TABLE;
+	private static final int DATABASE_VERSION = DATABASE_VERSION_SHIMMER_VALUES_TABLE;
 
 	// Table names
 	private static final String DATABASE_NAME = "data";
@@ -97,6 +98,7 @@ public class DbAdapter {
 	private static final String DATA_TABLE_COORDS = "coords";
 	private static final String DATA_TABLE_PAUSES = "pauses";
 	private static final String DATA_TABLE_SENSOR_VALUES = "sensor_values";
+	private static final String DATA_TABLE_SHIMMER_VALUES = "shimmer_values";
 	private static final String DATA_TABLE_HEART_RATE = "heart_rate";
 	private static final String DATA_TABLE_BIKE_POWER = "bike_power";
 
@@ -142,6 +144,19 @@ public class DbAdapter {
 	public static final String K_SENSOR_STD_0 = "ssd0";
 	public static final String K_SENSOR_STD_1 = "ssd1";
 	public static final String K_SENSOR_STD_2 = "ssd2";
+
+	// Shimmer Sensor table columns
+	public static final String K_SHIMMER_TIME = "time";
+	public static final String K_SHIMMER_ID = "id";
+	public static final String K_SHIMMER_TYPE = "type";
+	public static final String K_SHIMMER_SAMPLES = "samples";
+	public static final String K_SHIMMER_NUM_VALS = "numvals";
+	public static final String K_SHIMMER_AVG_0 = "avg0";
+	public static final String K_SHIMMER_AVG_1 = "avg1";
+	public static final String K_SHIMMER_AVG_2 = "avg2";
+	public static final String K_SHIMMER_STD_0 = "ssd0";
+	public static final String K_SHIMMER_STD_1 = "ssd1";
+	public static final String K_SHIMMER_STD_2 = "ssd2";
 
 	// Heart rate table columns
 	public static final String K_HR_TIME = "time";
@@ -204,10 +219,7 @@ public class DbAdapter {
 	public static final String K_SHIMMER_INT_EXP_A13 = "";
 	public static final String K_SHIMMER_INT_EXP_A14 = "";
 	public static final String K_SHIMMER_PRESSURE = "";
-	
-	
-	
-	
+
 	private static final String SQL_CREATE_TABLE_CMD = "create table";
 	
 	private static final String TABLE_CREATE_TRIPS = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_TRIPS + " ("
@@ -255,6 +267,20 @@ public class DbAdapter {
 			+ K_SENSOR_STD_1  + " double, "
 			+ K_SENSOR_STD_2  + " double, "
 			+ "PRIMARY KEY(" + K_SENSOR_TIME + ", " + K_SENSOR_ID + "));";
+
+	private static final String TABLE_CREATE_SHIMMER_VALUES = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_SHIMMER_VALUES + " ("
+			+ K_SHIMMER_TIME     + " double, "
+			+ K_SHIMMER_ID       + " text, "
+			+ K_SHIMMER_TYPE     + " integer, "
+			+ K_SHIMMER_SAMPLES  + " integer, "
+			+ K_SHIMMER_NUM_VALS + " integer, "
+			+ K_SHIMMER_AVG_0  + " double, "
+			+ K_SHIMMER_AVG_1  + " double, "
+			+ K_SHIMMER_AVG_2  + " double, "
+			+ K_SHIMMER_STD_0  + " double, "
+			+ K_SHIMMER_STD_1  + " double, "
+			+ K_SHIMMER_STD_2  + " double, "
+			+ "PRIMARY KEY(" + K_SHIMMER_TIME + ", " + K_SHIMMER_ID + "));";
 
 	private static final String TABLE_CREATE_HEART_RATE = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_HEART_RATE + " ("
 			+ K_HR_TIME           + " double, "
@@ -304,6 +330,7 @@ public class DbAdapter {
 			db.execSQL(TABLE_CREATE_SENSOR_VALUES);
 			db.execSQL(TABLE_CREATE_HEART_RATE);
 			db.execSQL(TABLE_CREATE_BIKE_POWER);
+			db.execSQL(TABLE_CREATE_SHIMMER_VALUES);
 		}
 
 		@Override
@@ -335,6 +362,16 @@ public class DbAdapter {
 			if (oldVersion < DATABASE_VERSION_BIKE_POWER_TABLE) {
 				try {
 					db.execSQL(TABLE_CREATE_BIKE_POWER);
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+			}
+
+			// Create table for holding sensor data
+			if (oldVersion < DATABASE_VERSION_SHIMMER_VALUES_TABLE) {
+				try {
+					db.execSQL(TABLE_CREATE_SHIMMER_VALUES);
 				}
 				catch(Exception ex) {
 					Log.e(MODULE_TAG, ex.getMessage());
@@ -509,6 +546,76 @@ public class DbAdapter {
 			}
 			return cursor;
 		} catch (Exception e) {
+			Log.e(MODULE_TAG, e.toString());
+			return null;
+		}
+	}
+
+	// ************************************************************************
+	// *                  Shimmer Sensor table methods
+	// ************************************************************************
+
+	public void addShimmerReadings(double currentTime, String sensorId, int sensorType, int numSamples, double[] averageValues, double[] standardDeviations) {
+
+		// Add the latest point
+		ContentValues cv = new ContentValues();
+		cv.put(K_SHIMMER_TIME, currentTime);
+		cv.put(K_SHIMMER_ID, sensorId);
+		cv.put(K_SHIMMER_TYPE, sensorType);
+		cv.put(K_SHIMMER_SAMPLES, numSamples);
+		cv.put(K_SHIMMER_NUM_VALS, averageValues.length);
+
+		switch(averageValues.length) {
+		
+		case 1:
+			cv.put(K_SHIMMER_AVG_0, averageValues[0]);
+			cv.put(K_SHIMMER_STD_0, standardDeviations[0]);
+			break;
+		
+		case 2:
+			cv.put(K_SHIMMER_AVG_0, averageValues[0]);
+			cv.put(K_SHIMMER_AVG_1, averageValues[1]);
+			cv.put(K_SHIMMER_STD_0, standardDeviations[0]);
+			cv.put(K_SHIMMER_STD_1, standardDeviations[1]);
+			break;
+		
+		case 3:
+			cv.put(K_SHIMMER_AVG_0, averageValues[0]);
+			cv.put(K_SHIMMER_AVG_1, averageValues[1]);
+			cv.put(K_SHIMMER_AVG_2, averageValues[2]);
+			cv.put(K_SHIMMER_STD_0, standardDeviations[0]);
+			cv.put(K_SHIMMER_STD_1, standardDeviations[1]);
+			cv.put(K_SHIMMER_STD_2, standardDeviations[2]);
+			break;
+			
+		default:
+			Log.e(MODULE_TAG, "addShimmerReadings failed: invalid number of values encountered");
+			return;
+		}
+
+		if (-1 == mDb.insert(DATA_TABLE_SHIMMER_VALUES, null, cv)) {
+			Log.e(MODULE_TAG, "Insert " + DATA_TABLE_SHIMMER_VALUES + ": failed");
+		}
+	}
+
+	public Cursor fetchShimmerValues(double time) {
+		
+		try {
+			String[] columns = new String[] {
+					K_SHIMMER_ID, K_SHIMMER_TYPE, K_SHIMMER_SAMPLES, K_SHIMMER_NUM_VALS,
+					K_SHIMMER_AVG_0, K_SHIMMER_AVG_1, K_SHIMMER_AVG_2,
+					K_SHIMMER_STD_0, K_SHIMMER_STD_1, K_SHIMMER_STD_2};
+			
+			Cursor cursor = mDb.query(true, DATA_TABLE_SHIMMER_VALUES, columns, 
+					K_SHIMMER_TIME + "=" + time,
+					null, null, null, null, null);
+
+			if (cursor != null) {
+				cursor.moveToFirst();
+			}
+			return cursor;
+		}
+		catch (Exception e) {
 			Log.e(MODULE_TAG, e.toString());
 			return null;
 		}

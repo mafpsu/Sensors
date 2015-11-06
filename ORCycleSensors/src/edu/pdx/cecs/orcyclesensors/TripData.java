@@ -540,9 +540,21 @@ public class TripData {
 		return status;
 	}
 
-	public void addShimmerReading(long currentTimeMillis,
-			HashMap<String, CalcReading> results) {
-		// TODO Auto-generated method stub
+	public void addShimmerReading(double currentTime, String sensorId, int sensorType, int numSamples, double[] averageValues, double[] standardDeviations) {
 		
+		Log.i(MODULE_TAG, "Sensor(time:" + currentTime + ", name: " + sensorId + ", type: " + sensorType + ", numSamples: " + numSamples + ")");
+		
+		if ((null != averageValues) && (null != standardDeviations)) {
+			mDb.open();
+			try {
+				mDb.addShimmerReadings(currentTime, sensorId, sensorType, numSamples, averageValues, standardDeviations);
+			}
+			catch (Exception ex) {
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
+			finally {
+				mDb.close();
+			}
+		}
 	}
 }

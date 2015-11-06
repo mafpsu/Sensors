@@ -37,7 +37,7 @@ public class RawDataFile_Shimmer extends RawDataFile {
 			sbHeader.append("Avg " + signalNames[i]);
 			sbHeader.append(COMMA);
 			sbHeader.append("STD Dev " + signalNames[i]);
-			decimalPlaces[i] = ShimmerRecorder.getSignalDecimalPlaces(signalNames[i], shimmerVersion);
+			decimalPlaces[i] = ShimmerFormat.getSignalDecimalPlaces(signalNames[i], shimmerVersion);
 		}
 		sbHeader.append(NEWLINE);
 		sbHeader.append(",,");
@@ -45,9 +45,9 @@ public class RawDataFile_Shimmer extends RawDataFile {
 			sbHeader.append(COMMA);
 			sbHeader.append("Units " );
 			sbHeader.append(COMMA);
-			sbHeader.append(ShimmerRecorder.getSignalUnits(signalNames[i], shimmerVersion));
+			sbHeader.append(ShimmerFormat.getSignalUnits(signalNames[i], shimmerVersion));
 			sbHeader.append(COMMA);
-			sbHeader.append(ShimmerRecorder.getSignalUnits(signalNames[i], shimmerVersion));
+			sbHeader.append(ShimmerFormat.getSignalUnits(signalNames[i], shimmerVersion));
 		}
 		sbHeader.append(NEWLINE);
 
