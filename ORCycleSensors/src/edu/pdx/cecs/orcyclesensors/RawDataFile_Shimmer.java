@@ -16,7 +16,6 @@ public class RawDataFile_Shimmer extends RawDataFile {
 	private static final String NEWLINE = "\r\n";
 	private static final String NULL_ENTRY = ",0,NULL,NULL";
 	private final String[] signalNames;
-	private final int[] decimalPlaces;
 	private final String header;
 	private boolean exceptionOccurred;
 	
@@ -26,7 +25,6 @@ public class RawDataFile_Shimmer extends RawDataFile {
 	public RawDataFile_Shimmer(String name, long tripId, String dataDir, String[] signalNames, int shimmerVersion) {
 		super(name, tripId, dataDir);
 		this.signalNames = signalNames;
-		this.decimalPlaces = new int[signalNames.length];
 
 		final StringBuilder sbHeader = new StringBuilder();
 		sbHeader.append("Time,Latitude,Longitude");
@@ -37,7 +35,6 @@ public class RawDataFile_Shimmer extends RawDataFile {
 			sbHeader.append("Avg " + signalNames[i]);
 			sbHeader.append(COMMA);
 			sbHeader.append("STD Dev " + signalNames[i]);
-			decimalPlaces[i] = ShimmerFormat.getSignalDecimalPlaces(signalNames[i], shimmerVersion);
 		}
 		sbHeader.append(NEWLINE);
 		sbHeader.append(",,");
@@ -88,7 +85,7 @@ public class RawDataFile_Shimmer extends RawDataFile {
 					row.append(COMMA);
 					row.append(calcReading.avg);
 					row.append(COMMA);
-					row.append(MyMath.rnd(calcReading.std, decimalPlaces[i]));
+					row.append(calcReading.std);
 				}
 			}
 			row.append(NEWLINE);

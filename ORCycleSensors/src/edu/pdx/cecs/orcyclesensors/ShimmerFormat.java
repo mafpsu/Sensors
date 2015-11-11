@@ -16,45 +16,45 @@ public class ShimmerFormat {
 	private static final String UNITS_CELSIUS = "Celsius";
 	private static final String UNITS_NO_UNITS = "No Units";
 	
-	private static final int SHIMMER2_ACCELEROMETER = 1;
-	private static final int SHIMMER2_GYROSCOPE = 2;
-	private static final int SHIMMER2_MAGNETOMETER = 3;
-	private static final int SHIMMER2_GSR = 4;
-	private static final int SHIMMER2_ECG = 5;
-	private static final int SHIMMER2_EMG = 6;
-	private static final int SHIMMER2_BRIDGE_AMPLIFIER = 7;
-	private static final int SHIMMER2_HEART_RATE = 8;
-	private static final int SHIMMER2_EXP_BOARD_A0 = 9;
-	private static final int SHIMMER2_EXP_BOARD_A7 = 10;
-	private static final int SHIMMER2_BATTERY = 11;
+	public static final int SHIMMER2_ACCELEROMETER = 1;
+	public static final int SHIMMER2_GYROSCOPE = 2;
+	public static final int SHIMMER2_MAGNETOMETER = 3;
+	public static final int SHIMMER2_GSR = 4;
+	public static final int SHIMMER2_ECG = 5;
+	public static final int SHIMMER2_EMG = 6;
+	public static final int SHIMMER2_BRIDGE_AMPLIFIER = 7;
+	public static final int SHIMMER2_HEART_RATE = 8;
+	public static final int SHIMMER2_EXP_BOARD_A0 = 9;
+	public static final int SHIMMER2_EXP_BOARD_A7 = 10;
+	public static final int SHIMMER2_BATTERY = 11;
 
-	private static final int SHIMMER3_LOW_NOISE_ACCELEROMETER = 20;
-	private static final int SHIMMER3_WIDE_RANGE_ACCELEROMETER = 21;
-	private static final int SHIMMER3_GYROSCOPE = 22;
-	private static final int SHIMMER3_MAGNETOMETER = 23;
-	private static final int SHIMMER3_BATTERY = 24;
-	private static final int SHIMMER3_EXT_ADC_A15 = 25;
-	private static final int SHIMMER3_EXT_ADC_A7 = 26;
-	private static final int SHIMMER3_EXT_ADC_A6 = 27;
-	private static final int SHIMMER3_INT_ADC_1 = 28;
-	private static final int SHIMMER3_INT_ADC_12 = 29;
-	private static final int SHIMMER3_INT_ADC_13 = 30;
-	private static final int SHIMMER3_INT_ADC_14 = 31;
-	private static final int SHIMMER3_PRESSURE = 32;
-	private static final int SHIMMER3_GSR = 33;
-	private static final int SHIMMER3_EXG1_24 = 34;
-	private static final int SHIMMER3_EXG1_ECG_24 = 35;
-	private static final int SHIMMER3_EXG1_EMG_24 = 36;
-	private static final int SHIMMER3_EXG2_24 = 37;
-	private static final int SHIMMER3_EXG2_ECG_24 = 38;
-	private static final int SHIMMER3_EXG2_EMG_24 = 39;
-	private static final int SHIMMER3_EXG1_16 = 40;
-	private static final int SHIMMER3_EXG1_ECG_16 = 41;
-	private static final int SHIMMER3_EXG1_EMG_16 = 42;
-	private static final int SHIMMER3_EXG2_16 = 43;
-	private static final int SHIMMER3_EXG2_ECG_16 = 44;
-	private static final int SHIMMER3_EXG2_EMG_16 = 45;
-	private static final int SHIMMER3_BRIDGE_AMPLIFIER = 46;
+	public static final int SHIMMER3_LOW_NOISE_ACCELEROMETER = 20;
+	public static final int SHIMMER3_WIDE_RANGE_ACCELEROMETER = 21;
+	public static final int SHIMMER3_GYROSCOPE = 22;
+	public static final int SHIMMER3_MAGNETOMETER = 23;
+	public static final int SHIMMER3_BATTERY = 24;
+	public static final int SHIMMER3_EXT_ADC_A6 = 25;
+	public static final int SHIMMER3_EXT_ADC_A7 = 26;
+	public static final int SHIMMER3_EXT_ADC_A15 = 27;
+	public static final int SHIMMER3_INT_ADC_1 = 28;
+	public static final int SHIMMER3_INT_ADC_12 = 29;
+	public static final int SHIMMER3_INT_ADC_13 = 30;
+	public static final int SHIMMER3_INT_ADC_14 = 31;
+	public static final int SHIMMER3_PRESSURE = 32;
+	public static final int SHIMMER3_GSR = 33;
+	public static final int SHIMMER3_EXG1_24 = 34;
+	public static final int SHIMMER3_EXG1_ECG_24 = 35;
+	public static final int SHIMMER3_EXG1_EMG_24 = 36;
+	public static final int SHIMMER3_EXG2_24 = 37;
+	public static final int SHIMMER3_EXG2_ECG_24 = 38;
+	public static final int SHIMMER3_EXG2_EMG_24 = 39;
+	public static final int SHIMMER3_EXG1_16 = 40;
+	public static final int SHIMMER3_EXG1_ECG_16 = 41;
+	public static final int SHIMMER3_EXG1_EMG_16 = 42;
+	public static final int SHIMMER3_EXG2_16 = 43;
+	public static final int SHIMMER3_EXG2_ECG_16 = 44;
+	public static final int SHIMMER3_EXG2_EMG_16 = 45;
+	public static final int SHIMMER3_BRIDGE_AMPLIFIER = 46;
 
 	public static String getSignalUnits(String signalName, int shimmerVersion) {
 
@@ -130,82 +130,6 @@ public class ShimmerFormat {
 			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.BRIDGE_AMP_LOW)) return UNITS_MVOLTS;
 		}
 	return "Undefined";
-	}
-
-	static int getSignalDecimalPlaces(String signalName, int shimmerVersion) {
-
-		if (shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_2 || shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_2R) {
-
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.ACCEL_X)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.ACCEL_Y)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.ACCEL_Z)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.GYRO_X)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.GYRO_Y)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.GYRO_Z)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.MAG_X)) return 3;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.MAG_Y)) return 3;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.MAG_Z)) return 3;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.GSR)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.ECG_RA_LL)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.ECG_LA_LL)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.EMG)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.BRIDGE_AMP_HIGH)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.BRIDGE_AMP_LOW)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.HEART_RATE)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.EXP_BOARD_A0)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.EXP_BOARD_A7)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.BATTERY)) return 4;
-			if (signalName.equals(Configuration.Shimmer2.ObjectClusterSensorName.REG)) return 4;
-		}	// Shimmer 3
-		else if (shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_3) { 
-
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_LN_X)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_LN_Y)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_LN_Z)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_WR_X)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_WR_Y)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.ACCEL_WR_Z)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.GYRO_X)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.GYRO_Y)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.GYRO_Z)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.MAG_X)) return 3;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.MAG_Y)) return 3;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.MAG_Z)) return 3;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.BATTERY)) return 2;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EXT_EXP_A15)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EXT_EXP_A7)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EXT_EXP_A6)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.INT_EXP_A1)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.INT_EXP_A12)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.INT_EXP_A13)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.INT_EXP_A14)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.PRESSURE_BMP180)) return 3; 
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.TEMPERATURE_BMP180)) return 3;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.GSR)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EXG1_STATUS)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.ECG_LL_RA_24BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.ECG_LA_RA_24BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EMG_CH1_24BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EMG_CH2_24BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EXG1_CH1_24BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EXG1_CH2_24BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EXG2_STATUS)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.ECG_VX_RL_24BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EXG2_CH1_24BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EXG2_CH2_24BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.ECG_LL_RA_16BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.ECG_LA_RA_16BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EMG_CH1_16BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EMG_CH2_16BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EXG1_CH1_16BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EXG1_CH2_16BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.ECG_VX_RL_16BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EXG2_CH1_16BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.EXG2_CH2_16BIT)) return 4;
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.BRIDGE_AMP_HIGH)) return 4; 
-			if (signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.BRIDGE_AMP_LOW)) return 4;
-		}
-	return -1;
 	}
 
 	public static int getSensorType(String sensorName, int shimmerVersion, 

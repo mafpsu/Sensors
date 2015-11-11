@@ -17,7 +17,6 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 	
 	private boolean exceptionOccurred;
 	private String header = null;
-	private int[] decimalPlaces;
 	
 	@SuppressLint("SimpleDateFormat")
 	protected final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
@@ -34,13 +33,10 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 		
 		StringBuilder sbHeader = new StringBuilder();
 		
-		this.decimalPlaces = new int[signalNames.length];
-		
 		sbHeader.append("Time,Latitude,Longitude");
 		for (int i = 0; i < signalNames.length; ++i) {
 			sbHeader.append(COMMA);
 			sbHeader.append(signalNames[i]);
-			this.decimalPlaces[i] = ShimmerFormat.getSignalDecimalPlaces(signalNames[i], shimmerVersion);
 		}
 		sbHeader.append(NEWLINE);
 		sbHeader.append(",,");
@@ -134,7 +130,7 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 					if (null != readings0) {
 						row.append(COMMA);
 						if (i < numReadings0)
-							row.append(MyMath.rnd(readings0.get(i), decimalPlaces[0]));
+							row.append(readings0.get(i));
 						else
 							row.append("null");
 					}
@@ -142,7 +138,7 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 					if (null != readings1) {
 						row.append(COMMA);
 						if (i < numReadings1)
-							row.append(MyMath.rnd(readings1.get(i), decimalPlaces[1]));
+							row.append(readings1.get(i));
 						else
 							row.append("null");
 					}
@@ -150,7 +146,7 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 					if (null != readings2) {
 						row.append(COMMA);
 						if (i < numReadings2)
-							row.append(MyMath.rnd(readings2.get(i), decimalPlaces[2]));
+							row.append(readings2.get(i));
 						else
 							row.append("null");
 					}

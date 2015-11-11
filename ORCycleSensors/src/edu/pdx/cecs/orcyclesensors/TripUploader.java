@@ -363,6 +363,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		JSONObject jsonShimmerReading;
 		int numVals;
 		Cursor cursorSV = null;
+		int shimmerType;
 		
 		try {
 			if (null != (cursorSV = mDb.fetchShimmerValues(coordTime))) {
@@ -389,7 +390,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 					
 					jsonShimmerReading = new JSONObject();
 					jsonShimmerReading.put(TRIP_COORD_SHIMMER_ID,      cursorSV.getString(shimmerColumn.get(TRIP_COORD_SHIMMER_ID)));
-					jsonShimmerReading.put(TRIP_COORD_SHIMMER_TYPE,    cursorSV.getInt   (shimmerColumn.get(TRIP_COORD_SHIMMER_TYPE)));
+					jsonShimmerReading.put(TRIP_COORD_SHIMMER_TYPE,    (shimmerType = cursorSV.getInt   (shimmerColumn.get(TRIP_COORD_SHIMMER_TYPE))));
 					jsonShimmerReading.put(TRIP_COORD_SHIMMER_SAMPLES, cursorSV.getInt   (shimmerColumn.get(TRIP_COORD_SHIMMER_SAMPLES)));
 					
 					numVals = cursorSV.getInt(shimmerColumn.get(TRIP_COORD_SHIMMER_NUM_VALS));
@@ -397,21 +398,21 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 					switch(numVals) {
 					case 1:
 						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_0, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_AVG_0)));
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_0)));
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, MyMath.rnd(cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_0)), getSDP(shimmerType)));
 						break;
 					case 2:
 						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_0, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_AVG_0)));
 						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_1, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_AVG_1)));
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_0)));
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_1, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_1)));
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, MyMath.rnd(cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_0)), getSDP(shimmerType)));
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_1, MyMath.rnd(cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_1)), getSDP(shimmerType)));
 						break;
 					case 3:
 						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_0, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_AVG_0)));
 						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_1, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_AVG_1)));
 						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_2, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_AVG_2)));
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_0)));
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_1, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_1)));
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_2, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_2)));
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, MyMath.rnd(cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_0)), getSDP(shimmerType)));
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_1, MyMath.rnd(cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_1)), getSDP(shimmerType)));
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_2, MyMath.rnd(cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_2)), getSDP(shimmerType)));
 						break;
 					}
 	
@@ -429,6 +430,57 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 			}
 		}
 		return jsonShimmerReadings;
+	}
+	
+	/**
+	 * Returns the number of decimal places to round standard 
+	 * deviation to for the given shimmer sensor type
+	 * @param ShimmerType
+	 * @return
+	 */
+	private int getSDP(int shimmerType) {
+		switch(shimmerType) {
+		case ShimmerFormat.SHIMMER2_ACCELEROMETER: return 4;
+		case ShimmerFormat.SHIMMER2_GYROSCOPE: return 4;
+		case ShimmerFormat.SHIMMER2_MAGNETOMETER: return 3;
+		case ShimmerFormat.SHIMMER2_GSR: return 4;
+		case ShimmerFormat.SHIMMER2_ECG: return 4;
+		case ShimmerFormat.SHIMMER2_EMG: return 4;
+		case ShimmerFormat.SHIMMER2_BRIDGE_AMPLIFIER: return 4;
+		case ShimmerFormat.SHIMMER2_HEART_RATE: return 4;
+		case ShimmerFormat.SHIMMER2_EXP_BOARD_A0: return 4;
+		case ShimmerFormat.SHIMMER2_EXP_BOARD_A7: return 4;
+		case ShimmerFormat.SHIMMER2_BATTERY: return 4;
+		
+		case ShimmerFormat.SHIMMER3_LOW_NOISE_ACCELEROMETER: return 4;
+		case ShimmerFormat.SHIMMER3_WIDE_RANGE_ACCELEROMETER: return 4;
+		case ShimmerFormat.SHIMMER3_GYROSCOPE: return 4;
+		case ShimmerFormat.SHIMMER3_MAGNETOMETER: return 3;
+		case ShimmerFormat.SHIMMER3_BATTERY: return 2;
+		case ShimmerFormat.SHIMMER3_EXT_ADC_A6: return 4;
+		case ShimmerFormat.SHIMMER3_EXT_ADC_A7: return 4;
+		case ShimmerFormat.SHIMMER3_EXT_ADC_A15: return 4;
+		case ShimmerFormat.SHIMMER3_INT_ADC_1: return 4;
+		case ShimmerFormat.SHIMMER3_INT_ADC_12: return 4;
+		case ShimmerFormat.SHIMMER3_INT_ADC_13: return 4;
+		case ShimmerFormat.SHIMMER3_INT_ADC_14: return 4;
+		case ShimmerFormat.SHIMMER3_PRESSURE: return 3;
+		case ShimmerFormat.SHIMMER3_GSR: return 4;
+		case ShimmerFormat.SHIMMER3_EXG1_24: return 4;
+		case ShimmerFormat.SHIMMER3_EXG1_ECG_24: return 4;
+		case ShimmerFormat.SHIMMER3_EXG1_EMG_24: return 4;
+		case ShimmerFormat.SHIMMER3_EXG2_24: return 4;
+		case ShimmerFormat.SHIMMER3_EXG2_ECG_24: return 4;
+		case ShimmerFormat.SHIMMER3_EXG2_EMG_24: return 4;
+		case ShimmerFormat.SHIMMER3_EXG1_16: return 4;
+		case ShimmerFormat.SHIMMER3_EXG1_ECG_16: return 4;
+		case ShimmerFormat.SHIMMER3_EXG1_EMG_16: return 4;
+		case ShimmerFormat.SHIMMER3_EXG2_16: return 4;
+		case ShimmerFormat.SHIMMER3_EXG2_ECG_16: return 4;
+		case ShimmerFormat.SHIMMER3_EXG2_EMG_16: return 4;
+		case ShimmerFormat.SHIMMER3_BRIDGE_AMPLIFIER: return 4;
+		default: return 4;
+		}
 	}
 	
 	/**
