@@ -24,6 +24,9 @@ import java.util.ArrayList;
 
 import com.dsi.ant.plugins.antplus.pcc.defines.DeviceType;
 
+import edu.pdx.cecs.orcyclesensors.ShimmerService.LocalBinder;
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -35,6 +38,7 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.widget.Toast;
 
 /**
  * This class extends the <code>Application<code/> class, and implements it as a singleton.
@@ -52,6 +56,7 @@ public class MyApplication extends android.app.Application {
 	private static final String SETTING_USER_ID = "SETTING_USER_ID";
 	private static final String SETTING_SENSORS = "SETTING_SENSORS";
 	private static final String SETTING_DEVICES = "SETTING_DEVICES";
+	private static final String SETTING_SHIMMERS = "SETTING_SHIMMERS";
 	private static final String SETTING_GPS_FREQUENCY = "PREF_GPS_FREQUENCY";
 	private static final String SETTING_DEFAULT_FREQUENCY = "1.0";
 	private static final long DEFAULT_MIN_RECORDING_DELAY = 1000;
@@ -67,8 +72,10 @@ public class MyApplication extends android.app.Application {
 	private UserId userId = null;
 	private AppDevices appDevices = null;
 	private AppSensors appSensors = null;
+	private AppShimmers appShimmers = null;
 	private AppInfo appInfo = null;
 	private RecordingService recordingService = null;
+	private ShimmerService mService;
 	private long minTimeBetweenReadings = 1000; // milliseconds
 	private boolean recordRawData = false;
 	private String rawDataEmailAddress = "";
@@ -122,8 +129,8 @@ public class MyApplication extends android.app.Application {
 			//EmailManager.cleanAttachmentDirectory(); // TODO:  Don't do this here because mailer might not have mailed files yet
 
 			ConnectRecordingService();
+			ConnectShimmerService();
 			loadApplicationSettings();
-			
         }
         catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
@@ -143,6 +150,8 @@ public class MyApplication extends android.app.Application {
 		(appDevices = AppDevices.getInstance()).loadFrom(settings, SETTING_DEVICES);
 		
 		(appSensors = AppSensors.getInstance()).loadFrom(settings, SETTING_SENSORS);
+		
+		(appShimmers = AppShimmers.getInstance()).loadFrom(settings, SETTING_SHIMMERS);
 		
 		// setDefaultApplicationSettings();
 
@@ -264,6 +273,32 @@ public class MyApplication extends android.app.Application {
 		return appDevices.getAntDeviceInfos();
 	}
 
+	// **********************************
+	// * Interface to Shimmer devices
+	// **********************************
+
+	public void addShimmerDevice(String address, String name) {
+		
+		appShimmers.addDevice(address, name);
+		
+		SharedPreferences settings = getSharedPreferences(PREFS_APPLICATION, MODE_PRIVATE);
+		
+		appShimmers.saveTo(settings, SETTING_SHIMMERS);
+	}
+	
+	public void deleteShimmerDevice(String address) {
+		
+		appShimmers.deleteDevice(address);
+		
+		SharedPreferences settings = getSharedPreferences(PREFS_APPLICATION, MODE_PRIVATE);
+		
+		appShimmers.saveTo(settings, SETTING_SHIMMERS);
+	}
+
+	public ArrayList<ShimmerDeviceInfo> getAppShimmers() {
+		return appShimmers.getShimmerDeviceInfos();
+	}
+
 	// *************************************
 	// * Interface to application data Files
 	// *************************************
@@ -346,24 +381,38 @@ public class MyApplication extends android.app.Application {
      * startRecording
      * @throws Exception 
      */
-    public void startRecording(FragmentActivity activity) throws Exception {
-		switch (recordingService.getState()) {
+    public boolean startRecording(FragmentActivity activity) throws Exception {
+		
+    	boolean recordingStarted = false;
+    	
+    	switch (recordingService.getState()) {
 
 		case RecordingService.STATE_IDLE:
+			
 			trip = TripData.createTrip(activity);
-			recordingService.startRecording(trip, appDevices.getAntDeviceInfos(), 
-					appSensors.getSensors(), minTimeBetweenReadings, recordRawData, DataFileInfoManager.getDirPath());
+			recordingService.startRecording(trip,
+					appDevices.getAntDeviceInfos(), 
+					appSensors.getSensors(),
+					appShimmers.getShimmerDeviceInfos(),
+					minTimeBetweenReadings, 
+					recordRawData, 
+					DataFileInfoManager.getDirPath());
+			recordingStarted = true;
 			break;
 
 		case RecordingService.STATE_RECORDING:
 			long id = recordingService.getCurrentTripID();
 			trip = TripData.fetchTrip(activity, id);
+			recordingStarted = true;
 			break;
 		}
 
-		startRecordingNotification(lastTripStartTime = trip.getStartTime());
+    	if (recordingStarted) {
+    		startRecordingNotification(lastTripStartTime = trip.getStartTime());
+    	}
+    	return recordingStarted;
     }
-
+    
     /**
      * finishRecording
      */
@@ -395,7 +444,73 @@ public class MyApplication extends android.app.Application {
     }
 
 	// *********************************************************************************
-	// * Recording
+	// *                             Shimmer Service
+	// *********************************************************************************
+
+    /**
+     * Connects the recording service to the Application object
+     */
+    private void ConnectShimmerService() {
+
+    	try {
+        Intent intent = new Intent(this, ShimmerService.class);
+        bindService(intent, shimmerServiceConnection, Context.BIND_AUTO_CREATE);
+    	}
+        catch(SecurityException ex) {
+			Log.d(MODULE_TAG, ex.getMessage());
+        }
+    }
+
+    private ServiceConnection shimmerServiceConnection = new ServiceConnection() {
+
+      	public void onServiceConnected(ComponentName arg0, IBinder service) {
+      		try {
+      			LocalBinder binder = null;
+
+	      		if (null != (binder = (ShimmerService.LocalBinder) service)) {
+		      		if (null != (mService = binder.getService())) {
+		      		}
+	      		}
+      		}
+    		catch (Exception ex) {
+    			Log.e(MODULE_TAG, ex.getMessage());
+    		}
+  		}
+
+      	public void onServiceDisconnected(ComponentName arg0) {
+      		try {
+	      		if (null != mService) {
+	          		mService.disconnectAllDevices();
+	      		}
+      		}
+      		catch(Exception ex) {
+    			Log.e(MODULE_TAG, ex.getMessage());
+      		}
+      		try {
+      			unbindService(this);
+      		}
+      		catch(Exception ex) {
+    			Log.e(MODULE_TAG, ex.getMessage());
+      		}
+      	}
+    };
+    
+    public ShimmerService getShimmerService() {
+    	return mService;
+    }
+
+    protected boolean isShimmerServiceRunning() {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if ("com.shimmerresearch.service.ShimmerServiceCBBC".equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+	// *********************************************************************************
+	// *                             Notification API
 	// *********************************************************************************
 
 	private static final double RESET_START_TIME = 0.0;

@@ -33,22 +33,22 @@ public class ScalarSensorRecorder extends SensorRecorder {
 	synchronized public void writeResult(TripData tripData, long currentTimeMillis, Location location) {
 		
 		float[] averageValues;
-		float[] sumSquareDifferences;
+		double[] standardDeviation;
 
 		averageValues = new float[1];
-		sumSquareDifferences = new float[1];
+		standardDeviation = new double[1];
 		
 		if (readings0.size() == 0) {
 			averageValues[0] = 0;
-			sumSquareDifferences[0] = 0;
+			standardDeviation[0] = 0;
 		}
 		else {
 			averageValues[0] = MyMath.getAverageValueF(readings0);
-			sumSquareDifferences[0] = MyMath.getSumSquareDifferenceF(readings0, averageValues[0]);
+			standardDeviation[0] = MyMath.getStandardDeviationF(readings0, averageValues[0]);
 		}
 		
 		tripData.addSensorReadings(currentTimeMillis, sensorName, type, numSamples,
-				averageValues, sumSquareDifferences);
+				averageValues, standardDeviation);
 		
 		if (null != rawDataFile) {
 			rawDataFile.write(currentTimeMillis, location, readings0);

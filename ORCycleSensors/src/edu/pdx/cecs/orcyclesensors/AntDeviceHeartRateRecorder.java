@@ -114,14 +114,14 @@ public class AntDeviceHeartRateRecorder extends AntDeviceRecorder implements
 	synchronized public void writeResult(TripData tripData, long currentTimeMillis, Location location) {
 		
 		float avgHeartRate = 0.0f;
-		float ssdHeartRate = 0.0f;
+		double stdHeartRate = 0.0f;
 		int numSamples = heartRates.size();
 		
 		if (numSamples > 0) {
 			avgHeartRate = MyMath.getAverageValueI(heartRates);
-			ssdHeartRate = MyMath.getSumSquareDifferenceI(heartRates, avgHeartRate);
+			stdHeartRate = MyMath.getStandardDeviationI(heartRates, avgHeartRate);
 		}
-		tripData.addHeartRateDeviceReading(currentTimeMillis, numSamples, avgHeartRate, ssdHeartRate);
+		tripData.addHeartRateDeviceReading(currentTimeMillis, numSamples, avgHeartRate, stdHeartRate);
 
 		if (null != rawDataFile) {
 			rawDataFile.write(currentTimeMillis, location, heartRates);

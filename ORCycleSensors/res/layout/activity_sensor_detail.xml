@@ -103,6 +103,7 @@
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
 			android:layout_alignParentStart="true"
+			android:layout_alignParentLeft="true"
 	        android:text="@string/asd_tv_label_sensor_rate"
 	        android:textSize="16sp"
 			android:textStyle="bold" 
@@ -115,6 +116,7 @@
 		    android:layout_height="wrap_content"
 			android:layout_alignBaseline="@id/tv_label_sensor_rate"
 			android:layout_toEndOf="@id/tv_label_sensor_rate"
+			android:layout_toRightOf="@id/tv_label_sensor_rate"
 			android:entries="@array/asd_spn_sensor_rates"
 			android:textAppearance="?android:attr/textAppearanceMedium" />
 
@@ -148,6 +150,7 @@
 	        android:id="@+id/tv_label_fifoMaxEventCount"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
+	        android:layout_marginRight="4dp"
 	        android:layout_marginEnd="4dp"
 	        android:text="@string/asd_tv_label_fifoMaxEventCount"
 	        android:textSize="16sp"
@@ -162,6 +165,7 @@
 		    android:layout_alignBaseline="@id/tv_label_fifoMaxEventCount"
 		    android:layout_alignParentRight="false"
 		    android:layout_toEndOf="@id/tv_label_fifoMaxEventCount"
+		    android:layout_toRightOf="@id/tv_label_fifoMaxEventCount"
 		    android:text="" />
 
 		</RelativeLayout>

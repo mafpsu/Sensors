@@ -60,16 +60,11 @@ package edu.pdx.cecs.orcyclesensors;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -77,7 +72,6 @@ import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class RecordingService extends Service 
@@ -101,12 +95,20 @@ public class RecordingService extends Service
 	private SpeedMonitor speedMonitor;
 	private int pauseId = -1;
 	
-	private ArrayList<AntDeviceInfo> devices;
-	private Map<Integer, AntDeviceRecorder> deviceRecorders = new HashMap<Integer, AntDeviceRecorder>();
+	// list of Ant+ devices to record
+	private ArrayList<AntDeviceInfo> antDeviceInfos;
+	private Map<Integer, AntDeviceRecorder> antDeviceRecorders = new HashMap<Integer, AntDeviceRecorder>();
 	
+	// list of phone sensors to record
     private ArrayList<SensorItem> sensors;
 	private Map<String, SensorRecorder> sensorRecorders = new HashMap<String, SensorRecorder>();
 
+	// list of Shimmer devices to record
+	private ArrayList<ShimmerDeviceInfo> shimmerDeviceInfos;
+	private Map<String, ShimmerRecorder> shimmerRecorders = new HashMap<String, ShimmerRecorder>();
+	
+	private long minTimeBetweenReadings;
+	
 	private final MyServiceBinder myServiceBinder = new MyServiceBinder();
 
 	// *********************************************************************************
@@ -149,7 +151,7 @@ public class RecordingService extends Service
 		
 		if (STATE_WAITING_FOR_DEVICE_CONNECT == state) {
 			
-			switch(getDeviceConnectState()) {
+			switch(getAsyncDeviceConnectState()) {
 			
 			case DEVICES_STATE_ALL_CONNECTED:
 				state = STATE_RECORDING;
@@ -203,6 +205,7 @@ public class RecordingService extends Service
 	public void startRecording(TripData trip, 
 			ArrayList<AntDeviceInfo> antDeviceInfos, 
 			ArrayList<SensorItem> sensorItems,
+			ArrayList<ShimmerDeviceInfo> shimmerDeviceInfos,
 			long minTimeBetweenReadings,
 			boolean recordRawData, String dataFileDir) throws Exception {
 		
@@ -210,10 +213,13 @@ public class RecordingService extends Service
 		this.pauseId = -1;
 		this.distanceMeters = 0.0f;
 		this.lastLocation = null;
-		this.devices = antDeviceInfos;
-		this.deviceRecorders.clear();
 		this.sensors = sensorItems;
 		this.sensorRecorders.clear();
+		this.antDeviceInfos = antDeviceInfos;
+		this.antDeviceRecorders.clear();
+		this.shimmerDeviceInfos = shimmerDeviceInfos;
+		this.shimmerRecorders.clear();
+		this.minTimeBetweenReadings = minTimeBetweenReadings;
 		
 		// Create a recorder for each sensor
 		for (SensorItem sensorItem: this.sensors) {
@@ -225,14 +231,20 @@ public class RecordingService extends Service
 		}
 
 		// Create a recorder for each Ant+ device
-		for (AntDeviceInfo antDeviceInfo: this.devices) {
-			deviceRecorders.put(antDeviceInfo.getNumber(), 
+		for (AntDeviceInfo antDeviceInfo: this.antDeviceInfos) {
+			antDeviceRecorders.put(antDeviceInfo.getNumber(), 
 					AntDeviceRecorder.create(antDeviceInfo.getNumber(),
 							antDeviceInfo.getDeviceType(), recordRawData, trip.tripid, dataFileDir));
 		}
 
+		// Create a recorder for each Shimmer device
+		for (ShimmerDeviceInfo shimmerDeviceInfo: this.shimmerDeviceInfos) {
+			shimmerRecorders.put(shimmerDeviceInfo.getAddress(), 
+					ShimmerRecorder.create(this, shimmerDeviceInfo.getAddress(), recordRawData, trip.tripid, dataFileDir));
+		}
+
 		// Start listening for GPS updates!
-		registerLocationUpdates(minTimeBetweenReadings);
+		// registerLocationUpdates(minTimeBetweenReadings);
 
 		// Start listening for device updates!
 		startDeviceRecorders();
@@ -240,18 +252,24 @@ public class RecordingService extends Service
 		// Start listening for sensor updates!
 		startSensorRecorders();
 
+		// Start listening for shimmer updates!
+		startShimmerRecorders();
+
 		if (null == speedMonitor) {
 			speedMonitor = new SpeedMonitor(this);
 		}
-		speedMonitor.start();
+		//speedMonitor.start();
 
+		this.state = STATE_WAITING_FOR_DEVICE_CONNECT;
+		
 		// Initialize recording state
-		if (this.devices.size() == 0) {
-			this.state = STATE_RECORDING;
-		}
-		else {
+		/*
+		if ((this.antDeviceInfos.size() > 0) || (this.shimmerDeviceInfos.size() > 0)) {
 			this.state = STATE_WAITING_FOR_DEVICE_CONNECT;
 		}
+		else {
+			this.state = STATE_RECORDING;
+		}*/
 	}
 
 	/**
@@ -265,6 +283,7 @@ public class RecordingService extends Service
 		trip.startPause();
 		pauseDeviceRecorders();
 		pauseSensorRecorders();
+		pauseShimmerRecorders();
 		if (null != speedMonitor)
 			speedMonitor.cancel();
 	}
@@ -280,6 +299,7 @@ public class RecordingService extends Service
 		trip.finishPause();
 		resumeDeviceRecorders();
 		resumeSensorRecorders();
+		resumeShimmerRecorders();
 
 		if (null != speedMonitor)
 			speedMonitor.start();
@@ -300,8 +320,10 @@ public class RecordingService extends Service
 
 		// Disable location manager updates
 		unregisterLocationUpdates();
+		// Disable sensor and device recorders
 		unregisterDeviceRecorders();
 		unregisterSensorRecorders();
+		unregisterShimmerRecorders();
 
 		//
 		if (trip.getNumPoints() > 0) {
@@ -326,6 +348,7 @@ public class RecordingService extends Service
 		unregisterLocationUpdates();
 		unregisterDeviceRecorders();
 		unregisterSensorRecorders();
+		unregisterShimmerRecorders();
 
 		this.state = STATE_IDLE;
 	}
@@ -334,7 +357,7 @@ public class RecordingService extends Service
 	// *                     LocationListener Implementation
 	// *********************************************************************************
 
-	private void registerLocationUpdates(long minTimeBetweenReadings) {
+	private void startLocationUpdates() {
 
 		LocationManager lm;
 		if (null != (lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE))) {
@@ -362,7 +385,8 @@ public class RecordingService extends Service
 	public void onLocationChanged(Location location) {
 
 		try {
-			if (state == STATE_WAITING_FOR_DEVICE_CONNECT) {
+			if ((state == STATE_WAITING_FOR_DEVICE_CONNECT) || 
+				(state == STATE_DEVICE_CONNECT_FAILED)) {
 				return;
 			}
 
@@ -385,8 +409,13 @@ public class RecordingService extends Service
 				}
 
 				// record device values
-				for (AntDeviceRecorder deviceRecorder: deviceRecorders.values()) {
+				for (AntDeviceRecorder deviceRecorder: antDeviceRecorders.values()) {
 					deviceRecorder.writeResult(trip, currentTimeMillis, location);
+				}
+				
+				// record shimmer values
+				for (ShimmerRecorder shimmerRecorder: shimmerRecorders.values()) {
+					shimmerRecorder.writeResult(trip, currentTimeMillis, location);
 				}
 				
 				// record location for distance measurement
@@ -476,8 +505,8 @@ public class RecordingService extends Service
 		
 		AntDeviceRecorder recorder;
 
-		for (Integer key : deviceRecorders.keySet()) {
-			recorder = deviceRecorders.get(key);
+		for (Integer key : antDeviceRecorders.keySet()) {
+			recorder = antDeviceRecorders.get(key);
 			recorder.start(this);
 		}
 	}
@@ -486,21 +515,91 @@ public class RecordingService extends Service
 		
 		AntDeviceRecorder recorder;
 
-		for (Integer key : deviceRecorders.keySet()) {
-			recorder = deviceRecorders.get(key);
+		for (Integer key : antDeviceRecorders.keySet()) {
+			recorder = antDeviceRecorders.get(key);
 			recorder.resume();
 		}
 	}
 	
-	private int getDeviceConnectState() {
+	private void pauseDeviceRecorders() {
 		
 		AntDeviceRecorder recorder;
+
+		for (Integer key : antDeviceRecorders.keySet()) {
+			recorder = antDeviceRecorders.get(key);
+			recorder.pause();
+		}
+	}
+	
+	private void unregisterDeviceRecorders() {
+		
+		AntDeviceRecorder recorder;
+
+		for (Integer key : antDeviceRecorders.keySet()) {
+			recorder = antDeviceRecorders.get(key);
+			recorder.unregister();
+		}
+	}
+
+	// *********************************************************************************
+	// *                     AntDeviceEventListener Implementation
+	// *********************************************************************************
+
+	private void startShimmerRecorders() {
+		
+		ShimmerRecorder recorder;
+
+		for (String key : shimmerRecorders.keySet()) {
+			recorder = shimmerRecorders.get(key);
+			recorder.start(this);
+		}
+	}
+	
+	private void resumeShimmerRecorders() {
+		
+		ShimmerRecorder recorder;
+
+		for (String key : shimmerRecorders.keySet()) {
+			recorder = shimmerRecorders.get(key);
+			recorder.resume();
+		}
+	}
+	
+	private void pauseShimmerRecorders() {
+		
+		ShimmerRecorder recorder;
+
+		for (String key : shimmerRecorders.keySet()) {
+			recorder = shimmerRecorders.get(key);
+			recorder.pause();
+		}
+	}
+	
+	private void unregisterShimmerRecorders() {
+		
+		ShimmerRecorder recorder;
+
+		for (String key : shimmerRecorders.keySet()) {
+			recorder = shimmerRecorders.get(key);
+			recorder.unregister();
+		}
+	}
+
+	// *********************************************************************************
+	// *                     Ant+ and Shimmer connect state
+	// *********************************************************************************
+
+	private int getAsyncDeviceConnectState() {
+		
+		AntDeviceRecorder antDeviceRecorder;
+		ShimmerRecorder shimmerRecorder;
 		boolean oneFailed = false;
 		boolean notAllConnected = false;
 
-		for (Integer key : deviceRecorders.keySet()) {
-			recorder = deviceRecorders.get(key);
-			switch(recorder.getState()) {
+		// Check all Ant+ device recorders for state
+		for (Integer key : antDeviceRecorders.keySet()) {
+			antDeviceRecorder = antDeviceRecorders.get(key);
+			switch(antDeviceRecorder.getState()) {
 			case IDLE:
 				notAllConnected = true;
 				break;
@@ -517,6 +616,27 @@ public class RecordingService extends Service
 			}
 		}
 		
+		// Check all Shimmer device recorders for state
+		for (String key : shimmerRecorders.keySet()) {
+			shimmerRecorder = shimmerRecorders.get(key);
+			switch(shimmerRecorder.getState()) {
+			case IDLE:
+				notAllConnected = true;
+				break;
+			case CONNECTING:
+				notAllConnected = true;
+				break;
+			case RUNNING:
+				break;
+			case PAUSED:
+				break;
+			case FAILED:
+				oneFailed = true;
+				break;
+			}
+		}
+		
+		// Summarize connect state
 		if (oneFailed) {
 			return DEVICES_STATE_ATLEAST_ONE_FAILED_CONNECT;
 		}
@@ -524,27 +644,10 @@ public class RecordingService extends Service
 			return DEVICES_STATE_NOT_ALL_CONNECTED;
 		}
 		else {
+			speedMonitor.start();
+			// Start listening for GPS updates!
+			startLocationUpdates();
 			return DEVICES_STATE_ALL_CONNECTED;
-		}
-	}
-
-	private void pauseDeviceRecorders() {
-		
-		AntDeviceRecorder recorder;
-
-		for (Integer key : deviceRecorders.keySet()) {
-			recorder = deviceRecorders.get(key);
-			recorder.pause();
-		}
-	}
-	
-	private void unregisterDeviceRecorders() {
-		
-		AntDeviceRecorder recorder;
-
-		for (Integer key : deviceRecorders.keySet()) {
-			recorder = deviceRecorders.get(key);
-			recorder.unregister();
 		}
 	}
 }

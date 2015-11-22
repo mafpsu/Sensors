@@ -24,42 +24,44 @@ public abstract class SensorRecorder implements SensorEventListener {
 	
 	public static SensorRecorder create(String sensorName, int type, int rate, boolean recordRawData, long tripId, String dataDir) {
 		
+		String filename = sensorName + " " + String.valueOf(tripId);
+		
 		switch(type) {
 		case Sensor.TYPE_ACCELEROMETER: // 1
-			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(sensorName, tripId, dataDir) : null);
+			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(filename, tripId, dataDir) : null);
 
 		case Sensor.TYPE_AMBIENT_TEMPERATURE: // 13
-			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(sensorName, tripId, dataDir) : null);
+			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(filename, tripId, dataDir) : null);
 			
 		case Sensor.TYPE_GAME_ROTATION_VECTOR: // 15
-			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(sensorName, tripId, dataDir) : null); // guess
+			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(filename, tripId, dataDir) : null); // guess
 			
 		case Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR: // 20
-			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(sensorName, tripId, dataDir) : null); // guess
+			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(filename, tripId, dataDir) : null); // guess
 			
 		case Sensor.TYPE_GRAVITY: // 9
-			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(sensorName, tripId, dataDir) : null);
+			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(filename, tripId, dataDir) : null);
 			
 		case Sensor.TYPE_GYROSCOPE: // 4
-			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(sensorName, tripId, dataDir) : null);
+			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(filename, tripId, dataDir) : null);
 			
 		case Sensor.TYPE_GYROSCOPE_UNCALIBRATED: // 16
-			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(sensorName, tripId, dataDir) : null);
+			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(filename, tripId, dataDir) : null);
 			
 		case Sensor.TYPE_HEART_RATE: // 21
-			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(sensorName, tripId, dataDir) : null); // guess
+			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(filename, tripId, dataDir) : null); // guess
 			
 		case Sensor.TYPE_LIGHT: // 5
-			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(sensorName, tripId, dataDir) : null);
+			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(filename, tripId, dataDir) : null);
 			
 		case Sensor.TYPE_LINEAR_ACCELERATION: // 10
-			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(sensorName, tripId, dataDir) : null);
+			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(filename, tripId, dataDir) : null);
 			
 		case Sensor.TYPE_MAGNETIC_FIELD: // 2
-			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(sensorName, tripId, dataDir) : null);
+			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(filename, tripId, dataDir) : null);
 			
 		case Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED: // 14
-			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(sensorName, tripId, dataDir) : null);
+			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(filename, tripId, dataDir) : null);
 			
 		// This constant was deprecated in API level 8.
 		// use SensorManager.getOrientation() instead
@@ -67,22 +69,22 @@ public abstract class SensorRecorder implements SensorEventListener {
 			//return new SensorRecorder(name, type);
 			
 		case Sensor.TYPE_PRESSURE: // 6
-			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(sensorName, tripId, dataDir) : null);
+			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(filename, tripId, dataDir) : null);
 			
 		case Sensor.TYPE_PROXIMITY: // 8
-			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(sensorName, tripId, dataDir) : null);
+			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(filename, tripId, dataDir) : null);
 			
 		case Sensor.TYPE_RELATIVE_HUMIDITY: // 12
-			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(sensorName, tripId, dataDir) : null);
+			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(filename, tripId, dataDir) : null);
 			
 		case Sensor.TYPE_SIGNIFICANT_MOTION: // 17
-			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(sensorName, tripId, dataDir) : null);
+			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(filename, tripId, dataDir) : null);
 			
 		case Sensor.TYPE_STEP_COUNTER: // 19
-			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(sensorName, tripId, dataDir) : null);
+			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(filename, tripId, dataDir) : null);
 			
 		case Sensor.TYPE_STEP_DETECTOR: // 18
-			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(sensorName, tripId, dataDir) : null);
+			return new ScalarSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_ScalarSensor(filename, tripId, dataDir) : null);
 			
 		// This constant was deprecated in API level 14. use 
 		// Sensor.TYPE_AMBIENT_TEMPERATURE instead
@@ -90,7 +92,7 @@ public abstract class SensorRecorder implements SensorEventListener {
 			//return new SensorRecorder(name, type);
 			
 		case Sensor.TYPE_ROTATION_VECTOR:
-			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(sensorName, tripId, dataDir) : null);
+			return new VectorSensorRecorder(sensorName, type, rate, recordRawData ? new RawDataFile_VectorSensor(filename, tripId, dataDir) : null);
 			
 		default: return null;
 		}

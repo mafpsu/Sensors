@@ -105,6 +105,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	public static final String TRIP_COORDS_HACCURACY = "h";
 	public static final String TRIP_COORDS_VACCURACY = "v";
 	public static final String TRIP_COORDS_SENSOR_READINGS = "sr";
+	public static final String TRIP_COORDS_SHIMMER_READINGS = "shr";
 	public static final String TRIP_COORDS_ANT_DEVICE_PREFIX = "ant_";
 
 	public static final String PAUSE_START = "ps";
@@ -117,39 +118,51 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	public static final String TRIP_COORD_SENSOR_AVG_0 = "s_a0";
 	public static final String TRIP_COORD_SENSOR_AVG_1 = "s_a1";
 	public static final String TRIP_COORD_SENSOR_AVG_2 = "s_a2";
-	public static final String TRIP_COORD_SENSOR_SSD_0 = "s_s0";
-	public static final String TRIP_COORD_SENSOR_SSD_1 = "s_s1";
-	public static final String TRIP_COORD_SENSOR_SSD_2 = "s_s2";
+	public static final String TRIP_COORD_SENSOR_STD_0 = "s_s0";
+	public static final String TRIP_COORD_SENSOR_STD_1 = "s_s1";
+	public static final String TRIP_COORD_SENSOR_STD_2 = "s_s2";
+	
+	public static final String TRIP_COORD_SHIMMER_ID = "sh_id";
+	public static final String TRIP_COORD_SHIMMER_TYPE = "sh_t";
+	public static final String TRIP_COORD_SHIMMER_SAMPLES = "sh_ns";
+	public static final String TRIP_COORD_SHIMMER_NUM_VALS = "sh_nv";
+	public static final String TRIP_COORD_SHIMMER_AVG_0 = "sh_a0";
+	public static final String TRIP_COORD_SHIMMER_AVG_1 = "sh_a1";
+	public static final String TRIP_COORD_SHIMMER_AVG_2 = "sh_a2";
+	public static final String TRIP_COORD_SHIMMER_STD_0 = "sh_s0";
+	public static final String TRIP_COORD_SHIMMER_STD_1 = "sh_s1";
+	public static final String TRIP_COORD_SHIMMER_STD_2 = "sh_s2";
 	
 	public static final String TRIP_COORD_HR_SAMPLES = "hr_ns";
 	public static final String TRIP_COORD_HR_AVG_HEART_RATE = "hr_avg";
-	public static final String TRIP_COORD_HR_SSD_HEART_RATE = "hr_ssd";
+	public static final String TRIP_COORD_HR_STD_HEART_RATE = "hr_ssd";
 
 	public static final String TRIP_COORD_BP_NS_CALC_POWER  = "bp_cp_ns";
 	public static final String TRIP_COORD_BP_AVG_CALC_POWER = "bp_cp_avg";
-	public static final String TRIP_COORD_BP_SSD_CALC_POWER = "bp_cp_ssd";
+	public static final String TRIP_COORD_BP_STD_CALC_POWER = "bp_cp_ssd";
 
 	public static final String TRIP_COORD_BP_NS_CALC_TORQUE  = "bp_ct_ns";
 	public static final String TRIP_COORD_BP_AVG_CALC_TORQUE = "bp_ct_avg";
-	public static final String TRIP_COORD_BP_SSD_CALC_TORQUE = "bp_ct_ssd";
+	public static final String TRIP_COORD_BP_STD_CALC_TORQUE = "bp_ct_ssd";
 
 	public static final String TRIP_COORD_BP_NS_CALC_CRANK_CADENCE  = "bp_ccc_ns";
 	public static final String TRIP_COORD_BP_AVG_CALC_CRANK_CADENCE = "bp_ccc_avg";
-	public static final String TRIP_COORD_BP_SSD_CALC_CRANK_CADENCE = "bp_ccc_ssd";
+	public static final String TRIP_COORD_BP_STD_CALC_CRANK_CADENCE = "bp_ccc_ssd";
 
 	public static final String TRIP_COORD_BP_NS_CALC_WHEEL_SPEED  = "bp_cws_ns";
 	public static final String TRIP_COORD_BP_AVG_CALC_WHEEL_SPEED = "bp_cws_avg";
-	public static final String TRIP_COORD_BP_SSD_CALC_WHEEL_SPEED = "bp_cws_ssd";
+	public static final String TRIP_COORD_BP_STD_CALC_WHEEL_SPEED = "bp_cws_ssd";
 
 	public static final String TRIP_COORD_BP_NS_CALC_WHEEL_DISTANCE  = "bp_cwd_ns";
 	public static final String TRIP_COORD_BP_AVG_CALC_WHEEL_DISTANCE = "bp_cwd_avg";
-	public static final String TRIP_COORD_BP_SSD_CALC_WHEEL_DISTANCE = "bp_cwd_ssd";
+	public static final String TRIP_COORD_BP_STD_CALC_WHEEL_DISTANCE = "bp_cwd_ssd";
 
 	private final Context mCtx;
 	private final String userId;
 	private final DbAdapter mDb;
 
 	private Map<String, Integer> sensorColumn = null;
+	private Map<String, Integer> shimmerColumn = null;
 
 	public TripUploader(Context ctx, String userId) {
 		super();
@@ -164,6 +177,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		JSONObject jsonHeartRateDeviceReadings = null;
 		JSONObject jsonBikePowerDeviceReadings = null;
 		JSONArray jsonSensorReadings = null;
+		JSONArray jsonShimmerReadings = null;
 		
 		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -210,8 +224,20 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 				
 				jsonSensorReadings = getJsonSensorReadings(coordTime);
 				
+				// insert sensor readings into coordinate jSON object
 				if ((null != jsonSensorReadings) && (jsonSensorReadings.length() > 0)) {
 					jsonCoord.put(TRIP_COORDS_SENSOR_READINGS, jsonSensorReadings);
+				}
+
+				// **********************************************************
+				// * Get all sensor readings corresponding to this time index
+				// **********************************************************
+				
+				jsonShimmerReadings = getJsonShimmerReadings(coordTime);
+				
+				// insert shimmer readings into coordinate jSON object
+				if ((null != jsonShimmerReadings) && (jsonShimmerReadings.length() > 0)) {
+					jsonCoord.put(TRIP_COORDS_SHIMMER_READINGS, jsonShimmerReadings);
 				}
 
 				// *****************************************************************
@@ -283,9 +309,9 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 					sensorColumn.put(TRIP_COORD_SENSOR_AVG_0,    cursorSV.getColumnIndex(DbAdapter.K_SENSOR_AVG_0));
 					sensorColumn.put(TRIP_COORD_SENSOR_AVG_1,    cursorSV.getColumnIndex(DbAdapter.K_SENSOR_AVG_1));
 					sensorColumn.put(TRIP_COORD_SENSOR_AVG_2,    cursorSV.getColumnIndex(DbAdapter.K_SENSOR_AVG_2));
-					sensorColumn.put(TRIP_COORD_SENSOR_SSD_0,    cursorSV.getColumnIndex(DbAdapter.K_SENSOR_SSD_0));
-					sensorColumn.put(TRIP_COORD_SENSOR_SSD_1,    cursorSV.getColumnIndex(DbAdapter.K_SENSOR_SSD_1));
-					sensorColumn.put(TRIP_COORD_SENSOR_SSD_2,    cursorSV.getColumnIndex(DbAdapter.K_SENSOR_SSD_2));
+					sensorColumn.put(TRIP_COORD_SENSOR_STD_0,    cursorSV.getColumnIndex(DbAdapter.K_SENSOR_STD_0));
+					sensorColumn.put(TRIP_COORD_SENSOR_STD_1,    cursorSV.getColumnIndex(DbAdapter.K_SENSOR_STD_1));
+					sensorColumn.put(TRIP_COORD_SENSOR_STD_2,    cursorSV.getColumnIndex(DbAdapter.K_SENSOR_STD_2));
 				}
 	
 				while (!cursorSV.isAfterLast()) {
@@ -300,15 +326,15 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 					switch(numVals) {
 					case 1:
 						jsonSensorReading.put(TRIP_COORD_SENSOR_AVG_0, cursorSV.getDouble(sensorColumn.get(TRIP_COORD_SENSOR_AVG_0)));
-						jsonSensorReading.put(TRIP_COORD_SENSOR_SSD_0, cursorSV.getDouble(sensorColumn.get(TRIP_COORD_SENSOR_SSD_0)));
+						jsonSensorReading.put(TRIP_COORD_SENSOR_STD_0, cursorSV.getDouble(sensorColumn.get(TRIP_COORD_SENSOR_STD_0)));
 						break;
 					case 3:
 						jsonSensorReading.put(TRIP_COORD_SENSOR_AVG_0, cursorSV.getDouble(sensorColumn.get(TRIP_COORD_SENSOR_AVG_0)));
 						jsonSensorReading.put(TRIP_COORD_SENSOR_AVG_1, cursorSV.getDouble(sensorColumn.get(TRIP_COORD_SENSOR_AVG_1)));
 						jsonSensorReading.put(TRIP_COORD_SENSOR_AVG_2, cursorSV.getDouble(sensorColumn.get(TRIP_COORD_SENSOR_AVG_2)));
-						jsonSensorReading.put(TRIP_COORD_SENSOR_SSD_0, cursorSV.getDouble(sensorColumn.get(TRIP_COORD_SENSOR_SSD_0)));
-						jsonSensorReading.put(TRIP_COORD_SENSOR_SSD_1, cursorSV.getDouble(sensorColumn.get(TRIP_COORD_SENSOR_SSD_1)));
-						jsonSensorReading.put(TRIP_COORD_SENSOR_SSD_2, cursorSV.getDouble(sensorColumn.get(TRIP_COORD_SENSOR_SSD_2)));
+						jsonSensorReading.put(TRIP_COORD_SENSOR_STD_0, cursorSV.getDouble(sensorColumn.get(TRIP_COORD_SENSOR_STD_0)));
+						jsonSensorReading.put(TRIP_COORD_SENSOR_STD_1, cursorSV.getDouble(sensorColumn.get(TRIP_COORD_SENSOR_STD_1)));
+						jsonSensorReading.put(TRIP_COORD_SENSOR_STD_2, cursorSV.getDouble(sensorColumn.get(TRIP_COORD_SENSOR_STD_2)));
 						break;
 					}
 	
@@ -329,6 +355,135 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	}
 	
 	/**
+	 * Get all shimmer sensor readings corresponding to this time index
+	 * @return
+	 */
+	private JSONArray getJsonShimmerReadings(double coordTime) {
+		JSONArray jsonShimmerReadings = null;
+		JSONObject jsonShimmerReading;
+		int numVals;
+		Cursor cursorSV = null;
+		int shimmerType;
+		
+		try {
+			if (null != (cursorSV = mDb.fetchShimmerValues(coordTime))) {
+				
+				// Collect shimmer readings into a json object
+				jsonShimmerReadings = new JSONArray();
+				
+				// Construct a map between cursor column index
+				if (null == shimmerColumn) {
+					shimmerColumn = new HashMap<String, Integer>();
+					shimmerColumn.put(TRIP_COORD_SHIMMER_ID,       cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_ID));
+					shimmerColumn.put(TRIP_COORD_SHIMMER_TYPE,     cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_TYPE));
+					shimmerColumn.put(TRIP_COORD_SHIMMER_SAMPLES,  cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_SAMPLES));
+					shimmerColumn.put(TRIP_COORD_SHIMMER_NUM_VALS, cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_NUM_VALS));
+					shimmerColumn.put(TRIP_COORD_SHIMMER_AVG_0,    cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_AVG_0));
+					shimmerColumn.put(TRIP_COORD_SHIMMER_AVG_1,    cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_AVG_1));
+					shimmerColumn.put(TRIP_COORD_SHIMMER_AVG_2,    cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_AVG_2));
+					shimmerColumn.put(TRIP_COORD_SHIMMER_STD_0,    cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_STD_0));
+					shimmerColumn.put(TRIP_COORD_SHIMMER_STD_1,    cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_STD_1));
+					shimmerColumn.put(TRIP_COORD_SHIMMER_STD_2,    cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_STD_2));
+				}
+	
+				while (!cursorSV.isAfterLast()) {
+					
+					jsonShimmerReading = new JSONObject();
+					jsonShimmerReading.put(TRIP_COORD_SHIMMER_ID,      cursorSV.getString(shimmerColumn.get(TRIP_COORD_SHIMMER_ID)));
+					jsonShimmerReading.put(TRIP_COORD_SHIMMER_TYPE,    (shimmerType = cursorSV.getInt   (shimmerColumn.get(TRIP_COORD_SHIMMER_TYPE))));
+					jsonShimmerReading.put(TRIP_COORD_SHIMMER_SAMPLES, cursorSV.getInt   (shimmerColumn.get(TRIP_COORD_SHIMMER_SAMPLES)));
+					
+					numVals = cursorSV.getInt(shimmerColumn.get(TRIP_COORD_SHIMMER_NUM_VALS));
+	
+					switch(numVals) {
+					case 1:
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_0, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_AVG_0)));
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, MyMath.rnd(cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_0)), getSDP(shimmerType)));
+						break;
+					case 2:
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_0, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_AVG_0)));
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_1, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_AVG_1)));
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, MyMath.rnd(cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_0)), getSDP(shimmerType)));
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_1, MyMath.rnd(cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_1)), getSDP(shimmerType)));
+						break;
+					case 3:
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_0, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_AVG_0)));
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_1, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_AVG_1)));
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_2, cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_AVG_2)));
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, MyMath.rnd(cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_0)), getSDP(shimmerType)));
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_1, MyMath.rnd(cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_1)), getSDP(shimmerType)));
+						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_2, MyMath.rnd(cursorSV.getDouble(shimmerColumn.get(TRIP_COORD_SHIMMER_STD_2)), getSDP(shimmerType)));
+						break;
+					}
+	
+					jsonShimmerReadings.put(jsonShimmerReading);
+					cursorSV.moveToNext();
+				}
+			}
+		}
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		finally {
+			if (null != cursorSV) {
+				cursorSV.close();
+			}
+		}
+		return jsonShimmerReadings;
+	}
+	
+	/**
+	 * Returns the number of decimal places to round standard 
+	 * deviation to for the given shimmer sensor type
+	 * @param ShimmerType
+	 * @return
+	 */
+	private int getSDP(int shimmerType) {
+		switch(shimmerType) {
+		case ShimmerFormat.SHIMMER2_ACCELEROMETER: return 4;
+		case ShimmerFormat.SHIMMER2_GYROSCOPE: return 4;
+		case ShimmerFormat.SHIMMER2_MAGNETOMETER: return 3;
+		case ShimmerFormat.SHIMMER2_GSR: return 4;
+		case ShimmerFormat.SHIMMER2_ECG: return 4;
+		case ShimmerFormat.SHIMMER2_EMG: return 4;
+		case ShimmerFormat.SHIMMER2_BRIDGE_AMPLIFIER: return 4;
+		case ShimmerFormat.SHIMMER2_HEART_RATE: return 4;
+		case ShimmerFormat.SHIMMER2_EXP_BOARD_A0: return 4;
+		case ShimmerFormat.SHIMMER2_EXP_BOARD_A7: return 4;
+		case ShimmerFormat.SHIMMER2_BATTERY: return 4;
+		
+		case ShimmerFormat.SHIMMER3_LOW_NOISE_ACCELEROMETER: return 4;
+		case ShimmerFormat.SHIMMER3_WIDE_RANGE_ACCELEROMETER: return 4;
+		case ShimmerFormat.SHIMMER3_GYROSCOPE: return 4;
+		case ShimmerFormat.SHIMMER3_MAGNETOMETER: return 3;
+		case ShimmerFormat.SHIMMER3_BATTERY: return 2;
+		case ShimmerFormat.SHIMMER3_EXT_ADC_A6: return 4;
+		case ShimmerFormat.SHIMMER3_EXT_ADC_A7: return 4;
+		case ShimmerFormat.SHIMMER3_EXT_ADC_A15: return 4;
+		case ShimmerFormat.SHIMMER3_INT_ADC_1: return 4;
+		case ShimmerFormat.SHIMMER3_INT_ADC_12: return 4;
+		case ShimmerFormat.SHIMMER3_INT_ADC_13: return 4;
+		case ShimmerFormat.SHIMMER3_INT_ADC_14: return 4;
+		case ShimmerFormat.SHIMMER3_PRESSURE: return 3;
+		case ShimmerFormat.SHIMMER3_GSR: return 4;
+		case ShimmerFormat.SHIMMER3_EXG1_24: return 4;
+		case ShimmerFormat.SHIMMER3_EXG1_ECG_24: return 4;
+		case ShimmerFormat.SHIMMER3_EXG1_EMG_24: return 4;
+		case ShimmerFormat.SHIMMER3_EXG2_24: return 4;
+		case ShimmerFormat.SHIMMER3_EXG2_ECG_24: return 4;
+		case ShimmerFormat.SHIMMER3_EXG2_EMG_24: return 4;
+		case ShimmerFormat.SHIMMER3_EXG1_16: return 4;
+		case ShimmerFormat.SHIMMER3_EXG1_ECG_16: return 4;
+		case ShimmerFormat.SHIMMER3_EXG1_EMG_16: return 4;
+		case ShimmerFormat.SHIMMER3_EXG2_16: return 4;
+		case ShimmerFormat.SHIMMER3_EXG2_ECG_16: return 4;
+		case ShimmerFormat.SHIMMER3_EXG2_EMG_16: return 4;
+		case ShimmerFormat.SHIMMER3_BRIDGE_AMPLIFIER: return 4;
+		default: return 4;
+		}
+	}
+	
+	/**
 	 * Get all heart rate readings corresponding to this time index
 	 * @return
 	 */
@@ -342,11 +497,11 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 				if (!cursor.isAfterLast()) {
 					int colSamples = cursor.getColumnIndex(DbAdapter.K_HR_NUM_SAMPLES);
 					int colAvgHeartRate = cursor.getColumnIndex(DbAdapter.K_HR_AVG_HEART_RATE);
-					int colSsdHeartRate = cursor.getColumnIndex(DbAdapter.K_HR_SSD_HEART_RATE);
+					int colStdHeartRate = cursor.getColumnIndex(DbAdapter.K_HR_STD_HEART_RATE);
 					jsonHeartRateReading = new JSONObject();
 					jsonHeartRateReading.put(TRIP_COORD_HR_SAMPLES, cursor.getInt(colSamples));
 					jsonHeartRateReading.put(TRIP_COORD_HR_AVG_HEART_RATE, cursor.getDouble(colAvgHeartRate));
-					jsonHeartRateReading.put(TRIP_COORD_HR_SSD_HEART_RATE, cursor.getDouble(colSsdHeartRate));
+					jsonHeartRateReading.put(TRIP_COORD_HR_STD_HEART_RATE, cursor.getDouble(colStdHeartRate));
 				}
 			}
 		}
@@ -376,44 +531,44 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 
 					int colNsCalcPower = cursor.getColumnIndex(DbAdapter.K_BP_CALC_POWER_NUM_SAMPLES);
 					int colAvgCalcPower = cursor.getColumnIndex(DbAdapter.K_BP_CALC_POWER_AVG);
-					int colSsdCalcPower = cursor.getColumnIndex(DbAdapter.K_BP_CALC_POWER_SSD);
+					int colStdCalcPower = cursor.getColumnIndex(DbAdapter.K_BP_CALC_POWER_STD);
 					
 					int colNsCalcTorque = cursor.getColumnIndex(DbAdapter.K_BP_CALC_TORQUE_NUM_SAMPLES);
 					int colAvgCalcTorque = cursor.getColumnIndex(DbAdapter.K_BP_CALC_TORQUE_AVG);
-					int colSsdCalcTorque = cursor.getColumnIndex(DbAdapter.K_BP_CALC_TORQUE_SSD);
+					int colStdCalcTorque = cursor.getColumnIndex(DbAdapter.K_BP_CALC_TORQUE_STD);
 					
 					int colNsCalcCrankCadence = cursor.getColumnIndex(DbAdapter.K_BP_CALC_CRANK_CADENCE_NUM_SAMPLES);
 					int colAvgCalcCrankCadence = cursor.getColumnIndex(DbAdapter.K_BP_CALC_CRANK_CADENCE_AVG);
-					int colSsdCalcCrankCadence = cursor.getColumnIndex(DbAdapter.K_BP_CALC_CRANK_CADENCE_SSD);
+					int colStdCalcCrankCadence = cursor.getColumnIndex(DbAdapter.K_BP_CALC_CRANK_CADENCE_STD);
 					
 					int colNsCalcWheelSpeed = cursor.getColumnIndex(DbAdapter.K_BP_CALC_WHEEL_SPEED_NUM_SAMPLES);
 					int colAvgCalcWheelSpeed = cursor.getColumnIndex(DbAdapter.K_BP_CALC_WHEEL_SPEED_AVG);
-					int colSsdCalcWheelSpeed = cursor.getColumnIndex(DbAdapter.K_BP_CALC_WHEEL_SPEED_SSD);
+					int colStdCalcWheelSpeed = cursor.getColumnIndex(DbAdapter.K_BP_CALC_WHEEL_SPEED_STD);
 					
 					int colNsCalcWheelDistance = cursor.getColumnIndex(DbAdapter.K_BP_CALC_WHEEL_DISTANCE_NUM_SAMPLES);
 					int colAvgCalcWheelDistance = cursor.getColumnIndex(DbAdapter.K_BP_CALC_WHEEL_DISTANCE_AVG);
-					int colSsdCalcWheelDistance = cursor.getColumnIndex(DbAdapter.K_BP_CALC_WHEEL_DISTANCE_SSD);
+					int colStdCalcWheelDistance = cursor.getColumnIndex(DbAdapter.K_BP_CALC_WHEEL_DISTANCE_STD);
 					
 					jsonHeartRateReading = new JSONObject();
 					jsonHeartRateReading.put(TRIP_COORD_BP_NS_CALC_POWER, cursor.getInt(colNsCalcPower));
 					jsonHeartRateReading.put(TRIP_COORD_BP_AVG_CALC_POWER, cursor.getDouble(colAvgCalcPower));
-					jsonHeartRateReading.put(TRIP_COORD_BP_SSD_CALC_POWER, cursor.getDouble(colSsdCalcPower));
+					jsonHeartRateReading.put(TRIP_COORD_BP_STD_CALC_POWER, cursor.getDouble(colStdCalcPower));
 
 					jsonHeartRateReading.put(TRIP_COORD_BP_NS_CALC_TORQUE, cursor.getInt(colNsCalcTorque));
 					jsonHeartRateReading.put(TRIP_COORD_BP_AVG_CALC_TORQUE, cursor.getDouble(colAvgCalcTorque));
-					jsonHeartRateReading.put(TRIP_COORD_BP_SSD_CALC_TORQUE, cursor.getDouble(colSsdCalcTorque));
+					jsonHeartRateReading.put(TRIP_COORD_BP_STD_CALC_TORQUE, cursor.getDouble(colStdCalcTorque));
 					
 					jsonHeartRateReading.put(TRIP_COORD_BP_NS_CALC_CRANK_CADENCE, cursor.getInt(colNsCalcCrankCadence));
 					jsonHeartRateReading.put(TRIP_COORD_BP_AVG_CALC_CRANK_CADENCE, cursor.getDouble(colAvgCalcCrankCadence));
-					jsonHeartRateReading.put(TRIP_COORD_BP_SSD_CALC_CRANK_CADENCE, cursor.getDouble(colSsdCalcCrankCadence));
+					jsonHeartRateReading.put(TRIP_COORD_BP_STD_CALC_CRANK_CADENCE, cursor.getDouble(colStdCalcCrankCadence));
 
 					jsonHeartRateReading.put(TRIP_COORD_BP_NS_CALC_WHEEL_SPEED, cursor.getInt(colNsCalcWheelSpeed));
 					jsonHeartRateReading.put(TRIP_COORD_BP_AVG_CALC_WHEEL_SPEED, cursor.getDouble(colAvgCalcWheelSpeed));
-					jsonHeartRateReading.put(TRIP_COORD_BP_SSD_CALC_WHEEL_SPEED, cursor.getDouble(colSsdCalcWheelSpeed));
+					jsonHeartRateReading.put(TRIP_COORD_BP_STD_CALC_WHEEL_SPEED, cursor.getDouble(colStdCalcWheelSpeed));
 
 					jsonHeartRateReading.put(TRIP_COORD_BP_NS_CALC_WHEEL_DISTANCE, cursor.getInt(colNsCalcWheelDistance));
 					jsonHeartRateReading.put(TRIP_COORD_BP_AVG_CALC_WHEEL_DISTANCE, cursor.getDouble(colAvgCalcWheelDistance));
-					jsonHeartRateReading.put(TRIP_COORD_BP_SSD_CALC_WHEEL_DISTANCE, cursor.getDouble(colSsdCalcWheelDistance));
+					jsonHeartRateReading.put(TRIP_COORD_BP_STD_CALC_WHEEL_DISTANCE, cursor.getDouble(colStdCalcWheelDistance));
 				}
 			}
 		}

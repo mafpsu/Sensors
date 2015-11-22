@@ -54,8 +54,7 @@ public class Activity_ShimmerDeviceList extends Activity {
     private static final boolean D = true;
 
     // Return Intent extra
-    public static String EXTRA_DEVICE_ADDRESS = "device_address";
-
+    public static String EXTRA_BLUETOOTH_ADDRESS = "EXTRA_BLUETOOTH_ADDRESS";
 
     // Member fields
     private BluetoothAdapter mBtAdapter;
@@ -71,7 +70,7 @@ public class Activity_ShimmerDeviceList extends Activity {
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.activity_shimmer_device_list);
 
-        // Set result CANCELED incase the user backs out
+        // Set result CANCELED in case the user backs out
         setResult(Activity.RESULT_CANCELED);
 
         // Initialize the button to perform device discovery
@@ -172,7 +171,7 @@ public class Activity_ShimmerDeviceList extends Activity {
 
             // Create the result Intent and include the MAC address
             Intent intent = new Intent();
-            intent.putExtra(EXTRA_DEVICE_ADDRESS, address);
+            intent.putExtra(EXTRA_BLUETOOTH_ADDRESS, address);
 
             Toast.makeText(getApplicationContext(),"Device Selected " +  "-> "+ address, Toast.LENGTH_SHORT).show();
             setResult(Activity.RESULT_OK, intent);              // Set result and finish this Activity
