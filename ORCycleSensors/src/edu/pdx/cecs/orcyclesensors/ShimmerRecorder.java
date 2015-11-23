@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.google.common.collect.BiMap;
@@ -27,6 +28,12 @@ import android.util.Log;
 public class ShimmerRecorder {
 
 	private static final String MODULE_TAG = "ShimmerRecorder";
+
+	// The Handler that gets information back from the BluetoothChatService
+    private static Handler shimmerMessageHandler = new ShimmerMessageHandler();
+
+    private static Map<String, ShimmerRecorder> shimmerRecorders = new HashMap<String, ShimmerRecorder>();
+	
 
 	public enum State { IDLE, CONNECTING, RUNNING, PAUSED, FAILED };
 
@@ -44,14 +51,12 @@ public class ShimmerRecorder {
 	private final HashMap<String, RawDataFile_ShimmerSensor> sensorDataFiles = new  HashMap<String, RawDataFile_ShimmerSensor>();
 	private List<String> enabledSensors = null;
 	private String[] enabledSignals = null;
-	// The Handler that gets information back from the BluetoothChatService
-    private Handler shimmerMessageHandler = new ShimmerMessageHandler();
     
 	HashMap<String, ArrayList<Double>> signalReadings = new HashMap<String, ArrayList<Double>>();
 	
     // ---------------------------------------------------------
 	
-	public ShimmerRecorder(Context context, String bluetoothAddress, boolean recordRawData, long tripId, String dataDir) {
+	private ShimmerRecorder(Context context, String bluetoothAddress, boolean recordRawData, long tripId, String dataDir) {
 		this.context = context;
 		this.bluetoothAddress = bluetoothAddress;
 		this.recordRawData = recordRawData;
@@ -64,7 +69,16 @@ public class ShimmerRecorder {
 	// **********************************
 	
 	public static ShimmerRecorder create(Context context, String bluetoothAddress, boolean recordRawData, long tripId, String dataDir) {
-		return new ShimmerRecorder(context, bluetoothAddress, recordRawData, tripId, dataDir);
+		
+		ShimmerRecorder shimmerRecorder = null;
+		
+		if (shimmerRecorders.containsKey(bluetoothAddress)) {
+			shimmerRecorders.remove(bluetoothAddress);
+		}
+
+		shimmerRecorders.put(bluetoothAddress, shimmerRecorder = new ShimmerRecorder(context, bluetoothAddress, recordRawData, tripId, dataDir));
+
+		return shimmerRecorder;
 	}
 
 	// **********************************
@@ -74,7 +88,7 @@ public class ShimmerRecorder {
 	synchronized public void start(Context context) {
 
         mService = MyApplication.getInstance().getShimmerService();
-  		mService.setMessageHandler(shimmerMessageHandler);
+    	mService.setMessageHandler(shimmerMessageHandler);
 		mService.enableGraphingHandler(true);
 		mService.setEnableLogging(true);
 		mService.connectShimmer(bluetoothAddress, "Device");
@@ -99,6 +113,10 @@ public class ShimmerRecorder {
 		}
 	}
 
+	synchronized private void setState(State state) {
+		this.state = state;
+	}
+	
 	synchronized public State getState() {
 		return state;
 	}
@@ -128,16 +146,76 @@ public class ShimmerRecorder {
 		mService.disconnectShimmer(bluetoothAddress);
         closeRawDataFile();
         signalReadings.clear();
+        shimmerRecorders.remove(bluetoothAddress);
 	}
 
+	synchronized private void init(Message msg) {
+		
+    	if (state == State.RUNNING) 
+    		return;
+    	
+    	try {
+			state = State.RUNNING;
+	        shimmerVersion = mService.getShimmerVersion(bluetoothAddress);
+			Shimmer shimmer = mService.getShimmer(bluetoothAddress);
+			isEXGUsingDefaultECGConfiguration = shimmer.isEXGUsingDefaultECGConfiguration();
+			isEXGUsingDefaultEMGConfiguration = shimmer.isEXGUsingDefaultEMGConfiguration();
+			String filenameRoot = "Shimmer" + "(" + String.valueOf(bluetoothAddress) + ") " + String.valueOf(tripId) + " ";
 
+			// Get list of enabled sensors
+			enabledSignals = shimmer.getListofEnabledSensorSignals();
+			ArrayList<String> signalNames = new ArrayList<String>(); 
+
+			// Create arrays to hold sensor reading for each signal of each enabled sensor
+			for (String signalName: enabledSignals) {
+				if (!signalName.equals("Timestamp")) {
+					signalReadings.put(signalName, new ArrayList<Double>());
+					signalNames.add(signalName);
+				}
+			}
+			
+			// If flag is set, Create data files for writing the raw data
+			ShimmerSignalGroup signalGroup;
+			
+			if (recordRawData) {
+				enabledSensors = shimmer.getListofEnabledSensors();
+				for (String sensorName: enabledSensors) {
+					if (!sensorName.equals("Timestamp")) {
+    					// Get the readings for the group  of signals specified
+						signalGroup = ShimmerSignalGroup.create(sensorName, shimmerVersion,
+								isEXGUsingDefaultECGConfiguration, isEXGUsingDefaultEMGConfiguration);
+    					RawDataFile_ShimmerSensor rawDataFile = 
+    							new RawDataFile_ShimmerSensor(filenameRoot + sensorName, tripId, dataDir, signalGroup.signalNames, shimmerVersion);
+    					rawDataFile.open(context);
+    					sensorDataFiles.put(sensorName, rawDataFile);
+    				}
+				}
+				// If flag is set, Create a data summary file
+				if (signalReadings.size() > 0) {
+					String[] arraySignalNames = new String[0];
+					arraySignalNames = signalNames.toArray(arraySignalNames);
+					summaryDataFile = new RawDataFile_Shimmer(filenameRoot + "Upload", tripId, dataDir, arraySignalNames, shimmerVersion);
+					summaryDataFile.open(context);
+				}
+			}
+			
+			// tell the shimmer device to start sending data
+			mService.startStreaming(bluetoothAddress);
+    	}
+    	catch(Exception ex) {
+    		Log.e(MODULE_TAG, ex.getMessage());
+			state = State.FAILED;
+    	}
+	}
+	
+	
 	/**
 	 * Write the result for each enabled sensor/group of enabled sensor signals
 	 * @param tripData
 	 * @param currentTimeMillis
 	 * @param location
 	 */
-	synchronized public void writeResult(TripData tripData, long currentTimeMillis, Location location) {
+ 	synchronized public void writeResult(TripData tripData, long currentTimeMillis, Location location) {
 
 		HashMap<String, CalcReading> results = new HashMap<String, CalcReading>();
 		RawDataFile_ShimmerSensor sensorDataFile;
@@ -332,92 +410,54 @@ public class ShimmerRecorder {
 	// *                          Shimmer Message Handler
 	// *********************************************************************************
 
-	private final class ShimmerMessageHandler extends Handler {
+	private static final class ShimmerMessageHandler extends Handler {
 		
 		public void handleMessage(Message msg) {
+
+        	ShimmerRecorder recorder = null;
+			ObjectCluster objectCluster = null;
 			
 			try {
 				switch (msg.what) {
 	            
 	            case Shimmer.MESSAGE_STATE_CHANGE:
-	            	
-	                switch (msg.arg1) {
-	
+
+    		    	switch (msg.arg1) {
+    		    	
 	                case Shimmer.STATE_CONNECTED: //this has been deprecated
 	                    break;
 	                    
 	                case Shimmer.MSG_STATE_FULLY_INITIALIZED:
 	                	
-	                	if (state == State.RUNNING) 
-	                		break;
-	                	
-	                	try {
-		    				state = State.RUNNING;
-		    		        shimmerVersion = mService.getShimmerVersion(bluetoothAddress);
-		    				Shimmer shimmer = mService.getShimmer(bluetoothAddress);
-		    				isEXGUsingDefaultECGConfiguration = shimmer.isEXGUsingDefaultECGConfiguration();
-		    				isEXGUsingDefaultEMGConfiguration = shimmer.isEXGUsingDefaultEMGConfiguration();
-		    				String filenameRoot = "Shimmer" + "(" + String.valueOf(bluetoothAddress) + ") " + String.valueOf(tripId) + " ";
-	
-		    				// Get list of enabled sensors
-		    				enabledSignals = shimmer.getListofEnabledSensorSignals();
-		    				ArrayList<String> signalNames = new ArrayList<String>(); 
-
-		    				// Create arrays to hold sensor reading for each signal of each enabled sensor
-		    				for (String signalName: enabledSignals) {
-		    					if (!signalName.equals("Timestamp")) {
-			    					signalReadings.put(signalName, new ArrayList<Double>());
-			    					signalNames.add(signalName);
-		    					}
-		    				}
-		    				
-		    				// If flag is set, Create data files for writing the raw data
-		    				ShimmerSignalGroup signalGroup;
-		    				
-	    					if (recordRawData) {
-			    				enabledSensors = shimmer.getListofEnabledSensors();
-			    				for (String sensorName: enabledSensors) {
-			    					if (!sensorName.equals("Timestamp")) {
-				    					// Get the readings for the group  of signals specified
-			    						signalGroup = ShimmerSignalGroup.create(sensorName, shimmerVersion,
-			    								isEXGUsingDefaultECGConfiguration, isEXGUsingDefaultEMGConfiguration);
-				    					RawDataFile_ShimmerSensor rawDataFile = 
-				    							new RawDataFile_ShimmerSensor(filenameRoot + sensorName, tripId, dataDir, signalGroup.signalNames, shimmerVersion);
-				    					rawDataFile.open(context);
-				    					sensorDataFiles.put(sensorName, rawDataFile);
-				    				}
-		    					}
-			    				// If flag is set, Create a data summary file
-			    				if (signalReadings.size() > 0) {
-			    					String[] arraySignalNames = new String[0];
-			    					arraySignalNames = signalNames.toArray(arraySignalNames);
-			    					summaryDataFile = new RawDataFile_Shimmer(filenameRoot + "Upload", tripId, dataDir, arraySignalNames, shimmerVersion);
-			    					summaryDataFile.open(context);
-			    				}
-		    				}
-	    					
-	    					// tell the shimmer device to start sending data
-		    				mService.startStreaming(bluetoothAddress);
-	                	}
-	                	catch(Exception ex) {
-	                		Log.e(MODULE_TAG, ex.getMessage());
-		    				state = State.FAILED;
-	                	}
+	    		    	if ((msg.obj instanceof ObjectCluster)) { 
+	    					objectCluster = (ObjectCluster) msg.obj;
+	    					if (null != (recorder = shimmerRecorders.get(objectCluster.mBluetoothAddress))) {
+		    					recorder.init(msg);
+	    					}
+	    		    	}
 	                    break;
 	
 	                case Shimmer.STATE_CONNECTING:
 	                    break;
 	                    
 	                case Shimmer.STATE_NONE:
-	    				state = State.FAILED;
+	                	
+	    		    	if ((msg.obj instanceof ObjectCluster)) { 
+	    					objectCluster = (ObjectCluster) msg.obj;
+	    					if (null != (recorder = shimmerRecorders.get(objectCluster.mBluetoothAddress))) {
+		    					recorder.setState(State.FAILED);
+	    					}
+	    		    	}
 	                    break;
-	                }
-	                break;
+    		    	}
 	            
 	            case Shimmer.MESSAGE_READ:
 
 					if ((msg.obj instanceof ObjectCluster)) {
-		            	writeData((ObjectCluster)msg.obj);
+    					objectCluster = (ObjectCluster) msg.obj;
+    					if (null != (recorder = shimmerRecorders.get(objectCluster.mBluetoothAddress))) {
+	    					recorder.writeData((ObjectCluster)msg.obj);
+    					}
 					}
 	                break;
 	
@@ -454,5 +494,4 @@ public class ShimmerRecorder {
 			this.std = std;
 		}
 	}
-
 }
