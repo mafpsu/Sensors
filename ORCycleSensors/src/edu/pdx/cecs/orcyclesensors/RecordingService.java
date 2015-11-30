@@ -93,6 +93,7 @@ public class RecordingService extends Service
 	private int state = STATE_IDLE;
 
 	private SpeedMonitor speedMonitor;
+	private Sound startSound = null;
 	private int pauseId = -1;
 	
 	// list of Ant+ devices to record
@@ -258,6 +259,10 @@ public class RecordingService extends Service
 		if (null == speedMonitor) {
 			speedMonitor = new SpeedMonitor(this);
 		}
+		
+		if (null == startSound) {
+			startSound = new Sound(this, R.raw.startbeep);
+		}
 		//speedMonitor.start();
 
 		this.state = STATE_WAITING_FOR_DEVICE_CONNECT;
@@ -397,6 +402,9 @@ public class RecordingService extends Service
 
 				if (lastLocation != null) {
 					distanceMeters += lastLocation.distanceTo(location);
+				}
+				else {
+					startSound.play();
 				}
 
 				long currentTimeMillis = System.currentTimeMillis();
