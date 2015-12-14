@@ -12,6 +12,7 @@
     <string name="tab_title_devices">Devices</string>
     <string name="tab_title_sensors">Sensors</string>
     <string name="tab_title_shimmers">Shimmers</string>
+    <string name="tab_title_emotiv">Emotiv</string>
     <string name="tab_title_data_files">Data Files</string>
     <string name="hello_world">Hello world!</string>
 
