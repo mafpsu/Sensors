@@ -68,7 +68,7 @@ public class Activity_Main extends FragmentActivity implements
 		fragmentDevices = new Fragment_MainDevices();
 		fragmentSensors = new Fragment_MainSensors();
 		fragmentShimmers = new Fragment_MainShimmers();
-		fragmentEmotiv = new Fragment_MainEmotiv();
+		fragmentEmotiv = new Fragment_MainEpocs();
 		fragmentDataFiles = new Fragment_MainDataFiles();
 		
 		// Set up the action bar.
