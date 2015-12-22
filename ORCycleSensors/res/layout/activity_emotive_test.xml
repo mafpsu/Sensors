@@ -9,6 +9,25 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".MainActivity" >
 
+    <TextView
+        android:id="@+id/tv_aet_status_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:text="Status: " >
+
+    </TextView>
+
+    <TextView
+        android:id="@+id/tv_aet_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/tv_aet_status_label"
+        android:layout_toEndOf="@+id/tv_aet_status_label"
+        android:text="Ready" />
+
     <Button
         android:id="@+id/startbutton"
         android:layout_width="wrap_content"

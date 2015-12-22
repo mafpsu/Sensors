@@ -31,9 +31,7 @@ public class Fragment_MainEpocs extends Fragment {
 	static final int REQUEST_ENABLE_BT = 1;
 	static final int REQUEST_CONNECT_SHIMMER = 2;
 	static final int REQUEST_CONFIGURE_SHIMMER = 3;
-	static final int REQUEST_CONFIGURE_VIEW_SENSOR = 4;
-	static final int REQUEST_COMMAND_SHIMMER = 5;
-	static final int REQUEST_LOGFILE_SHIMMER = 6;
+	static final int REQUEST_TEST_EPOC = 4;
 
 	// Local Bluetooth adapter
 	private BluetoothAdapter mBluetoothAdapter = null;
@@ -233,12 +231,8 @@ public class Fragment_MainEpocs extends Fragment {
 	            }
 	            break;
 	            
-	    	case REQUEST_CONFIGURE_VIEW_SENSOR:
+	    	case REQUEST_TEST_EPOC:
 	    		
-	            if (resultCode == Activity.RESULT_OK) {
-	                String bluetoothAddress = data.getExtras().getString(Activity_ShimmerSensorList.EXTRA_BLUETOOTH_ADDRESS);
-	                MyApplication.getInstance().addShimmerDevice(bluetoothAddress, "Shimmer");
-	            }
 	    		break;
 	    	}
 		}
@@ -307,10 +301,10 @@ public class Fragment_MainEpocs extends Fragment {
 					editMode.setTitle(savedEpocsAdapter.numSelectedItems() + " Selected");
 				}
 				else {
-					
 					String name = savedEpocsAdapter.getItem(pos).getName();
+					String address = savedEpocsAdapter.getItem(pos).getAddress();
 					
-					transitionToTestEpocActivity(name);
+					transitionToTestEpocActivity(name, address);
 				}
 			}
 			catch(Exception ex) {
@@ -466,10 +460,11 @@ public class Fragment_MainEpocs extends Fragment {
 		getActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
 	}
 
-	private void transitionToTestEpocActivity(String bluetoothAddress) {
-		Intent intent = new Intent(getActivity(), Activity_ShimmerSensorList.class);
-		intent.putExtra(Activity_ShimmerSensorList.EXTRA_BLUETOOTH_ADDRESS, bluetoothAddress);
-		startActivityForResult(intent, REQUEST_CONFIGURE_VIEW_SENSOR);
+	private void transitionToTestEpocActivity(String name, String address) {
+		Intent intent = new Intent(getActivity(), Activity_EmotivTest.class);
+		intent.putExtra(Activity_EmotivTest.EXTRA_BLUETOOTH_NAME, name);
+		intent.putExtra(Activity_EmotivTest.EXTRA_BLUETOOTH_ADDRESS, address);
+		startActivityForResult(intent, REQUEST_TEST_EPOC);
 		getActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
 	}
 }
