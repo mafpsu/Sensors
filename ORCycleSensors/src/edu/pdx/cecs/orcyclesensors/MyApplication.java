@@ -424,6 +424,7 @@ public class MyApplication extends android.app.Application {
 					appDevices.getAntDeviceInfos(), 
 					appSensors.getSensors(),
 					appShimmers.getShimmerDeviceInfos(),
+					appEpocs.getEpocDeviceInfos(),
 					minTimeBetweenReadings, 
 					recordRawData, 
 					DataFileInfoManager.getDirPath());

@@ -81,6 +81,7 @@ public interface IRecordService {
 			ArrayList<AntDeviceInfo> devices, 
 			ArrayList<SensorItem> sensors,
 			ArrayList<ShimmerDeviceInfo> shimmerDeviceInfos,
+			ArrayList<EpocDeviceInfo> epocDeviceInfos,
 			long minTimeBetweenReadings,
 			boolean recordRawData, String dataFileDir) throws Exception;
 
