@@ -3,6 +3,9 @@ package edu.pdx.cecs.orcyclesensors;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.emotiv.insight.IEdk;
+
+import edu.pdx.cecs.orcyclesensors.ShimmerRecorder.CalcReading;
 import android.content.Context;
 import android.location.Location;
 import android.util.Log;
@@ -11,12 +14,19 @@ public class EpocRecorder {
 
 	private static final String MODULE_TAG = "EpocRecorder";
 
+	private IEdk.IEE_MotionDataChannel_t[] Channel_list = {
+			IEdk.IEE_MotionDataChannel_t.IMD_COUNTER, IEdk.IEE_MotionDataChannel_t.IMD_GYROX,IEdk.IEE_MotionDataChannel_t.IMD_GYROY,
+			IEdk.IEE_MotionDataChannel_t.IMD_GYROZ,IEdk.IEE_MotionDataChannel_t.IMD_ACCX,IEdk.IEE_MotionDataChannel_t.IMD_ACCY,IEdk.IEE_MotionDataChannel_t.IMD_ACCZ,
+			IEdk.IEE_MotionDataChannel_t.IMD_MAGX,IEdk.IEE_MotionDataChannel_t.IMD_MAGY,IEdk.IEE_MotionDataChannel_t.IMD_MAGZ,IEdk.IEE_MotionDataChannel_t.IMD_TIMESTAMP};
+	
+	HashMap<String, CalcReading> eegReadings = new HashMap<String, CalcReading>();
+
 	private Context context;
 	private final String bluetoothAddress;
-	private boolean recordRawData;
 	private long tripId;
 	private String dataDir;
     private static Map<String, EpocRecorder> epocRecorders = new HashMap<String, EpocRecorder>();
+    private RawDataFile_Epoc rawDataFile = null;
 
     public enum State { IDLE, CONNECTING, RUNNING, PAUSED, FAILED };
 	
@@ -25,9 +35,11 @@ public class EpocRecorder {
 	private EpocRecorder(Context context, String bluetoothAddress, boolean recordRawData, long tripId, String dataDir) {
 		this.context = context;
 		this.bluetoothAddress = bluetoothAddress;
-		this.recordRawData = recordRawData;
 		this.tripId = tripId;
 		this.dataDir = dataDir;
+		if (recordRawData) {
+			this.rawDataFile = new RawDataFile_Epoc("Epoc_" + bluetoothAddress + ".csv" , tripId, dataDir);
+		}
 	}
 
 	public static EpocRecorder create(Context context, String bluetoothAddress, boolean recordRawData, long tripId, String dataDir) {
@@ -46,6 +58,9 @@ public class EpocRecorder {
 	synchronized public void start(Context context) {
     	// state = State.CONNECTING; TODO: change back
     	state = State.RUNNING;
+		if (null != rawDataFile) {
+			rawDataFile.open(context);
+		}
 	}
 
 	synchronized public void pause() {
@@ -79,6 +94,9 @@ public class EpocRecorder {
 	 * @param location
 	 */
  	synchronized public void writeResult(TripData tripData, long currentTimeMillis, Location location) {
+		if (null != rawDataFile) {
+			rawDataFile.write(currentTimeMillis, location, eegReadings);
+		}
  	}
 	
 	synchronized public State getState() {
@@ -86,5 +104,8 @@ public class EpocRecorder {
 	}
 	
 	protected void closeRawDataFile() {
+		if (null != rawDataFile) {
+			rawDataFile.close();
+		}
 	}
 }
