@@ -61,7 +61,7 @@ package edu.pdx.cecs.orcyclesensors;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -98,6 +98,7 @@ public class RecordingService extends Service
 	
 	// list of Ant+ devices to record
 	private ArrayList<AntDeviceInfo> antDeviceInfos;
+	@SuppressLint("UseSparseArrays")
 	private Map<Integer, AntDeviceRecorder> antDeviceRecorders = new HashMap<Integer, AntDeviceRecorder>();
 	
 	// list of phone sensors to record
@@ -107,6 +108,10 @@ public class RecordingService extends Service
 	// list of Shimmer devices to record
 	private ArrayList<ShimmerDeviceInfo> shimmerDeviceInfos;
 	private Map<String, ShimmerRecorder> shimmerRecorders = new HashMap<String, ShimmerRecorder>();
+	
+	// list of Shimmer devices to record
+	private ArrayList<EpocDeviceInfo> epocDeviceInfos;
+	private Map<String, EpocRecorder> epocRecorders = new HashMap<String, EpocRecorder>();
 	
 	private long minTimeBetweenReadings;
 	
@@ -207,6 +212,7 @@ public class RecordingService extends Service
 			ArrayList<AntDeviceInfo> antDeviceInfos, 
 			ArrayList<SensorItem> sensorItems,
 			ArrayList<ShimmerDeviceInfo> shimmerDeviceInfos,
+			ArrayList<EpocDeviceInfo> epocDeviceInfos,
 			long minTimeBetweenReadings,
 			boolean recordRawData, String dataFileDir) throws Exception {
 		
@@ -220,6 +226,8 @@ public class RecordingService extends Service
 		this.antDeviceRecorders.clear();
 		this.shimmerDeviceInfos = shimmerDeviceInfos;
 		this.shimmerRecorders.clear();
+		this.epocDeviceInfos = epocDeviceInfos;
+		this.epocRecorders.clear();
 		this.minTimeBetweenReadings = minTimeBetweenReadings;
 		
 		// Create a recorder for each sensor
@@ -244,6 +252,12 @@ public class RecordingService extends Service
 					ShimmerRecorder.create(this, shimmerDeviceInfo.getAddress(), recordRawData, trip.tripid, dataFileDir));
 		}
 
+		// Create a recorder for each Epoc device
+		for (EpocDeviceInfo epocDeviceInfo: this.epocDeviceInfos) {
+			epocRecorders.put(epocDeviceInfo.getAddress(), 
+					EpocRecorder.create(this, epocDeviceInfo.getAddress(), recordRawData, trip.tripid, dataFileDir));
+		}
+
 		// Start listening for GPS updates!
 		// registerLocationUpdates(minTimeBetweenReadings);
 
@@ -256,6 +270,9 @@ public class RecordingService extends Service
 		// Start listening for shimmer updates!
 		startShimmerRecorders();
 
+		// Start listening for shimmer updates!
+		startEpocRecorders();
+
 		if (null == speedMonitor) {
 			speedMonitor = new SpeedMonitor(this);
 		}
@@ -263,18 +280,8 @@ public class RecordingService extends Service
 		if (null == startSound) {
 			startSound = new Sound(this, R.raw.startbeep);
 		}
-		//speedMonitor.start();
 
 		this.state = STATE_WAITING_FOR_DEVICE_CONNECT;
-		
-		// Initialize recording state
-		/*
-		if ((this.antDeviceInfos.size() > 0) || (this.shimmerDeviceInfos.size() > 0)) {
-			this.state = STATE_WAITING_FOR_DEVICE_CONNECT;
-		}
-		else {
-			this.state = STATE_RECORDING;
-		}*/
 	}
 
 	/**
@@ -289,6 +296,7 @@ public class RecordingService extends Service
 		pauseDeviceRecorders();
 		pauseSensorRecorders();
 		pauseShimmerRecorders();
+		pauseEpocRecorders();
 		if (null != speedMonitor)
 			speedMonitor.cancel();
 	}
@@ -305,6 +313,7 @@ public class RecordingService extends Service
 		resumeDeviceRecorders();
 		resumeSensorRecorders();
 		resumeShimmerRecorders();
+		resumeEpocRecorders();
 
 		if (null != speedMonitor)
 			speedMonitor.start();
@@ -329,6 +338,7 @@ public class RecordingService extends Service
 		unregisterDeviceRecorders();
 		unregisterSensorRecorders();
 		unregisterShimmerRecorders();
+		unregisterEpocRecorders();
 
 		//
 		if (trip.getNumPoints() > 0) {
@@ -354,6 +364,7 @@ public class RecordingService extends Service
 		unregisterDeviceRecorders();
 		unregisterSensorRecorders();
 		unregisterShimmerRecorders();
+		unregisterEpocRecorders();
 
 		this.state = STATE_IDLE;
 	}
@@ -426,6 +437,11 @@ public class RecordingService extends Service
 					shimmerRecorder.writeResult(trip, currentTimeMillis, location);
 				}
 				
+				// record epoc values
+				for (EpocRecorder epocRecorder: epocRecorders.values()) {
+					epocRecorder.writeResult(trip, currentTimeMillis, location);
+				}
+				
 				// record location for distance measurement
 				lastLocation = location;
 			}
@@ -462,7 +478,7 @@ public class RecordingService extends Service
 	}
 
 	// *********************************************************************************
-	// *                     SensorEventListener Implementation
+	// *                     Sensor Implementation
 	// *********************************************************************************
 
 	private void startSensorRecorders() {
@@ -506,7 +522,7 @@ public class RecordingService extends Service
 	}
 
 	// *********************************************************************************
-	// *                     AntDeviceEventListener Implementation
+	// *                     AntDevice Implementation
 	// *********************************************************************************
 
 	private void startDeviceRecorders() {
@@ -550,7 +566,7 @@ public class RecordingService extends Service
 	}
 
 	// *********************************************************************************
-	// *                     AntDeviceEventListener Implementation
+	// *                     Shimmer Implementation
 	// *********************************************************************************
 
 	private void startShimmerRecorders() {
@@ -594,6 +610,50 @@ public class RecordingService extends Service
 	}
 
 	// *********************************************************************************
+	// *                     Epoc Implementation
+	// *********************************************************************************
+
+	private void startEpocRecorders() {
+		
+		EpocRecorder recorder;
+
+		for (String key : epocRecorders.keySet()) {
+			recorder = epocRecorders.get(key);
+			recorder.start(this);
+		}
+	}
+	
+	private void resumeEpocRecorders() {
+		
+		EpocRecorder recorder;
+
+		for (String key : epocRecorders.keySet()) {
+			recorder = epocRecorders.get(key);
+			recorder.resume();
+		}
+	}
+	
+	private void pauseEpocRecorders() {
+		
+		EpocRecorder recorder;
+
+		for (String key : epocRecorders.keySet()) {
+			recorder = epocRecorders.get(key);
+			recorder.pause();
+		}
+	}
+	
+	private void unregisterEpocRecorders() {
+		
+		EpocRecorder recorder;
+
+		for (String key : epocRecorders.keySet()) {
+			recorder = epocRecorders.get(key);
+			recorder.unregister();
+		}
+	}
+
+	// *********************************************************************************
 	// *                     Ant+ and Shimmer connect state
 	// *********************************************************************************
 
@@ -601,6 +661,7 @@ public class RecordingService extends Service
 		
 		AntDeviceRecorder antDeviceRecorder;
 		ShimmerRecorder shimmerRecorder;
+		EpocRecorder epocRecorder;
 		boolean oneFailed = false;
 		boolean notAllConnected = false;
 
@@ -628,6 +689,26 @@ public class RecordingService extends Service
 		for (String key : shimmerRecorders.keySet()) {
 			shimmerRecorder = shimmerRecorders.get(key);
 			switch(shimmerRecorder.getState()) {
+			case IDLE:
+				notAllConnected = true;
+				break;
+			case CONNECTING:
+				notAllConnected = true;
+				break;
+			case RUNNING:
+				break;
+			case PAUSED:
+				break;
+			case FAILED:
+				oneFailed = true;
+				break;
+			}
+		}
+		
+		// Check all Shimmer device recorders for state
+		for (String key : epocRecorders.keySet()) {
+			epocRecorder = epocRecorders.get(key);
+			switch(epocRecorder.getState()) {
 			case IDLE:
 				notAllConnected = true;
 				break;

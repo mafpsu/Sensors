@@ -35,7 +35,8 @@ public class Activity_Main extends FragmentActivity implements
 	private static final int FRAG_INDEX_DEVICES = 2;
 	private static final int FRAG_INDEX_SENSORS = 3;
 	private static final int FRAG_INDEX_SHIMMERS = 4;
-	private static final int FRAG_INDEX_DATA_FILES = 5;
+	private static final int FRAG_INDEX_EMOTIV = 5;
+	private static final int FRAG_INDEX_DATA_FILES = 6;
 
 	private int fragmentToShow = FRAG_INDEX_RECORD;
 
@@ -48,6 +49,7 @@ public class Activity_Main extends FragmentActivity implements
 	private Fragment fragmentDevices;
 	private Fragment fragmentSensors;
 	private Fragment fragmentShimmers;
+	private Fragment fragmentEmotiv;
 	private Fragment fragmentDataFiles;
 	private int tabIndex = -1;
 
@@ -66,6 +68,7 @@ public class Activity_Main extends FragmentActivity implements
 		fragmentDevices = new Fragment_MainDevices();
 		fragmentSensors = new Fragment_MainSensors();
 		fragmentShimmers = new Fragment_MainShimmers();
+		fragmentEmotiv = new Fragment_MainEpocs();
 		fragmentDataFiles = new Fragment_MainDataFiles();
 		
 		// Set up the action bar.
@@ -338,6 +341,8 @@ public class Activity_Main extends FragmentActivity implements
 				return fragmentSensors;
 			case FRAG_INDEX_SHIMMERS:
 				return fragmentShimmers;
+			case FRAG_INDEX_EMOTIV:
+				return fragmentEmotiv;
 			case FRAG_INDEX_DATA_FILES:
 				return fragmentDataFiles;
 			}
@@ -364,6 +369,8 @@ public class Activity_Main extends FragmentActivity implements
 				return getString(R.string.tab_title_sensors).toUpperCase(l);
 			case FRAG_INDEX_SHIMMERS:
 				return getString(R.string.tab_title_shimmers).toUpperCase(l);
+			case FRAG_INDEX_EMOTIV:
+				return getString(R.string.tab_title_emotiv).toUpperCase(l);
 			case FRAG_INDEX_DATA_FILES:
 				return getString(R.string.tab_title_data_files).toUpperCase(l);
 			}

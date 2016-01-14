@@ -55,6 +55,7 @@ public class Activity_ShimmerDeviceList extends Activity {
 
     // Return Intent extra
     public static String EXTRA_BLUETOOTH_ADDRESS = "EXTRA_BLUETOOTH_ADDRESS";
+    public static String EXTRA_BLUETOOTH_NAME = "EXTRA_BLUETOOTH_NAME";
 
     // Member fields
     private BluetoothAdapter mBtAdapter;
@@ -167,10 +168,12 @@ public class Activity_ShimmerDeviceList extends Activity {
 
             // Get the device MAC address, which is the last 17 chars in the View
             String info = ((TextView) v).getText().toString();
+            String name = info.substring(0, 16);
             String address = info.substring(info.length() - 17);
 
             // Create the result Intent and include the MAC address
             Intent intent = new Intent();
+            intent.putExtra(EXTRA_BLUETOOTH_NAME, name);
             intent.putExtra(EXTRA_BLUETOOTH_ADDRESS, address);
 
             Toast.makeText(getApplicationContext(),"Device Selected " +  "-> "+ address, Toast.LENGTH_SHORT).show();

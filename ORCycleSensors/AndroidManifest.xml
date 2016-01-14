@@ -133,6 +133,11 @@
                   android:label="@string/asdl_select_device"
                   android:theme="@android:style/Theme.Dialog"/>
         
-					</application>
+        <activity
+            android:name="edu.pdx.cecs.orcyclesensors.Activity_EmotivTest"
+            android:screenOrientation="portrait"
+            android:label="Trip Map" />
+
+	</application>
 
 </manifest>
