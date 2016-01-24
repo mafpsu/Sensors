@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/action_asc_commands"
+          android:showAsAction="ifRoom"
+          android:title="commands"/>
+    <item android:id="@+id/action_asc_sensors"
+          android:showAsAction="ifRoom"
+          android:title="sensors"/>
+    <item android:id="@+id/action_asc_exg"
+          android:showAsAction="ifRoom"
+          android:title="exg"/>
+    <item android:id="@+id/action_asc_close"
+          android:showAsAction="ifRoom"
+          android:title="close"/>
+</menu>
