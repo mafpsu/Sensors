@@ -6,44 +6,68 @@
     android:orientation="vertical"
     tools:context=".RecordTrip$DummySectionFragment" >
 
-    <LinearLayout
-        android:id="@+id/ll_assv"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
+	<RelativeLayout
+	    android:id="@+id/ll_asc_device_info"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentLeft="true"
+	    android:layout_alignParentTop="true"
+	    android:layout_marginTop="1dp"
+	    android:background="#fcfcfc"
+	    android:orientation="vertical"
+	    android:paddingBottom="4dp"
+	    android:paddingLeft="@dimen/activity_horizontal_margin"
+	    android:paddingRight="@dimen/activity_horizontal_margin"
+	    android:paddingTop="12dp"
+	    tools:context=".UserInfo$DummySectionFragment" >
 
-        <Button
-            android:id="@+id/assl_btn_done"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="Done" />
-        
-        <Button
-            android:id="@+id/assl_btn_try_again"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="Try Again" />
-        
-    </LinearLayout>
+	<TextView
+            android:id="@+id/tv_asc_device"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="0dp"
+            android:text="Device: unknown"
+            android:textAppearance="?android:attr/textAppearanceMedium" 
+            android:textColor="#474334" />
 
-    <ListView
-        android:id="@android:id/list"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:divider="#D6D6D6"
-        android:dividerHeight="1dp"
-        android:footerDividersEnabled="true"
-        android:groupIndicator="@null"
-        android:textColor="#000000" 
-        android:visibility="visible" >
+        <TextView
+            android:id="@+id/tv_asc_version"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@id/tv_asc_device"
+            android:layout_marginTop="0dp"
+            android:text="Version: unknown"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="#474334" />
+
+        </RelativeLayout>
+
+   	    <ListView
+   	        android:id="@android:id/list"
+   	        android:layout_width="match_parent"
+   	        android:layout_height="wrap_content"
+   	        android:layout_above="@+id/ll_assv"
+   	        android:layout_below="@+id/ll_asc_device_info"
+   	        android:divider="#D6D6D6"
+   	        android:dividerHeight="1dp"
+   	        android:footerDividersEnabled="true"
+   	        android:groupIndicator="@null"
+   	        android:textColor="#000000"
+   	        android:visibility="visible" >
+
     </ListView>
 
 <LinearLayout
     android:id="@+id/ll_asc_commands"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical" 
+    android:layout_above="@+id/ll_assv"
+    android:layout_below="@+id/ll_asc_device_info"
+    android:orientation="vertical"
     android:visibility="gone" >
 
     <LinearLayout
@@ -243,10 +267,36 @@
         android:id="@+id/ll_asc_exg"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_above="@+id/ll_assv"
+        android:layout_below="@+id/ll_asc_device_info"
         android:layout_marginBottom="10dp"
         android:orientation="vertical"
         android:paddingLeft="5dp"
         android:paddingRight="5dp" >
+
 	</LinearLayout>
         
+    <LinearLayout
+        android:id="@+id/ll_assv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true" >
+
+        <Button
+            android:id="@+id/assl_btn_done"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="Done" />
+        
+        <Button
+            android:id="@+id/assl_btn_try_again"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="Try Again" />
+        
+    </LinearLayout>
+
 </RelativeLayout>

@@ -2,7 +2,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
     <item android:id="@+id/action_asc_commands"
           android:showAsAction="ifRoom"
-          android:title="commands"/>
+          android:title="cmds"/>
     <item android:id="@+id/action_asc_sensors"
           android:showAsAction="ifRoom"
           android:title="sensors"/>

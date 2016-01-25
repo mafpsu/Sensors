@@ -5,6 +5,8 @@ import com.google.common.collect.BiMap;
 import edu.pdx.cecs.orcyclesensors.shimmer.android.Shimmer;
 import edu.pdx.cecs.orcyclesensors.shimmer.driver.Configuration;
 import edu.pdx.cecs.orcyclesensors.shimmer.driver.ShimmerVerDetails;
+import edu.pdx.cecs.orcyclesensors.shimmer.driver.ShimmerVerDetails.HW_ID;
+import edu.pdx.cecs.orcyclesensors.R.id;
 import edu.pdx.cecs.orcyclesensors.ShimmerService;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -28,6 +30,7 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -82,6 +85,8 @@ public class Activity_ShimmerConfig extends ListActivity {
     private Button buttonAccRange;
     private Button buttonBattVoltLimit;
     private Button buttonToggleLED;
+    private TextView tvDevice;
+    private TextView tvVersion;
     
     private int shimmerVersion;	
 
@@ -108,10 +113,17 @@ public class Activity_ShimmerConfig extends ListActivity {
 	        // Set result CANCELED in case the user backs out
 	        setResult(Activity.RESULT_CANCELED);
 	
+	        tvDevice = (TextView) findViewById(R.id.tv_asc_device);
+	        tvVersion = (TextView) findViewById(R.id.tv_asc_version);
 	        buttonDone = (Button) findViewById(R.id.assl_btn_done);
 	        buttonDone.setOnClickListener(new ButtonDone_OnClickListener());
 			buttonTryAgain = (Button) findViewById(R.id.assl_btn_try_again);
 			buttonTryAgain.setOnClickListener(new ButtonTryAgain_OnClickListener());
+			// get the list GUI elements
+			listView = (ListView) findViewById(android.R.id.list);
+			listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+			
+			ll_asc_exg = (LinearLayout) findViewById(R.id.ll_asc_exg);
 	
 			BluetoothAdapter mBluetoothAdapter = null;
 	        if(null == (mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter())) {
@@ -138,6 +150,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 			else {
 		        mService = MyApplication.getInstance().getShimmerService();
 			}
+	        tvDevice.setText("Device: " + mBluetoothAddress);
 			
 			// Commands window
 	        // Set an EditText view to get user input 
@@ -241,7 +254,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 	        
 	        buttonGsr.setOnClickListener(new ButtonGsr_OnClickListener(dialogGsrRange));
 	        
-	        buttonDone.setOnClickListener(new ButtonDone_OnClickListener());
+	        //buttonDone.setOnClickListener(new ButtonDone_OnClickListener());
 	        
 	        currentView = ShimmerConfigView.viewScanning;
 		}
@@ -257,10 +270,10 @@ public class Activity_ShimmerConfig extends ListActivity {
 			// Inflate the menu items for use in the action bar
 			getMenuInflater().inflate(R.menu.activity_shimmer_config, menu);
 
-			mnuCommands = menu.getItem(0);
-			mnuSensors = menu.getItem(1);
-			mnuExg = menu.getItem(2);
-			mnuClose = menu.getItem(3);
+			mnuCommands = menu.findItem(id.action_asc_commands);
+			mnuSensors = menu.findItem(id.action_asc_sensors);
+			mnuExg = menu.findItem(id.action_asc_exg);
+			mnuClose = menu.findItem(id.action_asc_close);
 			setCurrentView(currentView);
 		}
 		catch(Exception ex) {
@@ -309,30 +322,53 @@ public class Activity_ShimmerConfig extends ListActivity {
 
 		case viewScanning:
 
-			setTitle(mBluetoothAddress + " " + getString(R.string.assl_title_connecting));
+			setTitle(R.string.assl_title_connecting);
 	        setProgressBarIndeterminateVisibility(true);
 			buttonDone.setText("Cancel");
-			buttonDone.setVisibility(View.VISIBLE);
 			buttonTryAgain.setVisibility(View.GONE);
+
+			if (null != mnuCommands) {
+				mnuCommands.setVisible(false);
+			}
+			if (null != mnuSensors) {
+				mnuSensors.setVisible(false);
+			}
+			if (null != mnuExg) {
+				mnuExg.setVisible(false);
+			}
+			if (null != mnuClose) {
+				mnuClose.setVisible(false);
+			}
 			break;
 
 		case viewScanSuccess:
 
-			setTitle(mBluetoothAddress);
+			setTitle("");
 	        setProgressBarIndeterminateVisibility(false);
     		buttonDone.setText("Done");
-			buttonDone.setVisibility(View.VISIBLE);
 			buttonTryAgain.setVisibility(View.GONE);
 
+			if (null != mnuCommands) {
+				mnuCommands.setVisible(true);
+			}
+			if (null != mnuSensors) {
+				mnuSensors.setVisible(true);
+			}
+			if (null != mnuExg) {
+				mnuExg.setVisible(true);
+			}
+			if (null != mnuClose) {
+				mnuClose.setVisible(true);
+			}
 			
+			tvVersion.setText("Version: " + getShimmerVersion(mShimmerVersion));
 			break;
 
 		case viewScanFailed:
 
-			setTitle(mBluetoothAddress + " " + getString(R.string.assl_title_not_connected));
+			setTitle(R.string.assl_title_not_connected);
 	        setProgressBarIndeterminateVisibility(false);
 			buttonDone.setText("Cancel");
-			buttonDone.setVisibility(View.VISIBLE);
 			buttonTryAgain.setVisibility(View.VISIBLE);
 
 			ll_asc_commands.setVisibility(View.INVISIBLE);
@@ -355,13 +391,6 @@ public class Activity_ShimmerConfig extends ListActivity {
 				mnuSensors.setVisible(true);
 				mnuExg.setVisible(true);
 			}
-
-			//ll_asc_commands.setVisibility(View.GONE);
-	        //ll_asc0.setVisibility(View.GONE);
-	        //ll_asc1.setVisibility(View.GONE);
-	        //ll_asc2.setVisibility(View.GONE);
-	        //ll_asc3.setVisibility(View.GONE);
-
 			break;
 
 		case viewSensors:
@@ -390,6 +419,19 @@ public class Activity_ShimmerConfig extends ListActivity {
 		}
 		currentView = shimmerConfigView;
 	}
+	
+	public String getShimmerVersion(int version) {
+		switch(version) {
+        case HW_ID.SHIMMER_1: return "Shimmer 1";
+        case HW_ID.SHIMMER_2: return "Shimmer 2";
+        case HW_ID.SHIMMER_2R: return "Shimmer 2r";
+        case HW_ID.SHIMMER_3: return "Shimmer 3";
+        case HW_ID.SHIMMER_SR30: return "Shimmer SR30";
+        case HW_ID.SHIMMER_GQ: return "Shimmer GQ";
+        default: return "unknown";
+		}
+	}
+	
 
     /**
      * 
@@ -476,9 +518,9 @@ public class Activity_ShimmerConfig extends ListActivity {
 		@Override
 		public void onClick(View v) {
 			try {
-				setTitle(mBluetoothAddress + " " + getString(R.string.assl_title_connecting));
+				setTitle(R.string.assl_title_connecting);
 		        setProgressBarIndeterminateVisibility(true);
-				buttonTryAgain.setVisibility(View.GONE);
+		        setCurrentView(ShimmerConfigView.viewScanning);
 				mService.connectShimmer(mBluetoothAddress, "Device");
 			}
 	  		catch(Exception ex) {
@@ -1089,9 +1131,6 @@ public class Activity_ShimmerConfig extends ListActivity {
 		// get the bit field value corresponding to the enabled sensors
 		mEnabledSensors = mService.getEnabledSensors(mBluetoothAddress);
 		
-		// get the list GUI elements
-		listView = (ListView) findViewById(android.R.id.list);
-		listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
 		ArrayAdapter<String> adapterSensorNames = new ArrayAdapter<String>(
 				this, 
 				android.R.layout.simple_list_item_multiple_choice,
@@ -1210,12 +1249,6 @@ public class Activity_ShimmerConfig extends ListActivity {
   		cBoxLowPowerMag.setChecked(mService.isLowPowerMagEnabled(mBluetoothAddress));
   		
   		cBoxLowPowerMag.setOnCheckedChangeListener(new CBoxLowPowerMag_OnCheckedChangeListener());
-
-        //ll_asc_commands.setVisibility(View.VISIBLE);
-        //ll_asc0.setVisibility(View.VISIBLE);
-        //ll_asc1.setVisibility(View.VISIBLE);
-        //ll_asc2.setVisibility(View.VISIBLE);
-        //ll_asc3.setVisibility(View.VISIBLE);
 	}
 
 	// *********************************************************************************
