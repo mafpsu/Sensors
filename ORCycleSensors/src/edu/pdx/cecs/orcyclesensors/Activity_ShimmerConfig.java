@@ -4,6 +4,8 @@ import com.google.common.collect.BiMap;
 
 import edu.pdx.cecs.orcyclesensors.shimmer.android.Shimmer;
 import edu.pdx.cecs.orcyclesensors.shimmer.driver.Configuration;
+import edu.pdx.cecs.orcyclesensors.shimmer.driver.FormatCluster;
+import edu.pdx.cecs.orcyclesensors.shimmer.driver.ObjectCluster;
 import edu.pdx.cecs.orcyclesensors.shimmer.driver.ShimmerVerDetails;
 import edu.pdx.cecs.orcyclesensors.shimmer.driver.ShimmerVerDetails.HW_ID;
 import edu.pdx.cecs.orcyclesensors.R.id;
@@ -28,6 +30,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -53,6 +56,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 	private String mBluetoothAddress = "";
     private long mEnabledSensors = -1;
     private int mShimmerVersion = -1;
+    private String mShimmerFWVersion = "unknown";
     
 	private MenuItem mnuCommands;
 	private MenuItem mnuSensors;
@@ -67,10 +71,6 @@ public class Activity_ShimmerConfig extends ListActivity {
     private final String[] accelRangeArray = {"+/- 1.5g","+/- 6g"};
 
     private LinearLayout ll_asc_commands;
-    private LinearLayout ll_asc0;
-    private LinearLayout ll_asc1;
-    private LinearLayout ll_asc2;
-    private LinearLayout ll_asc3;
     private LinearLayout ll_asc_exg;
     private CheckBox cBoxLowPowerMag;
     private CheckBox cBoxLowPowerAccel;
@@ -87,9 +87,18 @@ public class Activity_ShimmerConfig extends ListActivity {
     private Button buttonToggleLED;
     private TextView tvDevice;
     private TextView tvVersion;
+    private TextView tvFWVersion;
     
-    private int shimmerVersion;	
+	static String exgMode="";
+	static ImageView statusCircle1, statusCircle2, statusCircle3, statusCircle4, statusCircle5;
+	static TextView chip1Item1, chip1Item2, chip1Item3, chip1Item4, chip1Item5, chip1Item6, chip1Item7, chip1Item8, chip1Item9, chip1Item10;
+	static TextView chip2Item1, chip2Item2, chip2Item3, chip2Item4, chip2Item5, chip2Item6, chip2Item7, chip2Item8, chip2Item9, chip2Item10;
+	static byte[] exgChip1Array = new byte[10];
+	static byte[] exgChip2Array = new byte[10];
 
+    
+    
+    
     private Handler shimmerMessageHandler = new ShimmerMessageHandler();
     
 
@@ -115,6 +124,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 	
 	        tvDevice = (TextView) findViewById(R.id.tv_asc_device);
 	        tvVersion = (TextView) findViewById(R.id.tv_asc_version);
+	        tvFWVersion = (TextView) findViewById(R.id.tv_asc_firmware);
 	        buttonDone = (Button) findViewById(R.id.assl_btn_done);
 	        buttonDone.setOnClickListener(new ButtonDone_OnClickListener());
 			buttonTryAgain = (Button) findViewById(R.id.assl_btn_try_again);
@@ -122,7 +132,8 @@ public class Activity_ShimmerConfig extends ListActivity {
 			// get the list GUI elements
 			listView = (ListView) findViewById(android.R.id.list);
 			listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-			
+
+			ll_asc_commands = (LinearLayout) findViewById(R.id.ll_asc_commands);
 			ll_asc_exg = (LinearLayout) findViewById(R.id.ll_asc_exg);
 	
 			BluetoothAdapter mBluetoothAdapter = null;
@@ -157,11 +168,6 @@ public class Activity_ShimmerConfig extends ListActivity {
 	        final EditText editTextBattLimit = new EditText(getApplicationContext());
 	        editTextBattLimit.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
 	        
-	        ll_asc_commands = (LinearLayout) findViewById(R.id.ll_asc_commands);
-	        ll_asc0 = (LinearLayout) findViewById(R.id.ll_asc0);
-	        ll_asc1 = (LinearLayout) findViewById(R.id.ll_asc1);
-	        ll_asc2 = (LinearLayout) findViewById(R.id.ll_asc2);
-	        ll_asc3 = (LinearLayout) findViewById(R.id.ll_asc3);
 	        buttonPressureResolution = (Button) findViewById(R.id.buttonPressureAccuracy);
 			buttonGyroRange = (Button) findViewById(R.id.buttonGyroRange);
 			buttonMagRange = (Button) findViewById(R.id.buttonMagRange);
@@ -256,6 +262,39 @@ public class Activity_ShimmerConfig extends ListActivity {
 	        
 	        //buttonDone.setOnClickListener(new ButtonDone_OnClickListener());
 	        
+	        // ------------------------------------------------------------------------------
+	        // EXG Screen
+	        
+	        statusCircle1 = (ImageView) findViewById(R.id.imageLeadOff1);
+	        statusCircle2 = (ImageView) findViewById(R.id.imageLeadOff2);
+	        statusCircle3 = (ImageView) findViewById(R.id.imageLeadOff3);
+	        statusCircle4 = (ImageView) findViewById(R.id.imageLeadOff4);
+	        statusCircle5 = (ImageView) findViewById(R.id.imageLeadOff5);
+	        
+	        chip1Item1 = (TextView) findViewById(R.id.texChip1_1);
+	        chip1Item2 = (TextView) findViewById(R.id.texChip1_2);
+	        chip1Item3 = (TextView) findViewById(R.id.texChip1_3);
+	        chip1Item4 = (TextView) findViewById(R.id.texChip1_4);
+	        chip1Item5 = (TextView) findViewById(R.id.texChip1_5);
+	        chip1Item6 = (TextView) findViewById(R.id.texChip1_6);
+	        chip1Item7 = (TextView) findViewById(R.id.texChip1_7);
+	        chip1Item8 = (TextView) findViewById(R.id.texChip1_8);
+	        chip1Item9 = (TextView) findViewById(R.id.texChip1_9);
+	        chip1Item10 = (TextView) findViewById(R.id.texChip1_10);
+	        
+	        chip2Item1 = (TextView) findViewById(R.id.texChip2_1);
+	        chip2Item2 = (TextView) findViewById(R.id.texChip2_2);
+	        chip2Item3 = (TextView) findViewById(R.id.texChip2_3);
+	        chip2Item4 = (TextView) findViewById(R.id.texChip2_4);
+	        chip2Item5 = (TextView) findViewById(R.id.texChip2_5);
+	        chip2Item6 = (TextView) findViewById(R.id.texChip2_6);
+	        chip2Item7 = (TextView) findViewById(R.id.texChip2_7);
+	        chip2Item8 = (TextView) findViewById(R.id.texChip2_8);
+	        chip2Item9 = (TextView) findViewById(R.id.texChip2_9);
+	        chip2Item10 = (TextView) findViewById(R.id.texChip2_10);
+
+	        // ------------------------------------------------------------------------------
+
 	        currentView = ShimmerConfigView.viewScanning;
 		}
 		catch(Exception ex) {
@@ -316,110 +355,6 @@ public class Activity_ShimmerConfig extends ListActivity {
 		return super.onOptionsItemSelected(item);
 	}
 
-	private void setCurrentView(ShimmerConfigView shimmerConfigView) {
-
-		switch (shimmerConfigView) {
-
-		case viewScanning:
-
-			setTitle(R.string.assl_title_connecting);
-	        setProgressBarIndeterminateVisibility(true);
-			buttonDone.setText("Cancel");
-			buttonTryAgain.setVisibility(View.GONE);
-
-			if (null != mnuCommands) {
-				mnuCommands.setVisible(false);
-			}
-			if (null != mnuSensors) {
-				mnuSensors.setVisible(false);
-			}
-			if (null != mnuExg) {
-				mnuExg.setVisible(false);
-			}
-			if (null != mnuClose) {
-				mnuClose.setVisible(false);
-			}
-			break;
-
-		case viewScanSuccess:
-
-			setTitle("");
-	        setProgressBarIndeterminateVisibility(false);
-    		buttonDone.setText("Done");
-			buttonTryAgain.setVisibility(View.GONE);
-
-			if (null != mnuCommands) {
-				mnuCommands.setVisible(true);
-			}
-			if (null != mnuSensors) {
-				mnuSensors.setVisible(true);
-			}
-			if (null != mnuExg) {
-				mnuExg.setVisible(true);
-			}
-			if (null != mnuClose) {
-				mnuClose.setVisible(true);
-			}
-			
-			tvVersion.setText("Version: " + getShimmerVersion(mShimmerVersion));
-			break;
-
-		case viewScanFailed:
-
-			setTitle(R.string.assl_title_not_connected);
-	        setProgressBarIndeterminateVisibility(false);
-			buttonDone.setText("Cancel");
-			buttonTryAgain.setVisibility(View.VISIBLE);
-
-			ll_asc_commands.setVisibility(View.INVISIBLE);
-			listView.setVisibility(View.INVISIBLE);
-			ll_asc_exg.setVisibility(View.INVISIBLE);
-			if ((null != mnuCommands) && (null != mnuSensors) && (null != mnuExg)) {
-				mnuCommands.setVisible(false);
-				mnuSensors.setVisible(false);
-				mnuExg.setVisible(false);
-			}
-			break;
-
-		case viewCommands:
-
-			ll_asc_commands.setVisibility(View.VISIBLE);
-			listView.setVisibility(View.INVISIBLE);
-			ll_asc_exg.setVisibility(View.INVISIBLE);
-			if ((null != mnuCommands) && (null != mnuSensors) && (null != mnuExg)) {
-				mnuCommands.setVisible(false);
-				mnuSensors.setVisible(true);
-				mnuExg.setVisible(true);
-			}
-			break;
-
-		case viewSensors:
-
-			ll_asc_commands.setVisibility(View.INVISIBLE);
-			listView.setVisibility(View.VISIBLE);
-			ll_asc_exg.setVisibility(View.INVISIBLE);
-			if ((null != mnuCommands) && (null != mnuSensors) && (null != mnuExg)) {
-				mnuCommands.setVisible(true);
-				mnuSensors.setVisible(false);
-				mnuExg.setVisible(true);
-			}
-			break;
-
-		case viewExg:
-
-			ll_asc_commands.setVisibility(View.INVISIBLE);
-			listView.setVisibility(View.INVISIBLE);
-			ll_asc_exg.setVisibility(View.VISIBLE);
-			if ((null != mnuCommands) && (null != mnuSensors) && (null != mnuExg)) {
-				mnuCommands.setVisible(true);
-				mnuSensors.setVisible(true);
-				mnuExg.setVisible(false);
-			}
-			break;
-		}
-		currentView = shimmerConfigView;
-	}
-	
 	public String getShimmerVersion(int version) {
 		switch(version) {
         case HW_ID.SHIMMER_1: return "Shimmer 1";
@@ -511,6 +446,274 @@ public class Activity_ShimmerConfig extends ListActivity {
 	}
     
 	// *********************************************************************************
+	// *                              View Management
+	// *********************************************************************************
+
+	private void setCurrentView(ShimmerConfigView shimmerConfigView) {
+
+		switch (shimmerConfigView) {
+
+		case viewScanning:
+
+			setTitle(R.string.assl_title_connecting);
+	        setProgressBarIndeterminateVisibility(true);
+			buttonDone.setText("Cancel");
+			buttonTryAgain.setVisibility(View.GONE);
+
+			if (null != mnuCommands) {
+				mnuCommands.setVisible(false);
+			}
+			if (null != mnuSensors) {
+				mnuSensors.setVisible(false);
+			}
+			if (null != mnuExg) {
+				mnuExg.setVisible(false);
+			}
+			if (null != mnuClose) {
+				mnuClose.setVisible(false);
+			}
+			break;
+
+		case viewScanSuccess:
+
+			setTitle("");
+	        setProgressBarIndeterminateVisibility(false);
+    		buttonDone.setText("Done");
+			buttonTryAgain.setVisibility(View.GONE);
+
+			if (null != mnuCommands) {
+				mnuCommands.setVisible(true);
+			}
+			if (null != mnuSensors) {
+				mnuSensors.setVisible(true);
+			}
+			if (null != mnuExg) {
+				mnuExg.setVisible(true);
+			}
+			if (null != mnuClose) {
+				mnuClose.setVisible(true);
+			}
+			
+			tvVersion.setText("Version: " + getShimmerVersion(mShimmerVersion));
+			tvFWVersion.setText("Firmware: " + mShimmerFWVersion);
+			break;
+
+		case viewScanFailed:
+
+			setTitle(R.string.assl_title_not_connected);
+	        setProgressBarIndeterminateVisibility(false);
+			buttonDone.setText("Cancel");
+			buttonTryAgain.setVisibility(View.VISIBLE);
+
+			ll_asc_commands.setVisibility(View.INVISIBLE);
+			listView.setVisibility(View.INVISIBLE);
+			ll_asc_exg.setVisibility(View.INVISIBLE);
+			if ((null != mnuCommands) && (null != mnuSensors) && (null != mnuExg)) {
+				mnuCommands.setVisible(false);
+				mnuSensors.setVisible(false);
+				mnuExg.setVisible(false);
+			}
+			break;
+
+		case viewCommands:
+
+			ll_asc_commands.setVisibility(View.VISIBLE);
+			listView.setVisibility(View.INVISIBLE);
+			ll_asc_exg.setVisibility(View.INVISIBLE);
+			if ((null != mnuCommands) && (null != mnuSensors) && (null != mnuExg)) {
+				mnuCommands.setVisible(false);
+				mnuSensors.setVisible(true);
+				mnuExg.setVisible(true);
+			}
+			break;
+
+		case viewSensors:
+
+			ll_asc_commands.setVisibility(View.INVISIBLE);
+			listView.setVisibility(View.VISIBLE);
+			ll_asc_exg.setVisibility(View.INVISIBLE);
+			if ((null != mnuCommands) && (null != mnuSensors) && (null != mnuExg)) {
+				mnuCommands.setVisible(true);
+				mnuSensors.setVisible(false);
+				mnuExg.setVisible(true);
+			}
+			break;
+
+		case viewExg:
+
+			ll_asc_commands.setVisibility(View.INVISIBLE);
+			listView.setVisibility(View.INVISIBLE);
+			ll_asc_exg.setVisibility(View.VISIBLE);
+			if ((null != mnuCommands) && (null != mnuSensors) && (null != mnuExg)) {
+				mnuCommands.setVisible(true);
+				mnuSensors.setVisible(true);
+				mnuExg.setVisible(false);
+			}
+			break;
+		}
+		currentView = shimmerConfigView;
+	}
+	
+	/**
+	 * Display the list of enabled sensors
+	 */
+	private void updateSensorsView(Shimmer shimmer, int shimmerVersion) {
+
+		// get the list of sensor names
+		final String[] sensorNames = shimmer.getListofSupportedSensors();
+		
+		// get the bit field value corresponding to the enabled sensors
+		mEnabledSensors = mService.getEnabledSensors(mBluetoothAddress);
+		
+		ArrayAdapter<String> adapterSensorNames = new ArrayAdapter<String>(
+				this, 
+				android.R.layout.simple_list_item_multiple_choice,
+				android.R.id.text1, 
+				sensorNames);
+		listView.setAdapter(adapterSensorNames);
+		
+		// translate the bit field value to specific sensor names to be displayed
+		final BiMap<String, String> sensorBitmaptoName;
+		sensorBitmaptoName = Shimmer.generateBiMapSensorIDtoSensorName(shimmerVersion);
+
+		for (int i = 0; i < sensorNames.length; i++) {
+			// get the bit mask for the given sensor name
+			int bitMask = Integer.parseInt(sensorBitmaptoName.inverse().get(sensorNames[i]));
+			if ((bitMask & mEnabledSensors) > 0) {
+				listView.setItemChecked(i, true);
+			}
+		}
+		listView.setOnItemClickListener(new ListView_OnClickListener(sensorBitmaptoName, sensorNames));
+	}
+
+	public void updateCommandsView(Shimmer shimmer, int shimmerVersion) {
+
+		Log.d("ShimmerService", "service connected");
+
+    	double mSamplingRateV = mService.getSamplingRate(mBluetoothAddress);
+    	int mAccelerometerRangeV = mService.getAccelRange(mBluetoothAddress);
+    	int mGSRRangeV = mService.getGSRRange(mBluetoothAddress);
+    	final double batteryLimit = mService.getBattLimitWarning(mBluetoothAddress);
+
+		buttonGsr.setText("GSR Range" + "\n" + Configuration.Shimmer3.ListofGSRRange[mGSRRangeV]);
+		buttonSampleRate.setText("Sampling Rate " + "\n(" + Double.toString(mSamplingRateV) + ") Hz");
+		buttonBattVoltLimit.setText("Set Batt Limit " + "\n" + "(" + Double.toString(batteryLimit) + " V)");
+
+        if (mAccelerometerRangeV == 0) {
+			if (shimmerVersion != ShimmerVerDetails.HW_ID.SHIMMER_3) {
+				buttonAccRange.setText("Accel Range" + "\n" + "(+/- 1.5g)");
+			}
+			else {
+				buttonAccRange.setText("Accel Range" + "\n" + "(+/- 2g)");
+			}
+		}
+		else if (mAccelerometerRangeV == 1) {
+			buttonAccRange.setText("Accel Range" + "\n" + "(+/- 4g)");
+		}
+		else if (mAccelerometerRangeV == 2) {
+			buttonAccRange.setText("Accel Range" + "\n" + "(+/- 8g)");
+		} 
+		else if (mAccelerometerRangeV == 3) {
+			if (shimmerVersion != ShimmerVerDetails.HW_ID.SHIMMER_3) {
+				buttonAccRange.setText("Accel Range" + "\n" + "(+/- 6g)");
+			}
+			else {
+				buttonAccRange.setText("Accel Range" + "\n" + "(+/- 16g)");
+			}
+		}
+        
+  		if (shimmer.getInternalExpPower()==1){
+  			cBoxInternalExpPower.setChecked(true);
+  		} else {
+  			cBoxInternalExpPower.setChecked(false);
+  		}
+  		
+  		if (shimmer.isLowPowerMagEnabled()){
+    		cBoxLowPowerMag.setChecked(true);
+    	}
+    	
+    	if (shimmer.isLowPowerAccelEnabled()){
+    		cBoxLowPowerAccel.setChecked(true);
+    	}
+    	
+    	if (shimmer.isLowPowerGyroEnabled()){
+    		cBoxLowPowerGyro.setChecked(true);
+    	}
+
+    	if (shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_3){
+        	buttonGsr.setVisibility(View.VISIBLE);
+        	cBox5VReg.setEnabled(false);
+        	String currentGyroRange = "("+Configuration.Shimmer3.ListofGyroRange[shimmer.getGyroRange()]+")";
+        	buttonGyroRange.setText("Gyro Range"+"\n"+currentGyroRange);
+        	String currentMagRange = "("+Configuration.Shimmer3.ListofMagRange[shimmer.getMagRange()-1]+")";
+    		buttonMagRange.setText("Mag Range"+"\n"+currentMagRange);
+    		String currentPressureResolution = "("+Configuration.Shimmer3.ListofPressureResolution[shimmer.getPressureResolution()]+")";
+    		buttonPressureResolution.setText("Pressure Res"+"\n"+currentPressureResolution);
+        	
+        	if (shimmer.getAccelRange()==0){
+        		cBoxLowPowerAccel.setEnabled(false);
+        	}
+        	
+        	//currently not supported for the moment 
+    		buttonPressureResolution.setEnabled(true);
+    	}
+    	else {
+    		cBoxInternalExpPower.setEnabled(false);
+    		buttonPressureResolution.setEnabled(false);
+    		buttonGyroRange.setEnabled(false);
+    		cBoxLowPowerAccel.setEnabled(false);
+    		cBoxLowPowerGyro.setEnabled(false);
+    		String currentMagRange = "("+Configuration.Shimmer2.ListofMagRange[shimmer.getMagRange()]+")";
+    		buttonMagRange.setText("Mag Range"+"\n"+currentMagRange);
+    	}
+    	
+  		//update the view
+  		if (mService.get5VReg(mBluetoothAddress)==1){
+  			cBox5VReg.setChecked(true);
+  		}
+  		
+  		cBox5VReg.setOnCheckedChangeListener(new CBox5VReg_OnCheckedChangeListener());
+  		
+  		cBoxLowPowerAccel.setOnCheckedChangeListener(new CBoxLowPowerAccel_OnCheckedChangeListener(shimmer));
+  		
+  		cBoxLowPowerGyro.setOnCheckedChangeListener(new CBoxLowPowerGyro_OnCheckedChangeListener(shimmer));
+  		
+  		cBoxInternalExpPower.setOnCheckedChangeListener(new CBoxInternalExpPower_OnCheckedChangeListener(shimmer));
+
+  		cBoxLowPowerMag.setChecked(mService.isLowPowerMagEnabled(mBluetoothAddress));
+  		
+  		cBoxLowPowerMag.setOnCheckedChangeListener(new CBoxLowPowerMag_OnCheckedChangeListener());
+	}
+
+ 	public static  void printExGArrays(Shimmer shimmer){
+ 		
+ 		exgChip1Array = shimmer.getExG1Register();
+ 		exgChip2Array = shimmer.getExG2Register();
+ 		
+ 		chip1Item1.setText(""+exgChip1Array[0]);
+ 		chip1Item2.setText(""+exgChip1Array[1]);
+ 		chip1Item3.setText(""+exgChip1Array[2]);
+ 		chip1Item4.setText(""+exgChip1Array[3]);
+ 		chip1Item5.setText(""+exgChip1Array[4]);
+ 		chip1Item6.setText(""+exgChip1Array[5]);
+ 		chip1Item7.setText(""+exgChip1Array[6]);
+ 		chip1Item8.setText(""+exgChip1Array[7]);
+ 		chip1Item9.setText(""+exgChip1Array[8]);
+ 		chip1Item10.setText(""+exgChip1Array[9]);
+ 		
+ 		chip2Item1.setText(""+exgChip2Array[0]);
+ 		chip2Item2.setText(""+exgChip2Array[1]);
+ 		chip2Item3.setText(""+exgChip2Array[2]);
+ 		chip2Item4.setText(""+exgChip2Array[3]);
+ 		chip2Item5.setText(""+exgChip2Array[4]);
+ 		chip2Item6.setText(""+exgChip2Array[5]);
+ 		chip2Item7.setText(""+exgChip2Array[6]);
+ 		chip2Item8.setText(""+exgChip2Array[7]);
+ 		chip2Item9.setText(""+exgChip2Array[8]);
+ 		chip2Item10.setText(""+exgChip2Array[9]);
+ 	}
+
+ 	// *********************************************************************************
 	// *                          Button OnClickListeners
 	// *********************************************************************************
 
@@ -1079,11 +1282,20 @@ public class Activity_ShimmerConfig extends ListActivity {
 
 	        			// the displayed list depends on the shimmer version
 	        			mShimmerVersion = mService.getShimmerVersion(mBluetoothAddress);
+	        			mShimmerFWVersion = mService.getFWVersion(mBluetoothAddress);
+		                if(mService.isEXGUsingECG16Configuration(mBluetoothAddress) || mService.isEXGUsingECG24Configuration(mBluetoothAddress)){
+		                	exgMode="ECG";
+		                }
+		                else 
+		                	exgMode="";
+
+
 
 	        			// get the shimmer object
 	        			if (null != (shimmer = mService.getShimmer(mBluetoothAddress))) {
 		        			updateSensorsView(shimmer, mShimmerVersion);
 		        			updateCommandsView(shimmer, mShimmerVersion);
+			                printExGArrays(shimmer);
 		        			setCurrentView(ShimmerConfigView.viewScanSuccess);
 		                }
 	        			else {
@@ -1101,6 +1313,51 @@ public class Activity_ShimmerConfig extends ListActivity {
 	                break;
 	            
 	            case Shimmer.MESSAGE_READ:
+	            	if ((msg.obj instanceof ObjectCluster)){
+	            	    ObjectCluster objectCluster =  (ObjectCluster) msg.obj;   
+	            	    FormatCluster fc1 = objectCluster.returnFormatCluster(objectCluster.mPropertyCluster.get("EXG1 STATUS"), "RAW");
+	            	    FormatCluster fc2 = objectCluster.returnFormatCluster(objectCluster.mPropertyCluster.get("EXG2 STATUS"), "RAW");
+	            	    
+	            	    if(fc1!=null && fc2!=null){
+	            	    	int statusChip1 = (int) fc1.mData;
+		            	    int statusChip2 = (int) fc2.mData;
+		            	    int status1 = 0, status2 = 0, status3 = 0, status4 = 0, status5 = 0;
+	            	    	if(exgMode.equals("ECG")){
+	            	    		status1 = (statusChip1 & 4) >> 2;
+								status2 = (statusChip1 & 8) >> 3;
+								status3 = (statusChip1 & 1);
+								status4 = (statusChip2 & 4) >> 2;
+								status5 = (statusChip1 & 16) >> 4;
+	            	    	}
+	            	    	
+	            	    	if(status1==0)
+								statusCircle1.setBackgroundResource(R.drawable.circle_green);
+							else
+								statusCircle1.setBackgroundResource(R.drawable.circle_red);
+							
+							if(status2==0)
+								statusCircle2.setBackgroundResource(R.drawable.circle_green);
+							else
+								statusCircle2.setBackgroundResource(R.drawable.circle_red);
+							
+							if(status3==0)
+								statusCircle3.setBackgroundResource(R.drawable.circle_green);
+							else
+								statusCircle3.setBackgroundResource(R.drawable.circle_red);
+							
+							if(status4==0)
+								statusCircle4.setBackgroundResource(R.drawable.circle_green);
+							else
+								statusCircle4.setBackgroundResource(R.drawable.circle_red);
+							
+							if(status5==0)
+								statusCircle5.setBackgroundResource(R.drawable.circle_green);
+							else
+								statusCircle5.setBackgroundResource(R.drawable.circle_red);
+	            	    }
+	            	                	    
+	            	}
+					
 	                break;
 	
 	            case Shimmer.MESSAGE_ACK_RECEIVED:
@@ -1118,137 +1375,6 @@ public class Activity_ShimmerConfig extends ListActivity {
 				Log.e(MODULE_TAG, ex.getMessage());
 			}
 		}
-	}
-
-	/**
-	 * Display the list of enabled sensors
-	 */
-	private void updateSensorsView(Shimmer shimmer, int shimmerVersion) {
-
-		// get the list of sensor names
-		final String[] sensorNames = shimmer.getListofSupportedSensors();
-		
-		// get the bit field value corresponding to the enabled sensors
-		mEnabledSensors = mService.getEnabledSensors(mBluetoothAddress);
-		
-		ArrayAdapter<String> adapterSensorNames = new ArrayAdapter<String>(
-				this, 
-				android.R.layout.simple_list_item_multiple_choice,
-				android.R.id.text1, 
-				sensorNames);
-		listView.setAdapter(adapterSensorNames);
-		
-		// translate the bit field value to specific sensor names to be displayed
-		final BiMap<String, String> sensorBitmaptoName;
-		sensorBitmaptoName = Shimmer.generateBiMapSensorIDtoSensorName(shimmerVersion);
-
-		for (int i = 0; i < sensorNames.length; i++) {
-			// get the bit mask for the given sensor name
-			int bitMask = Integer.parseInt(sensorBitmaptoName.inverse().get(sensorNames[i]));
-			if ((bitMask & mEnabledSensors) > 0) {
-				listView.setItemChecked(i, true);
-			}
-		}
-		listView.setOnItemClickListener(new ListView_OnClickListener(sensorBitmaptoName, sensorNames));
-	}
-
-	public void updateCommandsView(Shimmer shimmer, int shimmerVersion) {
-
-		Log.d("ShimmerService", "service connected");
-
-    	double mSamplingRateV = mService.getSamplingRate(mBluetoothAddress);
-    	int mAccelerometerRangeV = mService.getAccelRange(mBluetoothAddress);
-    	int mGSRRangeV = mService.getGSRRange(mBluetoothAddress);
-    	final double batteryLimit = mService.getBattLimitWarning(mBluetoothAddress);
-
-		buttonGsr.setText("GSR Range" + "\n" + Configuration.Shimmer3.ListofGSRRange[mGSRRangeV]);
-		buttonSampleRate.setText("Sampling Rate " + "\n(" + Double.toString(mSamplingRateV) + ") Hz");
-		buttonBattVoltLimit.setText("Set Batt Limit " + "\n" + "(" + Double.toString(batteryLimit) + " V)");
-
-        if (mAccelerometerRangeV == 0) {
-			if (shimmerVersion != ShimmerVerDetails.HW_ID.SHIMMER_3) {
-				buttonAccRange.setText("Accel Range" + "\n" + "(+/- 1.5g)");
-			}
-			else {
-				buttonAccRange.setText("Accel Range" + "\n" + "(+/- 2g)");
-			}
-		}
-		else if (mAccelerometerRangeV == 1) {
-			buttonAccRange.setText("Accel Range" + "\n" + "(+/- 4g)");
-		}
-		else if (mAccelerometerRangeV == 2) {
-			buttonAccRange.setText("Accel Range" + "\n" + "(+/- 8g)");
-		} 
-		else if (mAccelerometerRangeV == 3) {
-			if (shimmerVersion != ShimmerVerDetails.HW_ID.SHIMMER_3) {
-				buttonAccRange.setText("Accel Range" + "\n" + "(+/- 6g)");
-			}
-			else {
-				buttonAccRange.setText("Accel Range" + "\n" + "(+/- 16g)");
-			}
-		}
-        
-  		if (shimmer.getInternalExpPower()==1){
-  			cBoxInternalExpPower.setChecked(true);
-  		} else {
-  			cBoxInternalExpPower.setChecked(false);
-  		}
-  		
-  		if (shimmer.isLowPowerMagEnabled()){
-    		cBoxLowPowerMag.setChecked(true);
-    	}
-    	
-    	if (shimmer.isLowPowerAccelEnabled()){
-    		cBoxLowPowerAccel.setChecked(true);
-    	}
-    	
-    	if (shimmer.isLowPowerGyroEnabled()){
-    		cBoxLowPowerGyro.setChecked(true);
-    	}
-
-    	if (shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_3){
-        	buttonGsr.setVisibility(View.VISIBLE);
-        	cBox5VReg.setEnabled(false);
-        	String currentGyroRange = "("+Configuration.Shimmer3.ListofGyroRange[shimmer.getGyroRange()]+")";
-        	buttonGyroRange.setText("Gyro Range"+"\n"+currentGyroRange);
-        	String currentMagRange = "("+Configuration.Shimmer3.ListofMagRange[shimmer.getMagRange()-1]+")";
-    		buttonMagRange.setText("Mag Range"+"\n"+currentMagRange);
-    		String currentPressureResolution = "("+Configuration.Shimmer3.ListofPressureResolution[shimmer.getPressureResolution()]+")";
-    		buttonPressureResolution.setText("Pressure Res"+"\n"+currentPressureResolution);
-        	
-        	if (shimmer.getAccelRange()==0){
-        		cBoxLowPowerAccel.setEnabled(false);
-        	}
-        	
-        	//currently not supported for the moment 
-    		buttonPressureResolution.setEnabled(true);
-    	}
-    	else {
-    		cBoxInternalExpPower.setEnabled(false);
-    		buttonPressureResolution.setEnabled(false);
-    		buttonGyroRange.setEnabled(false);
-    		cBoxLowPowerAccel.setEnabled(false);
-    		cBoxLowPowerGyro.setEnabled(false);
-    		String currentMagRange = "("+Configuration.Shimmer2.ListofMagRange[shimmer.getMagRange()]+")";
-    		buttonMagRange.setText("Mag Range"+"\n"+currentMagRange);
-    	}
-    	
-  		//update the view
-  		if (mService.get5VReg(mBluetoothAddress)==1){
-  			cBox5VReg.setChecked(true);
-  		}
-  		
-  		cBox5VReg.setOnCheckedChangeListener(new CBox5VReg_OnCheckedChangeListener());
-  		
-  		cBoxLowPowerAccel.setOnCheckedChangeListener(new CBoxLowPowerAccel_OnCheckedChangeListener(shimmer));
-  		
-  		cBoxLowPowerGyro.setOnCheckedChangeListener(new CBoxLowPowerGyro_OnCheckedChangeListener(shimmer));
-  		
-  		cBoxInternalExpPower.setOnCheckedChangeListener(new CBoxInternalExpPower_OnCheckedChangeListener(shimmer));
-
-  		cBoxLowPowerMag.setChecked(mService.isLowPowerMagEnabled(mBluetoothAddress));
-  		
-  		cBoxLowPowerMag.setOnCheckedChangeListener(new CBoxLowPowerMag_OnCheckedChangeListener());
 	}
 
 	// *********************************************************************************
