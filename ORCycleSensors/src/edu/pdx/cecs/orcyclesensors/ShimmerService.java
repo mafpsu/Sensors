@@ -478,6 +478,46 @@ public class ShimmerService extends Service {
 		}
 	}
 	
+	public void writeEXGGainSetting(String bluetoothAddress, int gain){
+		Collection<Object> colS=mMultiShimmer.values();
+		Iterator<Object> iterator = colS.iterator();
+		while (iterator.hasNext()) {
+			Shimmer stemp=(Shimmer) iterator.next();
+			if (stemp.getShimmerState()==Shimmer.STATE_CONNECTED && stemp.getBluetoothAddress().equals(bluetoothAddress)){
+				stemp.writeEXGGainSetting(1, 1, gain);
+				try {
+					Thread.sleep(400);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				stemp.writeEXGGainSetting(1, 2, gain);
+				try {
+					Thread.sleep(400);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				stemp.writeEXGGainSetting(2, 1, gain);
+				try {
+					Thread.sleep(400);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				stemp.writeEXGGainSetting(2, 2, gain);	
+				try {
+					Thread.sleep(400);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} else {
+				
+			}
+		}
+	}
+	
 	public void writeExGReferenceElectrode(String bluetoothAddress,int reference) {
 		Collection<Object> colS=mMultiShimmer.values();
 		Iterator<Object> iterator = colS.iterator();
@@ -997,7 +1037,7 @@ public class ShimmerService extends Service {
 	}
 	
 	
-	public int sensorConflictCheckandCorrection(int enabledSensors,int sensorToCheck, int shimmerVersion){
+	public long sensorConflictCheckandCorrection(long enabledSensors,int sensorToCheck, int shimmerVersion){
 			
 			if (shimmerVersion==ShimmerVerDetails.HW_ID.SHIMMER_2 || shimmerVersion==ShimmerVerDetails.HW_ID.SHIMMER_2R){
 				if ((sensorToCheck & Shimmer.SENSOR_GYRO) >0 || (sensorToCheck & Shimmer.SENSOR_MAG) >0){
@@ -1061,4 +1101,10 @@ public class ShimmerService extends Service {
 		return number;
 	}
 	
+	private long disableBit(long number,long disablebitvalue){
+		if ((number&disablebitvalue)>0){
+			number = number ^ disablebitvalue;
+		}
+		return number;
+	}
 }

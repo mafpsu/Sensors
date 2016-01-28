@@ -72,208 +72,282 @@
 
     </ListView>
 
-<LinearLayout
-    android:id="@+id/ll_asc_commands"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_above="@+id/ll_assv"
-    android:layout_below="@+id/ll_asc_device_info"
-    android:orientation="vertical"
-    android:visibility="gone" >
-
-    <LinearLayout
-        android:id="@+id/ll_asc0"
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp"
-        android:orientation="vertical"
-        android:paddingLeft="5dp"
-        android:paddingRight="5dp"
-        android:paddingTop="20dp" >
-
-        <TextView
-            android:id="@+id/textViewOptionsTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Enable options" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@android:color/background_light" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/ll_asc1"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.25"
-        android:orientation="horizontal" >
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.5"
-            android:orientation="vertical" >
-
-            <CheckBox
-                android:id="@+id/checkBox5VReg"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:text="5VReg" />
-
-            <CheckBox
-                android:id="@+id/CheckBoxIntExpPow"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:text="IntExpPow" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.5"
-            android:orientation="vertical" >
-
-            <CheckBox
-                android:id="@+id/checkBoxLowPowerMag"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:text="Low Power Mag" />
-
-            <CheckBox
-                android:id="@+id/checkBoxLowPowerAccel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:text="Low Power Acc" />
-
-            <CheckBox
-                android:id="@+id/checkBoxLowPowerGyro"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:text="Low Power Gyro" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/ll_asc2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp"
-        android:orientation="vertical"
-        android:paddingLeft="5dp"
-        android:paddingRight="5dp" >
-
-        <TextView
-            android:id="@+id/textViewConfigurationTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Configuration options" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@android:color/background_light" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/ll_asc3"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.40"
-        android:orientation="horizontal" >
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="0.5"
-            android:orientation="vertical" >
-
-            <Button
-                android:id="@+id/buttonRate"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:text="Sampling Rate (Hz)" />
-
-            <Button
-                android:id="@+id/buttonAccel"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:text="Accel Range" />
-
-            <Button
-                android:id="@+id/buttonGSR"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:text="GSR Range" />
-
-            <Button
-                android:id="@+id/buttonBattLimit"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:text="Set Batt Limit(V)" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="0.5"
-            android:orientation="vertical" >
-
-            <Button
-                android:id="@+id/buttonGyroRange"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:text="Gyro Range" />
-
-            <Button
-                android:id="@+id/buttonMagRange"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:text="Mag Range" />
-
-            <Button
-                android:id="@+id/buttonPressureAccuracy"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:text="Pressure Res" />
-
-            <Button
-                android:id="@+id/buttonToggleLED"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:text="Toggle LED" />
-        </LinearLayout>
-    </LinearLayout>
-
-</LinearLayout>
+	    android:layout_above="@+id/ll_assv"
+	    android:layout_below="@+id/ll_asc_device_info" >
         
+	<LinearLayout
+	    android:id="@+id/ll_asc_commands"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:orientation="vertical"
+	    android:visibility="gone" >
+	
+	    <LinearLayout
+	        android:id="@+id/ll_asc0"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_marginBottom="10dp"
+	        android:orientation="vertical"
+	        android:paddingLeft="5dp"
+	        android:paddingRight="5dp"
+	        android:paddingTop="20dp" >
+	
+	        <TextView
+	            android:id="@+id/textViewOptionsTitle"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:text="Enable options" />
+	
+	        <View
+	            android:layout_width="match_parent"
+	            android:layout_height="1dp"
+	            android:background="@android:color/background_light" />
+	    </LinearLayout>
+	
+	    <LinearLayout
+	        android:id="@+id/ll_asc1"
+	        android:layout_width="match_parent"
+	        android:layout_height="0dp"
+	        android:layout_weight="0.25"
+	        android:orientation="horizontal" >
+	
+	        <LinearLayout
+	            android:layout_width="0dp"
+	            android:layout_height="wrap_content"
+	            android:layout_weight="0.5"
+	            android:orientation="vertical" >
+	
+	            <CheckBox
+	                android:id="@+id/checkBox5VReg"
+	                android:layout_width="wrap_content"
+	                android:layout_height="wrap_content"
+	                android:layout_gravity="center_vertical"
+	                android:layout_weight="1"
+	                android:text="5VReg" />
+	
+	            <CheckBox
+	                android:id="@+id/CheckBoxIntExpPow"
+	                android:layout_width="wrap_content"
+	                android:layout_height="wrap_content"
+	                android:layout_gravity="center_vertical"
+	                android:layout_weight="1"
+	                android:text="IntExpPow" />
+	        </LinearLayout>
+	
+	        <LinearLayout
+	            android:layout_width="0dp"
+	            android:layout_height="wrap_content"
+	            android:layout_weight="0.5"
+	            android:orientation="vertical" >
+	
+	            <CheckBox
+	                android:id="@+id/checkBoxLowPowerMag"
+	                android:layout_width="match_parent"
+	                android:layout_height="wrap_content"
+	                android:layout_gravity="center_vertical"
+	                android:layout_weight="1"
+	                android:text="Low Power Mag" />
+	
+	            <CheckBox
+	                android:id="@+id/checkBoxLowPowerAccel"
+	                android:layout_width="match_parent"
+	                android:layout_height="wrap_content"
+	                android:layout_gravity="center_vertical"
+	                android:layout_weight="1"
+	                android:text="Low Power Acc" />
+	
+	            <CheckBox
+	                android:id="@+id/checkBoxLowPowerGyro"
+	                android:layout_width="match_parent"
+	                android:layout_height="wrap_content"
+	                android:layout_gravity="center_vertical"
+	                android:layout_weight="1"
+	                android:text="Low Power Gyro" />
+	        </LinearLayout>
+	    </LinearLayout>
+	
+	    <LinearLayout
+	        android:id="@+id/ll_asc2"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_marginBottom="10dp"
+	        android:orientation="vertical"
+	        android:paddingLeft="5dp"
+	        android:paddingRight="5dp" >
+	
+	        <TextView
+	            android:id="@+id/textViewConfigurationTitle"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:text="Configuration options" />
+	
+	        <View
+	            android:layout_width="match_parent"
+	            android:layout_height="1dp"
+	            android:background="@android:color/background_light" />
+	    </LinearLayout>
+	
+	        <LinearLayout
+		        android:id="@+id/ll_asc3"
+		        android:layout_width="match_parent"
+		        android:layout_height="0dp"
+		        android:layout_weight="0.40"
+		        android:orientation="horizontal" >
+		
+	     		<LinearLayout
+		            android:layout_width="0dp"
+		            android:layout_height="match_parent"
+		            android:layout_weight="0.5"
+		            android:orientation="vertical" >
+		
+		            <Button
+		                android:id="@+id/buttonRate"
+		                android:layout_width="match_parent"
+		                android:layout_height="0dp"
+		                android:layout_gravity="center_vertical"
+		                android:layout_weight="1"
+						android:textSize="@dimen/medium"
+		                android:text="Sampling Rate (Hz)" />
+		
+		            <Button
+		                android:id="@+id/buttonAccel"
+		                android:layout_width="match_parent"
+		                android:layout_height="0dp"
+		                android:layout_gravity="center_vertical"
+		                android:layout_weight="1"
+						android:textSize="@dimen/medium"
+		                android:text="Accel Range" />
+		
+		            <Button
+		                android:id="@+id/buttonGSR"
+		                android:layout_width="match_parent"
+		                android:layout_height="0dp"
+		                android:layout_gravity="center_vertical"
+		                android:layout_weight="1"
+						android:textSize="@dimen/medium"
+		                android:text="GSR Range" />
+		
+		            <Button
+		                android:id="@+id/buttonBattLimit"
+		                android:layout_width="match_parent"
+		                android:layout_height="0dp"
+		                android:layout_gravity="center_vertical"
+		                android:layout_weight="1"
+						android:textSize="@dimen/medium"
+		                android:text="Set Batt Limit(V)" />
+		            
+			        <Button
+			       	     android:id="@+id/buttonExgGain"
+			       	     android:layout_width="match_parent"
+			       	     android:layout_height="0dp"
+			             android:layout_gravity="center_vertical"
+			       	     android:layout_weight="1"
+			             android:layout_margin="3dp"
+			             android:textSize="@dimen/medium"
+			       	     android:text="Exg Gain" />   		
+					
+			        <Button
+			       	     android:id="@+id/buttonReferenceElectrode"
+			       	     android:layout_width="match_parent"
+			       	     android:layout_height="0dp"
+			       	     android:layout_weight="1"
+			             android:layout_margin="3dp"
+			             android:textSize="@dimen/medium"
+			             android:layout_gravity="center_vertical"
+			       	     android:text="Ref. Electrode" />   		
+					
+			        <Button
+			       	     android:id="@+id/buttonLeadOffCurrent"
+			       	     android:layout_width="match_parent"
+			       	     android:layout_height="0dp"
+			       	     android:layout_weight="1"
+			             android:layout_margin="3dp"
+			             android:textSize="@dimen/medium"
+			             android:layout_gravity="center_vertical"
+			       	     android:text="Lead-Off Current" />   		
+					
+				</LinearLayout>
+		
+		        <LinearLayout
+		            android:layout_width="0dp"
+		            android:layout_height="match_parent"
+		            android:layout_weight="0.5"
+		            android:orientation="vertical" >
+		
+		            <Button
+		                android:id="@+id/buttonGyroRange"
+		                android:layout_width="match_parent"
+		                android:layout_height="0dp"
+		                android:layout_gravity="center_vertical"
+		                android:layout_weight="1"
+						android:textSize="@dimen/medium"
+		                android:text="Gyro Range" />
+		
+		            <Button
+		                android:id="@+id/buttonMagRange"
+		                android:layout_width="match_parent"
+		                android:layout_height="0dp"
+		                android:layout_gravity="center_vertical"
+		                android:layout_weight="1"
+						android:textSize="@dimen/medium"
+		                android:text="Mag Range" />
+		
+		            <Button
+		                android:id="@+id/buttonPressureAccuracy"
+		                android:layout_width="match_parent"
+		                android:layout_height="0dp"
+		                android:layout_gravity="center_vertical"
+		                android:layout_weight="1"
+						android:textSize="@dimen/medium"
+		                android:text="Pressure Res" />
+		
+		            <Button
+		                android:id="@+id/buttonToggleLED"
+		                android:layout_width="match_parent"
+		                android:layout_height="0dp"
+		                android:layout_gravity="center_vertical"
+		                android:layout_weight="1"
+						android:textSize="@dimen/medium"
+		                android:text="Toggle LED" />
+		
+		            <Button
+			       	     android:id="@+id/buttonExgRes"
+			       	     android:layout_width="match_parent"
+			       	     android:layout_height="0dp"
+			       	     android:layout_weight="1"
+			             android:layout_margin="3dp"
+			             android:textSize="@dimen/medium"
+			             android:layout_gravity="center_vertical"
+			       	     android:text="Exg Res" />
+			       
+		            <Button
+			       	     android:id="@+id/buttonLeadOffComparator"
+			       	     android:layout_width="match_parent"
+			       	     android:layout_height="0dp"
+			       	     android:layout_weight="1"
+			             android:layout_margin="3dp"
+			             android:textSize="@dimen/medium"
+			             android:layout_gravity="center_vertical"
+			       	     android:text="Lead-Off Comparator" />
+			       
+		            <Button
+			       	     android:id="@+id/buttonLeadOffDetection"
+			       	     android:layout_width="match_parent"
+			       	     android:layout_height="0dp"
+			       	     android:layout_weight="1"
+			             android:layout_margin="3dp"
+			             android:textSize="@dimen/medium"
+			             android:layout_gravity="center_vertical"
+			       	     android:text="Lead-Off Detection" />
+		       
+	            </LinearLayout>
+		    </LinearLayout>
+		</LinearLayout>
+	</ScrollView>
+    
     <LinearLayout
         android:id="@+id/ll_asc_exg"
         android:layout_width="match_parent"
@@ -286,15 +360,6 @@
         android:paddingRight="5dp"
         android:visibility="gone" >
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" 
-        android:layout_marginTop="30dp"
-        android:orientation="vertical">
-        
-
-    
-    
     <TextView 
 	        android:id="@+id/texLeadOffStatus"
 	        android:layout_width="wrap_content"
@@ -709,25 +774,7 @@
           
           
       </LinearLayout>
-    
-      
-      </LinearLayout>
-    
-     <LinearLayout
-         android:layout_width="match_parent"
-         android:layout_height="fill_parent" >
-         
-         <Button 
-	        android:id="@+id/menuButton"
-	        android:layout_width="match_parent"
-	        android:layout_height="wrap_content"
-	        android:layout_margin="5dp"
-	        android:layout_gravity="bottom"
-	        android:textColor="@color/shimmer_grey"
-	        android:background="@drawable/selector_grey"
-	        android:text="MENU"/>
-         
-     </LinearLayout>
+
     </LinearLayout>
         
     <LinearLayout

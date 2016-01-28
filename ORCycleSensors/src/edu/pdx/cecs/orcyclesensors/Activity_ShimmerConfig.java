@@ -48,6 +48,81 @@ public class Activity_ShimmerConfig extends ListActivity {
 	public static final String EXTRA_BLUETOOTH_ADDRESS = "EXTRA_BLUETOOTH_ADDRESS";
 	
 	private static final int REQUEST_ENABLE_BT = 1;
+
+	private final class ButtonLeadOffComparator_OnClickListener implements
+			OnClickListener {
+		private final Builder dialogLeadOffComparator;
+
+		private ButtonLeadOffComparator_OnClickListener(
+				Builder dialogLeadOffComparator) {
+			this.dialogLeadOffComparator = dialogLeadOffComparator;
+		}
+
+		@Override
+		public void onClick(View arg0) {
+			// TODO Auto-generated method stub
+			dialogLeadOffComparator.show();
+		}
+	}
+
+	private final class DialogLeadOffComparator_OnClickListener implements
+			DialogInterface.OnClickListener {
+		@Override
+		public void onClick(DialogInterface arg0, int arg1) {
+			// TODO Auto-generated method stub
+			Log.d("Shimmer ",Configuration.Shimmer3.ListOfExGLeadOffComparator[arg1]);
+			String newComparator = Configuration.Shimmer3.ListOfExGLeadOffComparator[arg1];
+			mService.writeExGLeadOffDetectionCurrent(mBluetoothAddress, arg1);
+			mService.writeExGLeadOffDetectionComparatorTreshold(mBluetoothAddress, arg1);
+			Toast.makeText(getApplicationContext(), "Lead-Off Comparator changed. New Lead-Off Comparator = "+newComparator, Toast.LENGTH_SHORT).show();
+			buttonLeadOffComparator.setText("Lead-Off Comparator "+"\n ("+newComparator+")");
+		}
+	}
+
+	private final class ButtonLeadOffCurrent_OnClickListener implements
+			OnClickListener {
+		private final Builder dialogLeadOffCurrent;
+
+		private ButtonLeadOffCurrent_OnClickListener(
+				Builder dialogLeadOffCurrent) {
+			this.dialogLeadOffCurrent = dialogLeadOffCurrent;
+		}
+
+		@Override
+		public void onClick(View arg0) {
+			// TODO Auto-generated method stub
+			dialogLeadOffCurrent.show();
+		}
+	}
+
+	private final class DialogLeadOffCurrent_OnClickListener implements
+			DialogInterface.OnClickListener {
+		@Override
+		public void onClick(DialogInterface arg0, int arg1) {
+			// TODO Auto-generated method stub
+			Log.d("Shimmer ",Configuration.Shimmer3.ListOfExGLeadOffCurrent[arg1]);
+			String newCurrent = Configuration.Shimmer3.ListOfExGLeadOffCurrent[arg1];
+			mService.writeExGLeadOffDetectionCurrent(mBluetoothAddress, arg1);
+			Toast.makeText(getApplicationContext(), "Lead-Off Current changed. New Lead-Off Current = "+newCurrent, Toast.LENGTH_SHORT).show();
+			buttonLeadOffCurrent.setText("Lead-Off Current "+"\n ("+newCurrent+")");
+		}
+	}
+
+	private final class ButtonLeadOffDetection_OnClickListener implements
+			OnClickListener {
+		private final Builder dialogLeadOffDetection;
+
+		private ButtonLeadOffDetection_OnClickListener(
+				Builder dialogLeadOffDetection) {
+			this.dialogLeadOffDetection = dialogLeadOffDetection;
+		}
+
+		@Override
+		public void onClick(View arg0) {
+			dialogLeadOffDetection.show();
+		}
+	}
+
 	private enum ShimmerConfigView { viewScanning, viewScanSuccess, viewScanFailed, viewSensors, viewCommands, viewExg};
 	private ShimmerConfigView currentView = ShimmerConfigView.viewScanning;
 
@@ -57,6 +132,7 @@ public class Activity_ShimmerConfig extends ListActivity {
     private long mEnabledSensors = -1;
     private int mShimmerVersion = -1;
     private String mShimmerFWVersion = "unknown";
+    private int exgRes;
     
 	private MenuItem mnuCommands;
 	private MenuItem mnuSensors;
@@ -69,6 +145,8 @@ public class Activity_ShimmerConfig extends ListActivity {
     
 	private final String[] samplingRate = new String [] {"8","16","51.2","102.4","128","204.8","256","512","1024","2048"};
     private final String[] accelRangeArray = {"+/- 1.5g","+/- 6g"};
+	private final String[] exgGain = new String [] {"6","1","2","3","4","8","12"};
+	private final String[] exgResolution = new String [] {"16 bits","24 bits"};
 
     private LinearLayout ll_asc_commands;
     private LinearLayout ll_asc_exg;
@@ -85,6 +163,14 @@ public class Activity_ShimmerConfig extends ListActivity {
     private Button buttonAccRange;
     private Button buttonBattVoltLimit;
     private Button buttonToggleLED;
+    private Button buttonExgGain;
+    private Button buttonExgRes;
+
+    private Button buttonReferenceElectrode;
+    private Button buttonLeadOffCurrent;
+    private Button buttonLeadOffDetection;
+    private Button buttonLeadOffComparator;
+    
     private TextView tvDevice;
     private TextView tvVersion;
     private TextView tvFWVersion;
@@ -176,7 +262,14 @@ public class Activity_ShimmerConfig extends ListActivity {
 			buttonAccRange = (Button) findViewById(R.id.buttonAccel);
 			buttonToggleLED = (Button) findViewById(R.id.buttonToggleLED);
 			buttonBattVoltLimit = (Button) findViewById(R.id.buttonBattLimit);
-			
+	        buttonExgGain = (Button) findViewById(R.id.buttonExgGain);
+	        buttonExgRes = (Button) findViewById(R.id.buttonExgRes);
+	        
+	        buttonReferenceElectrode = (Button) findViewById(R.id.buttonReferenceElectrode);
+	        buttonLeadOffCurrent = (Button) findViewById(R.id.buttonLeadOffCurrent);
+	        buttonLeadOffDetection = (Button) findViewById(R.id.buttonLeadOffDetection);
+	        buttonLeadOffComparator = (Button) findViewById(R.id.buttonLeadOffComparator);
+	        
 			cBox5VReg = (CheckBox) findViewById(R.id.checkBox5VReg);
 			cBoxLowPowerMag = (CheckBox) findViewById(R.id.checkBoxLowPowerMag);
 			cBoxLowPowerAccel = (CheckBox) findViewById(R.id.checkBoxLowPowerAccel);
@@ -187,10 +280,12 @@ public class Activity_ShimmerConfig extends ListActivity {
 	        buttonGsr.setText("GSR Range" + "\n(N/A)");                  
 	        
 	        // ------------------------------------------------------------------------------
+	        // Toggle LED
 			
 	        buttonToggleLED.setOnClickListener(new ButtonToggleLED_OnClickListener());
 	
 	        // ------------------------------------------------------------------------------
+	        // Set Battery Limit
 			
 	        final AlertDialog.Builder dialogBattLimit = new AlertDialog.Builder(this);
 			dialogBattLimit.setTitle("Battery Limit");
@@ -201,7 +296,8 @@ public class Activity_ShimmerConfig extends ListActivity {
 			buttonBattVoltLimit.setOnClickListener(new ButtonBattVoltLimit_OnClickListener(editTextBattLimit, dialogBattLimit));
 	
 	        // ------------------------------------------------------------------------------
-	    	
+	    	// Sampling Rate
+			
 			final AlertDialog.Builder dialogRate = new AlertDialog.Builder(this);		 
 	        dialogRate.setTitle("Sample Rate");
 	        dialogRate.setItems(samplingRate, new DialogRate_OnClickListener());
@@ -209,6 +305,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 	    	buttonSampleRate.setOnClickListener(new ButtonSampleRate_OnClickListener(dialogRate));
 	
 	        // ------------------------------------------------------------------------------
+	    	// Accel Range
 	    	
 	    	final AlertDialog.Builder dialogAccelShimmer2 = new AlertDialog.Builder(this);		 
 	    	dialogAccelShimmer2.setTitle("Accelerometer range");
@@ -223,6 +320,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 	        buttonAccRange.setOnClickListener(new ButtonAccRange_OnClickListener(dialogAccelShimmer3, dialogAccelShimmer2));
 	
 	        // ------------------------------------------------------------------------------
+	        // Gyro Range
 	        
 	        final AlertDialog.Builder dialogGyroRangeShimmer3 = new AlertDialog.Builder(this);		 
 	        dialogGyroRangeShimmer3.setTitle("Gyroscope Range");
@@ -231,12 +329,11 @@ public class Activity_ShimmerConfig extends ListActivity {
 	        buttonGyroRange.setOnClickListener(new ButtonGyroRange_OnClickListener(dialogGyroRangeShimmer3));
 	
 	        // ------------------------------------------------------------------------------
+	        // Mag Range
 	        
 	        final AlertDialog.Builder dialogMagRangeShimmer2 = new AlertDialog.Builder(this);		 
 	        dialogMagRangeShimmer2.setTitle("Magnetometer Range");
 	        dialogMagRangeShimmer2.setItems(Configuration.Shimmer2.ListofMagRange, new DialogMagRangeShimmer2_OnClickListener());
-	        
-	        // ------------------------------------------------------------------------------
 	        
 	        final AlertDialog.Builder dialogMagRangeShimmer3 = new AlertDialog.Builder(this);		 
 	        dialogMagRangeShimmer3.setTitle("Magnetometer Range");
@@ -245,6 +342,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 	        buttonMagRange.setOnClickListener(new ButtonMagRange_OnClickListener(dialogMagRangeShimmer3, dialogMagRangeShimmer2));
 	
 	        // ------------------------------------------------------------------------------
+	        // Pressure Res
 	        
 	        final AlertDialog.Builder dialogPressureResolutionShimmer3 = new AlertDialog.Builder(this);		 
 	        dialogPressureResolutionShimmer3.setTitle("Pressure Resolution");
@@ -253,17 +351,76 @@ public class Activity_ShimmerConfig extends ListActivity {
 	        buttonPressureResolution.setOnClickListener(new ButtonPressureResolution_OnClickListener(dialogPressureResolutionShimmer3));
 	        
 	        // ------------------------------------------------------------------------------
-	        // The Gsr Range is the same for the Shimmer 3 and the Shimmer 2 so we only need to do one dialog
+	        // GSR Range is the same for the Shimmer 3 and the Shimmer 2 so we only need to do one dialog
+	        
 	        final AlertDialog.Builder dialogGsrRange = new AlertDialog.Builder(this);		 
 	        dialogGsrRange.setTitle("Gsr Range");
 	        dialogGsrRange.setItems(Configuration.Shimmer3.ListofGSRRange, new DialogGsrRange_OnClickListener());
 	        
 	        buttonGsr.setOnClickListener(new ButtonGsr_OnClickListener(dialogGsrRange));
+
+	        // ------------------------------------------------------------------------------
+	        // Exg Gain
 	        
-	        //buttonDone.setOnClickListener(new ButtonDone_OnClickListener());
+	        final AlertDialog.Builder dialogExgGain = new AlertDialog.Builder(this);
+	        dialogExgGain.setTitle("ExG Gain");
+	        dialogExgGain.setItems(exgGain, new DialogExgGain_OnClickListener());
+	        
+	        buttonExgGain.setOnClickListener(new ButtonExgGain_OnClickListener(dialogExgGain));
+
+	        // ------------------------------------------------------------------------------
+	        // Exg Res
+	        
+	        final AlertDialog.Builder dialogExgRes = new AlertDialog.Builder(this);
+	        dialogExgRes.setTitle("ExG Resolution");
+	        dialogExgRes.setItems(exgResolution, new DialogExgRes_OnClickListener());
+	        
+	        buttonExgRes.setOnClickListener(new ButtonExgRes_OnClickListener(dialogExgRes));
 	        
 	        // ------------------------------------------------------------------------------
-	        // EXG Screen
+	        // Ref. Electrode
+
+	    	final AlertDialog.Builder ecgDialogReference = new AlertDialog.Builder(this);
+	    	final String [] ecgListOfReference = Configuration.Shimmer3.ListOfECGReferenceElectrode;
+	    	ecgDialogReference.setTitle("ECG Reference Electrode");
+	    	ecgDialogReference.setItems(ecgListOfReference, new DialogECGReference_OnClickListener(ecgListOfReference));
+
+	    	final AlertDialog.Builder emgDialogReference = new AlertDialog.Builder(this);
+	    	final String [] emgListOfReference = Configuration.Shimmer3.ListOfEMGReferenceElectrode;
+	    	emgDialogReference.setTitle("EMG Reference Electrode");
+	    	emgDialogReference.setItems(emgListOfReference, new DialogEMGReference_OnClickListener(emgListOfReference));
+
+	    	buttonReferenceElectrode.setOnClickListener(new ButtonReferenceElectrode_OnClickListener(ecgDialogReference,
+					emgDialogReference));
+
+	        // ------------------------------------------------------------------------------
+			// Lead-Off Detection
+
+	    	final AlertDialog.Builder dialogLeadOffDetection = new AlertDialog.Builder(this);
+	    	dialogLeadOffDetection.setTitle("Lead-Off Detection Mode");
+	    	dialogLeadOffDetection.setItems(Configuration.Shimmer3.ListOfExGLeadOffDetection, new DialogLeadOffDetection_OnClickListener());
+	    	
+	    	buttonLeadOffDetection.setOnClickListener(new ButtonLeadOffDetection_OnClickListener(dialogLeadOffDetection));
+
+	        // ------------------------------------------------------------------------------
+			// Lead-Off Current
+
+			final AlertDialog.Builder dialogLeadOffCurrent = new AlertDialog.Builder(this);
+			dialogLeadOffCurrent.setTitle("Lead-Off Current");
+			dialogLeadOffCurrent.setItems(Configuration.Shimmer3.ListOfExGLeadOffCurrent, new DialogLeadOffCurrent_OnClickListener());
+			
+			buttonLeadOffCurrent.setOnClickListener(new ButtonLeadOffCurrent_OnClickListener(dialogLeadOffCurrent));
+
+	        // ------------------------------------------------------------------------------
+			// Lead-Off Comparator
+			
+			final AlertDialog.Builder dialogLeadOffComparator = new AlertDialog.Builder(this);
+			dialogLeadOffComparator.setTitle("Lead-Off Comparator Threshold");
+			dialogLeadOffComparator.setItems(Configuration.Shimmer3.ListOfExGLeadOffComparator, new DialogLeadOffComparator_OnClickListener());
+			
+			buttonLeadOffComparator.setOnClickListener(new ButtonLeadOffComparator_OnClickListener(dialogLeadOffComparator));
+	        
+	        // ------------------------------------------------------------------------------
 	        
 	        statusCircle1 = (ImageView) findViewById(R.id.imageLeadOff1);
 	        statusCircle2 = (ImageView) findViewById(R.id.imageLeadOff2);
@@ -298,11 +455,13 @@ public class Activity_ShimmerConfig extends ListActivity {
 	        currentView = ShimmerConfigView.viewScanning;
 		}
 		catch(Exception ex) {
-		Log.e(MODULE_TAG, ex.getMessage());
+			Log.e(MODULE_TAG, ex.getMessage());
 		}
     }
     
-	/* Creates the menu items */
+	/**
+	 * Creates the menu items
+	 */
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		try {
@@ -321,7 +480,9 @@ public class Activity_ShimmerConfig extends ListActivity {
 		return super.onCreateOptionsMenu(menu);
 	}
 
-	/* Handles item selections */
+	/**
+	 * Handles item selections
+	 */
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		try {
@@ -367,7 +528,6 @@ public class Activity_ShimmerConfig extends ListActivity {
 		}
 	}
 	
-
     /**
      * 
      */
@@ -672,7 +832,30 @@ public class Activity_ShimmerConfig extends ListActivity {
   			cBox5VReg.setChecked(true);
   		}
   		
-  		cBox5VReg.setOnCheckedChangeListener(new CBox5VReg_OnCheckedChangeListener());
+  		// EXG --------------------------------------------------
+
+  		if(shimmerVersion != ShimmerVerDetails.HW_ID.SHIMMER_3){
+        	buttonExgGain.setEnabled(false);
+        	buttonExgRes.setEnabled(false);
+        }
+        else{
+        	buttonExgGain.setEnabled(true);
+        	buttonExgRes.setEnabled(true);
+        }
+        
+    	int gain = mService.getEXGGain(mBluetoothAddress);
+    	if(gain!=-1)
+    		buttonExgGain.setText("EXG Gain"+"\n ("+gain+")");
+    	else
+    		buttonExgGain.setText("EXG Gain"+"\n (no gain set)");
+    	
+    	exgRes = mService.getEXGResolution(mBluetoothAddress);
+    	if(exgRes==16 || exgRes==24)
+    		buttonExgRes.setText("EXG Res"+"\n ("+exgRes+" bit)");
+    	else
+    		buttonExgRes.setText("EXG Res"+"\n (no res. set)");
+        
+    	cBox5VReg.setOnCheckedChangeListener(new CBox5VReg_OnCheckedChangeListener());
   		
   		cBoxLowPowerAccel.setOnCheckedChangeListener(new CBoxLowPowerAccel_OnCheckedChangeListener(shimmer));
   		
@@ -909,6 +1092,58 @@ public class Activity_ShimmerConfig extends ListActivity {
 			catch(Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());
 			}
+		}
+	}
+
+	private final class ButtonExgGain_OnClickListener implements OnClickListener {
+		private final Builder dialogExgGain;
+
+		private ButtonExgGain_OnClickListener(Builder dialogExgGain) {
+			this.dialogExgGain = dialogExgGain;
+		}
+
+		@Override
+		public void onClick(View arg0) {
+			// TODO Auto-generated method stub
+			if(mService.getShimmer(mBluetoothAddress).getFirmwareCode() > 2){
+				dialogExgGain.show();
+			}
+			else
+				Toast.makeText(getApplicationContext(), "Operation not supported in this FW Version", Toast.LENGTH_SHORT).show();
+		}
+	}
+
+	private final class ButtonExgRes_OnClickListener implements OnClickListener {
+		private final Builder dialogExgRes;
+
+		private ButtonExgRes_OnClickListener(Builder dialogExgRes) {
+			this.dialogExgRes = dialogExgRes;
+		}
+
+		@Override
+		public void onClick(View v) {
+			// TODO Auto-generated method stub
+			dialogExgRes.show();
+		}
+	}
+
+	private final class ButtonReferenceElectrode_OnClickListener implements OnClickListener {
+		private final Builder ecgDialogReference;
+		private final Builder emgDialogReference;
+
+		private ButtonReferenceElectrode_OnClickListener(Builder ecgDialogReference, Builder emgDialogReference) {
+			this.ecgDialogReference = ecgDialogReference;
+			this.emgDialogReference = emgDialogReference;
+		}
+
+		@Override
+		public void onClick(View arg0) {
+			// TODO Auto-generated method stub
+			if(mService.isEXGUsingECG16Configuration(mBluetoothAddress) ||
+					mService.isEXGUsingECG24Configuration(mBluetoothAddress))
+				ecgDialogReference.show();
+			else
+				emgDialogReference.show();
 		}
 	}
 
@@ -1258,6 +1493,134 @@ public class Activity_ShimmerConfig extends ListActivity {
 		}
 	}
 
+	private final class DialogExgGain_OnClickListener implements DialogInterface.OnClickListener {
+		
+		public void onClick(DialogInterface dialog, int item) {
+			
+			int exgGainNew = 0;
+
+			if (exgGain[item] == "6") {
+				exgGainNew = 0;
+			} else if (exgGain[item] == "1") {
+				exgGainNew = 1;
+			} else if (exgGain[item] == "2") {
+				exgGainNew = 2;
+			} else if (exgGain[item] == "3") {
+				exgGainNew = 3;
+			} else if (exgGain[item] == "4") {
+				exgGainNew = 4;
+			} else if (exgGain[item] == "8") {
+				exgGainNew = 5;
+			} else if (exgGain[item] == "12") {
+				exgGainNew = 6;
+			}
+
+		    mService.writeEXGGainSetting(mBluetoothAddress, exgGainNew); // TODO: in MultiShimmer example project, this is writeEXGGainSetting 
+		    Toast.makeText(getApplicationContext(), "Exg gain changed. New gain = "+exgGain[item], Toast.LENGTH_SHORT).show();
+		    buttonExgGain.setText("EXG Gain"+"\n"+"("+exgGain[item]+")");
+		}
+	}
+
+	private final class DialogExgRes_OnClickListener implements DialogInterface.OnClickListener {
+
+		public void onClick(DialogInterface dialog, int item) {
+
+		    long enabledSensors = mService.getEnabledSensors(mBluetoothAddress);
+		    
+		    
+		    if (exgResolution[item]=="16 bits") {
+		    	// if 16-bit was chosen and 24-bit sensors are enabled, change to 16 bit
+		    	if (((enabledSensors & Shimmer.SENSOR_EXG1_24BIT) > 0 && (enabledSensors & Shimmer.SENSOR_EXG2_24BIT) > 0)){
+			    	enabledSensors = mService.sensorConflictCheckandCorrection(enabledSensors, Shimmer.SENSOR_EXG1_16BIT, (int)mShimmerVersion);
+			    	enabledSensors = mService.sensorConflictCheckandCorrection(enabledSensors, Shimmer.SENSOR_EXG2_16BIT, (int)mShimmerVersion);
+		    	}
+		    	exgRes = 16;
+		    }
+		    else { 
+		    	//if 24-bit was chosen and 16-bit sensors are enabled, change to 24 bit
+		    	if (((enabledSensors & Shimmer.SENSOR_EXG1_16BIT) > 0 && (enabledSensors & Shimmer.SENSOR_EXG2_16BIT) > 0)){
+			    	enabledSensors = mService.sensorConflictCheckandCorrection(enabledSensors, Shimmer.SENSOR_EXG1_24BIT, (int)mShimmerVersion);
+			    	enabledSensors = mService.sensorConflictCheckandCorrection(enabledSensors, Shimmer.SENSOR_EXG2_24BIT, (int)mShimmerVersion);
+		    	}
+		    	exgRes = 24;
+		    }
+			//shimmerConfig.setEnabledSensors(enabledSensor);
+			//mService.mShimmerConfigurationList.set(currentPosition, shimmerConfig);					
+			mService.setEnabledSensors(enabledSensors, mBluetoothAddress);
+			Toast.makeText(getApplicationContext(), "Exg resolution changed. New resolution = " + exgResolution[item], Toast.LENGTH_SHORT).show();
+			buttonExgRes.setText("EXG Res" + "\n" + "(" + exgResolution[item] + ")");
+		}
+	}
+	
+	private final class DialogECGReference_OnClickListener implements DialogInterface.OnClickListener {
+
+		private final String[] listOfReference;
+
+		private DialogECGReference_OnClickListener(String[] listOfReference) {
+			this.listOfReference = listOfReference;
+		}
+
+		@Override
+		public void onClick(DialogInterface arg0, int arg1) {
+			// TODO Auto-generated method stub
+
+			Log.d("Shimmer ",listOfReference[arg1]);
+			
+			String newReference = listOfReference[arg1];
+			
+			int reference = 0;
+			if(listOfReference[arg1].equals("Fixed Potential"))
+				reference = 0;
+			else
+				reference = 13;
+			
+			mService.writeExGReferenceElectrode(mBluetoothAddress, reference);
+			Toast.makeText(getApplicationContext(), "Referecen electrode changed. New reference electrode = "+newReference, Toast.LENGTH_SHORT).show();
+			buttonReferenceElectrode.setText("Ref. Electrode "+"\n ("+newReference+")");
+		}
+	}
+
+	private final class DialogEMGReference_OnClickListener implements DialogInterface.OnClickListener {
+		
+		private final String[] listOfReference;
+		
+		private DialogEMGReference_OnClickListener(String[] listOfReference) {
+			this.listOfReference = listOfReference;
+		}
+		
+		@Override
+		public void onClick(DialogInterface arg0, int arg1) {
+
+			Log.d("Shimmer ",listOfReference[arg1]);
+			
+			String newReference = listOfReference[arg1];
+			
+			int reference = 0;
+			if(listOfReference[arg1].equals("Fixed Potential"))
+				reference = 0;
+			else
+				reference = 3;
+
+			mService.writeExGReferenceElectrode(mBluetoothAddress, reference);
+			Toast.makeText(getApplicationContext(), "Referecen electrode changed. New reference electrode = "+newReference, Toast.LENGTH_SHORT).show();
+			buttonReferenceElectrode.setText("Ref. Electrode "+"\n ("+newReference+")");
+		}
+	}
+
+	private final class DialogLeadOffDetection_OnClickListener implements DialogInterface.OnClickListener {
+
+		@Override
+		public void onClick(DialogInterface arg0, int arg1) {
+
+			Log.d("Shimmer ",Configuration.Shimmer3.ListOfExGLeadOffDetection[arg1]);
+			
+			String newDetection = Configuration.Shimmer3.ListOfExGLeadOffDetection[arg1];
+			mService.writeExGLeadOffDetectionMode(mBluetoothAddress, arg1);
+			Toast.makeText(getApplicationContext(), "Lead-Off Detection changed. New Lead-Off Detection = " + newDetection, Toast.LENGTH_SHORT).show();
+			buttonLeadOffDetection.setText("Lead-Off Detection " + "\n (" + newDetection + ")");
+		}
+}
+
 	// *********************************************************************************
 	// *                          Shimmer Message Handler
 	// *********************************************************************************
@@ -1289,14 +1652,13 @@ public class Activity_ShimmerConfig extends ListActivity {
 		                else 
 		                	exgMode="";
 
-
-
 	        			// get the shimmer object
 	        			if (null != (shimmer = mService.getShimmer(mBluetoothAddress))) {
 		        			updateSensorsView(shimmer, mShimmerVersion);
 		        			updateCommandsView(shimmer, mShimmerVersion);
 			                printExGArrays(shimmer);
 		        			setCurrentView(ShimmerConfigView.viewScanSuccess);
+		        			setCurrentView(ShimmerConfigView.viewCommands);
 		                }
 	        			else {
 		                	setCurrentView(ShimmerConfigView.viewScanFailed);
