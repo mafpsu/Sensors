@@ -35,6 +35,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ScrollView;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -48,80 +49,6 @@ public class Activity_ShimmerConfig extends ListActivity {
 	public static final String EXTRA_BLUETOOTH_ADDRESS = "EXTRA_BLUETOOTH_ADDRESS";
 	
 	private static final int REQUEST_ENABLE_BT = 1;
-
-	private final class ButtonLeadOffComparator_OnClickListener implements
-			OnClickListener {
-		private final Builder dialogLeadOffComparator;
-
-		private ButtonLeadOffComparator_OnClickListener(
-				Builder dialogLeadOffComparator) {
-			this.dialogLeadOffComparator = dialogLeadOffComparator;
-		}
-
-		@Override
-		public void onClick(View arg0) {
-			// TODO Auto-generated method stub
-			dialogLeadOffComparator.show();
-		}
-	}
-
-	private final class DialogLeadOffComparator_OnClickListener implements
-			DialogInterface.OnClickListener {
-		@Override
-		public void onClick(DialogInterface arg0, int arg1) {
-			// TODO Auto-generated method stub
-			Log.d("Shimmer ",Configuration.Shimmer3.ListOfExGLeadOffComparator[arg1]);
-			String newComparator = Configuration.Shimmer3.ListOfExGLeadOffComparator[arg1];
-			mService.writeExGLeadOffDetectionCurrent(mBluetoothAddress, arg1);
-			mService.writeExGLeadOffDetectionComparatorTreshold(mBluetoothAddress, arg1);
-			Toast.makeText(getApplicationContext(), "Lead-Off Comparator changed. New Lead-Off Comparator = "+newComparator, Toast.LENGTH_SHORT).show();
-			buttonLeadOffComparator.setText("Lead-Off Comparator "+"\n ("+newComparator+")");
-		}
-	}
-
-	private final class ButtonLeadOffCurrent_OnClickListener implements
-			OnClickListener {
-		private final Builder dialogLeadOffCurrent;
-
-		private ButtonLeadOffCurrent_OnClickListener(
-				Builder dialogLeadOffCurrent) {
-			this.dialogLeadOffCurrent = dialogLeadOffCurrent;
-		}
-
-		@Override
-		public void onClick(View arg0) {
-			// TODO Auto-generated method stub
-			dialogLeadOffCurrent.show();
-		}
-	}
-
-	private final class DialogLeadOffCurrent_OnClickListener implements
-			DialogInterface.OnClickListener {
-		@Override
-		public void onClick(DialogInterface arg0, int arg1) {
-			// TODO Auto-generated method stub
-			Log.d("Shimmer ",Configuration.Shimmer3.ListOfExGLeadOffCurrent[arg1]);
-			String newCurrent = Configuration.Shimmer3.ListOfExGLeadOffCurrent[arg1];
-			mService.writeExGLeadOffDetectionCurrent(mBluetoothAddress, arg1);
-			Toast.makeText(getApplicationContext(), "Lead-Off Current changed. New Lead-Off Current = "+newCurrent, Toast.LENGTH_SHORT).show();
-			buttonLeadOffCurrent.setText("Lead-Off Current "+"\n ("+newCurrent+")");
-		}
-	}
-
-	private final class ButtonLeadOffDetection_OnClickListener implements
-			OnClickListener {
-		private final Builder dialogLeadOffDetection;
-
-		private ButtonLeadOffDetection_OnClickListener(
-				Builder dialogLeadOffDetection) {
-			this.dialogLeadOffDetection = dialogLeadOffDetection;
-		}
-
-		@Override
-		public void onClick(View arg0) {
-			dialogLeadOffDetection.show();
-		}
-	}
 
 	private enum ShimmerConfigView { viewScanning, viewScanSuccess, viewScanFailed, viewSensors, viewCommands, viewExg};
 	private ShimmerConfigView currentView = ShimmerConfigView.viewScanning;
@@ -138,7 +65,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 	private MenuItem mnuSensors;
 	private MenuItem mnuExg;
 	private MenuItem mnuClose;
-    private ListView listView;
+    private ListView lvSensors;
     private Button buttonDone;
     private Button buttonTryAgain;
     // Activity_ShimmerCommands Private variables
@@ -148,6 +75,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 	private final String[] exgGain = new String [] {"6","1","2","3","4","8","12"};
 	private final String[] exgResolution = new String [] {"16 bits","24 bits"};
 
+    private ScrollView svCommandButtons;
     private LinearLayout ll_asc_commands;
     private LinearLayout ll_asc_exg;
     private CheckBox cBoxLowPowerMag;
@@ -216,9 +144,10 @@ public class Activity_ShimmerConfig extends ListActivity {
 			buttonTryAgain = (Button) findViewById(R.id.assl_btn_try_again);
 			buttonTryAgain.setOnClickListener(new ButtonTryAgain_OnClickListener());
 			// get the list GUI elements
-			listView = (ListView) findViewById(android.R.id.list);
-			listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+			lvSensors = (ListView) findViewById(android.R.id.list);
+			lvSensors.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
 
+			svCommandButtons = (ScrollView) findViewById(R.id.sv_asc_commands);
 			ll_asc_commands = (LinearLayout) findViewById(R.id.ll_asc_commands);
 			ll_asc_exg = (LinearLayout) findViewById(R.id.ll_asc_exg);
 	
@@ -665,8 +594,9 @@ public class Activity_ShimmerConfig extends ListActivity {
 			buttonDone.setText("Cancel");
 			buttonTryAgain.setVisibility(View.VISIBLE);
 
+			svCommandButtons.setVisibility(View.INVISIBLE);
 			ll_asc_commands.setVisibility(View.INVISIBLE);
-			listView.setVisibility(View.INVISIBLE);
+			lvSensors.setVisibility(View.INVISIBLE);
 			ll_asc_exg.setVisibility(View.INVISIBLE);
 			if ((null != mnuCommands) && (null != mnuSensors) && (null != mnuExg)) {
 				mnuCommands.setVisible(false);
@@ -677,8 +607,9 @@ public class Activity_ShimmerConfig extends ListActivity {
 
 		case viewCommands:
 
+			svCommandButtons.setVisibility(View.VISIBLE);
 			ll_asc_commands.setVisibility(View.VISIBLE);
-			listView.setVisibility(View.INVISIBLE);
+			lvSensors.setVisibility(View.INVISIBLE);
 			ll_asc_exg.setVisibility(View.INVISIBLE);
 			if ((null != mnuCommands) && (null != mnuSensors) && (null != mnuExg)) {
 				mnuCommands.setVisible(false);
@@ -689,8 +620,9 @@ public class Activity_ShimmerConfig extends ListActivity {
 
 		case viewSensors:
 
+			svCommandButtons.setVisibility(View.INVISIBLE);
 			ll_asc_commands.setVisibility(View.INVISIBLE);
-			listView.setVisibility(View.VISIBLE);
+			lvSensors.setVisibility(View.VISIBLE);
 			ll_asc_exg.setVisibility(View.INVISIBLE);
 			if ((null != mnuCommands) && (null != mnuSensors) && (null != mnuExg)) {
 				mnuCommands.setVisible(true);
@@ -701,8 +633,9 @@ public class Activity_ShimmerConfig extends ListActivity {
 
 		case viewExg:
 
+			svCommandButtons.setVisibility(View.INVISIBLE);
 			ll_asc_commands.setVisibility(View.INVISIBLE);
-			listView.setVisibility(View.INVISIBLE);
+			lvSensors.setVisibility(View.INVISIBLE);
 			ll_asc_exg.setVisibility(View.VISIBLE);
 			if ((null != mnuCommands) && (null != mnuSensors) && (null != mnuExg)) {
 				mnuCommands.setVisible(true);
@@ -717,33 +650,88 @@ public class Activity_ShimmerConfig extends ListActivity {
 	/**
 	 * Display the list of enabled sensors
 	 */
-	private void updateSensorsView(Shimmer shimmer, int shimmerVersion) {
+	private void showEnableSensors(Shimmer shimmer, int shimmerVersion) {
 
 		// get the list of sensor names
-		final String[] sensorNames = shimmer.getListofSupportedSensors();
+		final String[] supportedSensors = shimmer.getListofSupportedSensors();
 		
-		// get the bit field value corresponding to the enabled sensors
-		mEnabledSensors = mService.getEnabledSensors(mBluetoothAddress);
+		String[] sensorNames = new String[supportedSensors.length+2]; 
+		//remove from the list of sensors EXG1, EXG2, EXG1 16bits, EXG2 16bits, and add ECG,EMG,TestSignal,ECG 16Bits,EMG 16Bits, TestSignal 16Bits
+		for(int i=0; i<supportedSensors.length-5;i++)
+			sensorNames[i] = supportedSensors[i];
 		
+		sensorNames[supportedSensors.length-5] = supportedSensors[supportedSensors.length-1]; // add "Strain gauge" which is the last one in the sensor list
+		sensorNames[supportedSensors.length-4] = "ECG";
+		sensorNames[supportedSensors.length-3] = "ECG 16Bit";
+		sensorNames[supportedSensors.length-2] = "EMG";
+		sensorNames[supportedSensors.length-1] = "EMG 16Bit";
+		sensorNames[supportedSensors.length] = "Test Signal";
+		sensorNames[supportedSensors.length+1] = "Test Signal 16Bit";
+		
+		// Create an adapter to hold sensor names
 		ArrayAdapter<String> adapterSensorNames = new ArrayAdapter<String>(
 				this, 
 				android.R.layout.simple_list_item_multiple_choice,
 				android.R.id.text1, 
 				sensorNames);
-		listView.setAdapter(adapterSensorNames);
+		
+		// Attach adapter to ListView
+		lvSensors.setAdapter(adapterSensorNames);
 		
 		// translate the bit field value to specific sensor names to be displayed
 		final BiMap<String, String> sensorBitmaptoName;
 		sensorBitmaptoName = Shimmer.generateBiMapSensorIDtoSensorName(shimmerVersion);
 
+		// get the bit field value corresponding to the enabled sensors
+		mEnabledSensors = mService.getEnabledSensors(mBluetoothAddress);
+		
 		for (int i = 0; i < sensorNames.length; i++) {
+			
 			// get the bit mask for the given sensor name
-			int bitMask = Integer.parseInt(sensorBitmaptoName.inverse().get(sensorNames[i]));
-			if ((bitMask & mEnabledSensors) > 0) {
-				listView.setItemChecked(i, true);
+			if(shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_3 && 
+					(sensorNames[i].equals("ECG") || sensorNames[i].equals("EMG") || sensorNames[i].equals("Test Signal") ||
+					sensorNames[i].equals("ECG 16Bit") || sensorNames[i].equals("EMG 16Bit") || sensorNames[i].equals("Test Signal 16Bit"))){
+				
+				if(sensorNames[i].equals("ECG") && mService.isEXGUsingECG24Configuration(mBluetoothAddress))
+					lvSensors.setItemChecked(i, true);
+				else if(sensorNames[i].equals("ECG 16Bit") && mService.isEXGUsingECG16Configuration(mBluetoothAddress))
+					lvSensors.setItemChecked(i, true);
+				else if(sensorNames[i].equals("EMG") && mService.isEXGUsingEMG24Configuration(mBluetoothAddress))
+					lvSensors.setItemChecked(i, true);
+				else if(sensorNames[i].equals("EMG 16Bit") && mService.isEXGUsingEMG16Configuration(mBluetoothAddress))
+					lvSensors.setItemChecked(i, true);
+				else if(sensorNames[i].equals("Test Signal") && mService.isEXGUsingTestSignal24Configuration(mBluetoothAddress))
+					lvSensors.setItemChecked(i, true);
+				else if(sensorNames[i].equals("Test Signal 16Bit") && mService.isEXGUsingTestSignal16Configuration(mBluetoothAddress))
+					lvSensors.setItemChecked(i, true);
+			}
+			else{	
+				int bitMask = Integer.parseInt(sensorBitmaptoName.inverse().get(sensorNames[i]));
+				if ((bitMask & mEnabledSensors) > 0) {
+					lvSensors.setItemChecked(i, true);
+				}
 			}
 		}
-		listView.setOnItemClickListener(new ListView_OnClickListener(sensorBitmaptoName, sensorNames));
+		lvSensors.setOnItemClickListener(new Sensors_OnClickListener(sensorBitmaptoName, sensorNames));
+	}
+	
+	public String[] createListWithNewExgNames(String[] sensors) {
+		
+		String[] newSensorNames = new String[sensors.length+2]; 
+
+		// add old sensor names to new list
+		for(int i = 0; i < sensors.length - 5; i++)
+			newSensorNames[i] = sensors[i];
+		
+		//remove from the list of sensors EXG1, EXG2, EXG1 16bits, EXG2 16bits, and add ECG,EMG,TestSignal,ECG 16Bits,EMG 16Bits, TestSignal 16Bits
+		newSensorNames[sensors.length-5] = sensors[sensors.length-1]; // add "Strain gauge" which is the last one in the sensor list
+		newSensorNames[sensors.length-4] = "ECG";
+		newSensorNames[sensors.length-3] = "ECG 16Bit";
+		newSensorNames[sensors.length-2] = "EMG";
+		newSensorNames[sensors.length-1] = "EMG 16Bit";
+		newSensorNames[sensors.length] = "Test Signal";
+		newSensorNames[sensors.length+1] = "Test Signal 16Bit";
+		return newSensorNames;
 	}
 
 	public void updateCommandsView(Shimmer shimmer, int shimmerVersion) {
@@ -916,9 +904,9 @@ public class Activity_ShimmerConfig extends ListActivity {
 	}
 
 	private final class ButtonDone_OnClickListener implements OnClickListener {
+
 		@Override
 		public void onClick(View arg0) {
-			// TODO Auto-generated method stub
 			if (null != mService) {
 				mService.setEnabledSensors(mEnabledSensors, mBluetoothAddress);
 	            Intent intent = new Intent();
@@ -1104,7 +1092,6 @@ public class Activity_ShimmerConfig extends ListActivity {
 
 		@Override
 		public void onClick(View arg0) {
-			// TODO Auto-generated method stub
 			if(mService.getShimmer(mBluetoothAddress).getFirmwareCode() > 2){
 				dialogExgGain.show();
 			}
@@ -1144,6 +1131,51 @@ public class Activity_ShimmerConfig extends ListActivity {
 				ecgDialogReference.show();
 			else
 				emgDialogReference.show();
+		}
+	}
+
+	private final class ButtonLeadOffCurrent_OnClickListener implements OnClickListener {
+		private final Builder dialogLeadOffCurrent;
+		
+		private ButtonLeadOffCurrent_OnClickListener(
+				Builder dialogLeadOffCurrent) {
+			this.dialogLeadOffCurrent = dialogLeadOffCurrent;
+		}
+		
+		@Override
+		public void onClick(View arg0) {
+			// TODO Auto-generated method stub
+			dialogLeadOffCurrent.show();
+		}
+	}
+
+	private final class ButtonLeadOffDetection_OnClickListener implements OnClickListener {
+		private final Builder dialogLeadOffDetection;
+		
+		private ButtonLeadOffDetection_OnClickListener(
+				Builder dialogLeadOffDetection) {
+			this.dialogLeadOffDetection = dialogLeadOffDetection;
+		}
+		
+		@Override
+		public void onClick(View arg0) {
+			dialogLeadOffDetection.show();
+		}
+	}
+
+	private final class ButtonLeadOffComparator_OnClickListener implements OnClickListener {
+		
+		private final Builder dialogLeadOffComparator;
+		
+		private ButtonLeadOffComparator_OnClickListener(
+				Builder dialogLeadOffComparator) {
+			this.dialogLeadOffComparator = dialogLeadOffComparator;
+		}
+		
+		@Override
+		public void onClick(View arg0) {
+			// TODO Auto-generated method stub
+			dialogLeadOffComparator.show();
 		}
 	}
 
@@ -1607,6 +1639,18 @@ public class Activity_ShimmerConfig extends ListActivity {
 		}
 	}
 
+	private final class DialogLeadOffCurrent_OnClickListener implements DialogInterface.OnClickListener {
+		@Override
+		public void onClick(DialogInterface arg0, int arg1) {
+			// TODO Auto-generated method stub
+			Log.d("Shimmer ",Configuration.Shimmer3.ListOfExGLeadOffCurrent[arg1]);
+			String newCurrent = Configuration.Shimmer3.ListOfExGLeadOffCurrent[arg1];
+			mService.writeExGLeadOffDetectionCurrent(mBluetoothAddress, arg1);
+			Toast.makeText(getApplicationContext(), "Lead-Off Current changed. New Lead-Off Current = "+newCurrent, Toast.LENGTH_SHORT).show();
+			buttonLeadOffCurrent.setText("Lead-Off Current "+"\n ("+newCurrent+")");
+		}
+	}
+
 	private final class DialogLeadOffDetection_OnClickListener implements DialogInterface.OnClickListener {
 
 		@Override
@@ -1619,7 +1663,20 @@ public class Activity_ShimmerConfig extends ListActivity {
 			Toast.makeText(getApplicationContext(), "Lead-Off Detection changed. New Lead-Off Detection = " + newDetection, Toast.LENGTH_SHORT).show();
 			buttonLeadOffDetection.setText("Lead-Off Detection " + "\n (" + newDetection + ")");
 		}
-}
+	}
+
+	private final class DialogLeadOffComparator_OnClickListener implements DialogInterface.OnClickListener {
+		@Override
+		public void onClick(DialogInterface arg0, int arg1) {
+			// TODO Auto-generated method stub
+			Log.d("Shimmer ",Configuration.Shimmer3.ListOfExGLeadOffComparator[arg1]);
+			String newComparator = Configuration.Shimmer3.ListOfExGLeadOffComparator[arg1];
+			mService.writeExGLeadOffDetectionCurrent(mBluetoothAddress, arg1);
+			mService.writeExGLeadOffDetectionComparatorTreshold(mBluetoothAddress, arg1);
+			Toast.makeText(getApplicationContext(), "Lead-Off Comparator changed. New Lead-Off Comparator = "+newComparator, Toast.LENGTH_SHORT).show();
+			buttonLeadOffComparator.setText("Lead-Off Comparator "+"\n ("+newComparator+")");
+		}
+	}
 
 	// *********************************************************************************
 	// *                          Shimmer Message Handler
@@ -1654,7 +1711,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 
 	        			// get the shimmer object
 	        			if (null != (shimmer = mService.getShimmer(mBluetoothAddress))) {
-		        			updateSensorsView(shimmer, mShimmerVersion);
+		        			showEnableSensors(shimmer, mShimmerVersion);
 		        			updateCommandsView(shimmer, mShimmerVersion);
 			                printExGArrays(shimmer);
 		        			setCurrentView(ShimmerConfigView.viewScanSuccess);
@@ -1743,11 +1800,11 @@ public class Activity_ShimmerConfig extends ListActivity {
 	// *                          ListView
 	// *********************************************************************************
 
-	private final class ListView_OnClickListener implements OnItemClickListener {
+	private final class Sensors_OnClickListener implements OnItemClickListener {
 		private final BiMap<String, String> sensorBitmaptoName;
 		private final String[] sensorNames;
 
-		private ListView_OnClickListener(
+		private Sensors_OnClickListener(
 				BiMap<String, String> sensorBitmaptoName, String[] sensorNames) {
 			this.sensorBitmaptoName = sensorBitmaptoName;
 			this.sensorNames = sensorNames;
@@ -1755,17 +1812,169 @@ public class Activity_ShimmerConfig extends ListActivity {
 
 		@Override
 		public void onItemClick(AdapterView<?> arg0, View arg1, int clickIndex, long arg3) {
-			int sensorIdentifier = Integer.parseInt(sensorBitmaptoName.inverse().get(sensorNames[clickIndex]));
-			// check and remove any old daughter boards (sensors) which will
-			// cause a conflict with sensorIdentifier
-			mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors, sensorIdentifier);
-			// update the checkbox accordingly
-			for (int i = 0; i < sensorNames.length; i++) {
-				int iDBMValue = Integer.parseInt(sensorBitmaptoName.inverse().get(sensorNames[i]));
-				if ((iDBMValue & mEnabledSensors) > 0) {
-					listView.setItemChecked(i, true);
-				} else {
-					listView.setItemChecked(i, false);
+			
+			if(mService.getShimmerVersion(mBluetoothAddress)==ShimmerVerDetails.HW_ID.SHIMMER_3 && sensorNames[clickIndex].equals("ECG")){
+				int iDBMValue1 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG1"));
+				int iDBMValue3 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG2"));
+				if (!((mEnabledSensors & Shimmer.SENSOR_EXG1_24BIT)>0 && (mEnabledSensors & Shimmer.SENSOR_EXG2_24BIT)>0)){
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue1);
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue3);
+				}
+				
+				if(!lvSensors.isItemChecked(clickIndex)){
+					lvSensors.setItemChecked(clickIndex, false); //ECG
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue1);
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue3);
+				}
+				else
+					lvSensors.setItemChecked(clickIndex, true); //ECG
+				
+				lvSensors.setItemChecked(clickIndex+1, false); //ECG 16Bit
+				lvSensors.setItemChecked(clickIndex+2, false);// EMG
+				lvSensors.setItemChecked(clickIndex+3, false);// EMG 16Bit
+				lvSensors.setItemChecked(clickIndex+4, false);// Test Signal
+				lvSensors.setItemChecked(clickIndex+5, false);// Test Signal 16Bit
+				if(lvSensors.isItemChecked(clickIndex))
+					mService.writeEXGSetting(mBluetoothAddress, 0);
+			} 
+			else if(mService.getShimmerVersion(mBluetoothAddress)==ShimmerVerDetails.HW_ID.SHIMMER_3 && sensorNames[clickIndex].equals("ECG 16Bit")){
+					int iDBMValue1 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG1 16Bit"));
+					int iDBMValue3 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG2 16Bit"));
+					if (!((mEnabledSensors & Shimmer.SENSOR_EXG1_16BIT)>0 && (mEnabledSensors & Shimmer.SENSOR_EXG2_16BIT)>0)){
+						mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue1);
+						mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue3);
+					}
+					
+					if(!lvSensors.isItemChecked(clickIndex)){
+						lvSensors.setItemChecked(clickIndex, false); //ECG 16Bit
+						mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue1);
+						mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue3);
+					}
+					else
+						lvSensors.setItemChecked(clickIndex, true); //ECG 16Bit
+					
+					lvSensors.setItemChecked(clickIndex-1, false); //ECG
+					lvSensors.setItemChecked(clickIndex+1, false);// EMG
+					lvSensors.setItemChecked(clickIndex+2, false);// EMG 16Bit
+					lvSensors.setItemChecked(clickIndex+3, false);// Test Signal
+					lvSensors.setItemChecked(clickIndex+4, false);// Test Signal 16Bit
+					if(lvSensors.isItemChecked(clickIndex))
+						mService.writeEXGSetting(mBluetoothAddress, 0);
+			}
+			else if(mService.getShimmerVersion(mBluetoothAddress)==ShimmerVerDetails.HW_ID.SHIMMER_3 && sensorNames[clickIndex].equals("EMG")){
+				int iDBMValue1 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG1"));
+				int iDBMValue3 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG2"));
+				if (!((mEnabledSensors & Shimmer.SENSOR_EXG1_24BIT)>0 && (mEnabledSensors & Shimmer.SENSOR_EXG2_24BIT)>0)){
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue1);
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue3);
+				}
+				
+				if(!lvSensors.isItemChecked(clickIndex)){
+					lvSensors.setItemChecked(clickIndex, false); //EMG
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue1);
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue3);
+				}
+				else
+					lvSensors.setItemChecked(clickIndex, true); //EMG
+				
+				lvSensors.setItemChecked(clickIndex-2, false); //ECG
+				lvSensors.setItemChecked(clickIndex-1, false);// ECG 16Bit
+				lvSensors.setItemChecked(clickIndex+1, false);// EMG 16Bit
+				lvSensors.setItemChecked(clickIndex+2, false);// Test Signal
+				lvSensors.setItemChecked(clickIndex+3, false);// Test Signal 16Bit
+				if(lvSensors.isItemChecked(clickIndex))
+					mService.writeEXGSetting(mBluetoothAddress, 1);
+			}
+			else if(mService.getShimmerVersion(mBluetoothAddress)==ShimmerVerDetails.HW_ID.SHIMMER_3 && sensorNames[clickIndex].equals("EMG 16Bit")){
+				int iDBMValue1 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG1 16Bit"));
+				int iDBMValue3 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG2 16Bit"));
+				if (!((mEnabledSensors & Shimmer.SENSOR_EXG1_16BIT)>0 && (mEnabledSensors & Shimmer.SENSOR_EXG2_16BIT)>0)){
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue1);
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue3);
+				}
+				
+				if(!lvSensors.isItemChecked(clickIndex)){
+					lvSensors.setItemChecked(clickIndex, false); //EMG 16Bit
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue1);
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue3);
+				}
+				else
+					lvSensors.setItemChecked(clickIndex, true); //EMG 16Bit
+				
+				lvSensors.setItemChecked(clickIndex-3, false); //ECG
+				lvSensors.setItemChecked(clickIndex-2, false);// ECG 16Bit
+				lvSensors.setItemChecked(clickIndex-1, false);// EMG 
+				lvSensors.setItemChecked(clickIndex+1, false);// Test Signal
+				lvSensors.setItemChecked(clickIndex+2, false);// Test Signal 16Bit
+				if(lvSensors.isItemChecked(clickIndex))
+					mService.writeEXGSetting(mBluetoothAddress, 1);
+			}
+			else if(mService.getShimmerVersion(mBluetoothAddress)==ShimmerVerDetails.HW_ID.SHIMMER_3 && sensorNames[clickIndex].equals("Test Signal")){
+				int iDBMValue1 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG1"));
+				int iDBMValue3 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG2"));
+				if (!((mEnabledSensors & Shimmer.SENSOR_EXG1_24BIT)>0 && (mEnabledSensors & Shimmer.SENSOR_EXG2_24BIT)>0)){
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue1);
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue3);
+				}
+				
+				if(!lvSensors.isItemChecked(clickIndex)){
+					lvSensors.setItemChecked(clickIndex, false); //Test Signal
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue1);
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue3);
+				}
+				else
+					lvSensors.setItemChecked(clickIndex, true); //Test Signal
+				
+				lvSensors.setItemChecked(clickIndex-4, false); //ECG
+				lvSensors.setItemChecked(clickIndex-3, false);// ECG 16Bit
+				lvSensors.setItemChecked(clickIndex-2, false);// EMG 
+				lvSensors.setItemChecked(clickIndex-1, false);// EMG 16Bit
+				lvSensors.setItemChecked(clickIndex+1, false);// Test Signal 16Bit
+				if(lvSensors.isItemChecked(clickIndex))
+				mService.writeEXGSetting(mBluetoothAddress, 2);
+			}
+			else if(mService.getShimmerVersion(mBluetoothAddress)==ShimmerVerDetails.HW_ID.SHIMMER_3 && sensorNames[clickIndex].equals("Test Signal 16Bit")){
+				int iDBMValue1 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG1 16Bit"));
+				int iDBMValue3 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG2 16Bit"));
+				if (!((mEnabledSensors & Shimmer.SENSOR_EXG1_16BIT)>0 && (mEnabledSensors & Shimmer.SENSOR_EXG2_16BIT)>0)){
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue1);
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue3);
+				}
+					
+				if(!lvSensors.isItemChecked(clickIndex)){
+					lvSensors.setItemChecked(clickIndex, false); //Test Signal 16Bit
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue1);
+					mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress, mEnabledSensors,iDBMValue3);
+				}
+				else
+					lvSensors.setItemChecked(clickIndex, true); //Test Signal 16Bit
+					
+				lvSensors.setItemChecked(clickIndex-5, false); //ECG
+				lvSensors.setItemChecked(clickIndex-4, false);// ECG 16Bit
+				lvSensors.setItemChecked(clickIndex-3, false);// EMG 
+				lvSensors.setItemChecked(clickIndex-2, false);// EMG 16Bit
+				lvSensors.setItemChecked(clickIndex-1, false);// Test Signal
+				if(lvSensors.isItemChecked(clickIndex))
+					mService.writeEXGSetting(mBluetoothAddress, 2);
+			}
+			else{
+				int sensorIdentifier = Integer.parseInt(sensorBitmaptoName.inverse().get(sensorNames[clickIndex]));
+				//check and remove any old daughter boards (sensors) which will cause a conflict with sensorIdentifier 
+				mEnabledSensors = mService.sensorConflictCheckandCorrection(mBluetoothAddress,mEnabledSensors,sensorIdentifier);
+				//update the checkbox accordingly
+				int end=0;
+				if(mService.getShimmerVersion(mBluetoothAddress)==ShimmerVerDetails.HW_ID.SHIMMER_3)
+					end=sensorNames.length-6;
+				else
+					end=sensorNames.length;
+				
+				for (int i=0;i<end;i++){
+					int iDBMValue = Integer.parseInt(sensorBitmaptoName.inverse().get(sensorNames[i]));	
+					if( (iDBMValue & mEnabledSensors) >0){
+						lvSensors.setItemChecked(i, true);
+					} else {
+						lvSensors.setItemChecked(i, false);
+					}
 				}
 			}
 		}

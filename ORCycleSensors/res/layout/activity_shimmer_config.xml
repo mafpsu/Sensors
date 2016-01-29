@@ -73,6 +73,7 @@
     </ListView>
 
     <ScrollView
+	    android:id="@+id/sv_asc_commands"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
 	    android:layout_above="@+id/ll_assv"
