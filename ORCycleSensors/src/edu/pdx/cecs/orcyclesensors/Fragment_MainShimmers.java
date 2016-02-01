@@ -456,65 +456,6 @@ public class Fragment_MainShimmers extends Fragment {
 	}
 
 	// *********************************************************************************
-	// *                            Dialog Select Shimmer Function
-	// *********************************************************************************
-
-	/**
-	 * Build dialog telling user that the GPS is not available
-	 */
-	private void dialogSelectShimmerFunction(String bluetoothAddress) {
-		final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-		builder.setMessage(R.string.fmr_dssf_dlg_title);
-		builder.setCancelable(false);
-		builder.setPositiveButton(getResources().getString(R.string.fmr_dssf_dlg_button_edit_sensors),
-				new DialogSelectShimmer_EditSensorListener(bluetoothAddress));
-		builder.setNegativeButton(getResources().getString(R.string.fmr_dssf_dlg_button_configure_device),
-				new DialogSelectShimmer_ConfigureDeviceListener(bluetoothAddress));
-		final AlertDialog alert = builder.create();
-		alert.show();
-	}
-
-	private final class DialogSelectShimmer_EditSensorListener implements DialogInterface.OnClickListener {
-		
-		private final String bluetoothAddress;
-		
-		public DialogSelectShimmer_EditSensorListener(String bluetoothAddress) {
-			this.bluetoothAddress = bluetoothAddress;
-		}
-		
-		public void onClick(final DialogInterface dialog, final int id) {
-			try {
-	     		//Shimmer shimmer = mService.getShimmer(mBluetoothAddress);
-	     		//showEnableSensors(shimmer.getListofSupportedSensors(),mService.getEnabledSensors(mBluetoothAddress));
-	     		transitionToShimmerEditSensorsActivity(bluetoothAddress);
-				dialog.cancel();
-			}
-			catch(Exception ex) {
-				Log.e(MODULE_TAG, ex.getMessage());
-			}
-		}
-	}
-
-	private final class DialogSelectShimmer_ConfigureDeviceListener implements DialogInterface.OnClickListener {
-
-		private final String bluetoothAddress;
-		
-		public DialogSelectShimmer_ConfigureDeviceListener(String bluetoothAddress) {
-			this.bluetoothAddress = bluetoothAddress;
-		}
-		
-		public void onClick(final DialogInterface dialog, final int id) {
-			try {
-				transitionToShimmerConfigureDeviceActivity(bluetoothAddress);
-				dialog.cancel();
-			}
-			catch(Exception ex) {
-				Log.e(MODULE_TAG, ex.getMessage());
-			}
-		}
-	}
-
-	// *********************************************************************************
 	// *                                       Transitions
 	// *********************************************************************************
 
@@ -526,20 +467,6 @@ public class Fragment_MainShimmers extends Fragment {
 		startActivityForResult(intent, REQUEST_CONNECT_SHIMMER);
 		getActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
 		//getActivity().finish();
-	}
-
-	private void transitionToShimmerEditSensorsActivity(String bluetoothAddress) {
-		Intent intent = new Intent(getActivity(), Activity_ShimmerSensorList.class);
-		intent.putExtra(Activity_ShimmerSensorList.EXTRA_BLUETOOTH_ADDRESS, bluetoothAddress);
-		startActivityForResult(intent, REQUEST_CONFIGURE_VIEW_SENSOR);
-		getActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
-	}
-	
-	private void transitionToShimmerConfigureDeviceActivity(String bluetoothAddress) {
-		Intent intent = new Intent(getActivity(), Activity_ShimmerCommands.class);
-		intent.putExtra(Activity_ShimmerCommands.EXTRA_BLUETOOTH_ADDRESS, bluetoothAddress);
-		startActivityForResult(intent, REQUEST_COMMAND_SHIMMER);
-		getActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
 	}
 
 	private void transitionToShimmerConfigureActivity(String bluetoothAddress) {
