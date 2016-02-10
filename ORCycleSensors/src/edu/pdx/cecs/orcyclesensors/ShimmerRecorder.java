@@ -166,12 +166,13 @@ public class ShimmerRecorder {
 			enabledSignals = shimmer.getListofEnabledSensorSignals();
 			ArrayList<String> signalNames = new ArrayList<String>(); 
 
-			// Create arrays to hold sensor reading for each signal of each enabled sensor
+			// Create arrays to hold sensor readings for each signal 
+			// of each enabled sensor (including timestamp)
 			for (String signalName: enabledSignals) {
-				if (!signalName.equals("Timestamp")) {
+				//if (!signalName.equals("Timestamp")) {
 					signalReadings.put(signalName, new ArrayList<Double>());
 					signalNames.add(signalName);
-				}
+				//}
 			}
 			
 			// If flag is set, Create data files for writing the raw data
@@ -180,21 +181,20 @@ public class ShimmerRecorder {
 			if (recordRawData) {
 				enabledSensors = shimmer.getListofEnabledSensors();
 				for (String sensorName: enabledSensors) {
-					if (!sensorName.equals("Timestamp")) {
-    					// Get the readings for the group  of signals specified
-						signalGroup = ShimmerSignalGroup.create(sensorName, shimmerVersion,
-								isEXGUsingDefaultECGConfiguration, isEXGUsingDefaultEMGConfiguration);
-    					RawDataFile_ShimmerSensor rawDataFile = 
-    							new RawDataFile_ShimmerSensor(filenameRoot + sensorName, tripId, dataDir, signalGroup.signalNames, shimmerVersion);
-    					rawDataFile.open(context);
-    					sensorDataFiles.put(sensorName, rawDataFile);
-    				}
+					signalGroup = ShimmerSignalGroup.create(sensorName, shimmerVersion,
+							isEXGUsingDefaultECGConfiguration, isEXGUsingDefaultEMGConfiguration);
+					RawDataFile_ShimmerSensor rawDataFile = 
+							new RawDataFile_ShimmerSensor(filenameRoot + sensorName, tripId, dataDir, signalGroup.signalNames, shimmerVersion);
+					rawDataFile.open(context);
+					sensorDataFiles.put(sensorName, rawDataFile);
 				}
-				// If flag is set, Create a data summary file
+				
+				// Remove Timestamp from the group of signal to be recorded in the summary data file
 				if (signalReadings.size() > 0) {
-					String[] arraySignalNames = new String[0];
-					arraySignalNames = signalNames.toArray(arraySignalNames);
-					summaryDataFile = new RawDataFile_Shimmer(filenameRoot + "Upload", tripId, dataDir, arraySignalNames, shimmerVersion);
+					ArrayList<String> dataFileSignalNames = new ArrayList<String>(signalNames);
+					dataFileSignalNames.remove("Timestamp");
+					String[] aDataFileSignalNames = dataFileSignalNames.toArray(new String[signalReadings.size() - 1]);
+					summaryDataFile = new RawDataFile_Shimmer(filenameRoot + "Upload", tripId, dataDir, aDataFileSignalNames, shimmerVersion);
 					summaryDataFile.open(context);
 				}
 			}
@@ -223,26 +223,31 @@ public class ShimmerRecorder {
 		ArrayList<Double> signal0 = null;
 		ArrayList<Double> signal1 = null;
 		ArrayList<Double> signal2 = null;
+		ArrayList<Double> timestamps = null;
 
 		CalcReading result;
 		try {
-			// Cycle thru each enabled signals
+			// For each enabled signal extract the array containing the signal data
 			for (String signalName: enabledSignals) {
 				
-				// For now, we are not going to record the sensor's timestamp
-				if (signalName.equalsIgnoreCase("Timestamp")) {
-					continue;
-				}
-				
 				signalReading = signalReadings.get(signalName);
-				if (null != (result = calculateResult(signalName, signalReading))) {
-					results.put(signalName, result);
+
+				// Timestamps are not averaged like other signal readings, but
+				// they are recorded in the raw data file
+				if (signalName.equalsIgnoreCase("Timestamp")) {
+					timestamps = signalReading;
+				}
+				else {
+					if (null != (result = calculateResult(signalName, signalReading))) {
+						results.put(signalName, result);
+					}
 				}
 			}
 
 			// Cycle thru enabled sensors
 			for (String sensorName: enabledSensors) {
 
+				// Again, timestamps are not averaged like other signal readings
 				if (sensorName.equals("Timestamp")) {
 					continue;
 				}
@@ -283,9 +288,9 @@ public class ShimmerRecorder {
 				for (String sensorName: enabledSensors) {
 					
 					// For now, we are not going to record the sensor's timestamp
-					if (sensorName.equalsIgnoreCase("timestamp")) {
-						continue;
-					}
+					//if (sensorName.equalsIgnoreCase("timestamp")) {
+					//	continue;
+					//}
 	
 					if (null != (sensorDataFile = sensorDataFiles.get(sensorName))) {
 						// Get the group of signals for the specified sensor
@@ -315,7 +320,7 @@ public class ShimmerRecorder {
 							else {
 								signal0 = null;
 							}
-							sensorDataFile.write(currentTimeMillis, location, signal0, signal1, signal2);
+							sensorDataFile.write(currentTimeMillis, location, timestamps, signal0, signal1, signal2);
 						}
 					}
 				}
@@ -368,6 +373,9 @@ public class ShimmerRecorder {
 					if (null != (formatCluster = ((FormatCluster)ObjectCluster.returnFormatCluster(formats, calFormat(signalName))))) {
 						readings.add(formatCluster.mData);
 					}
+					else {
+						Log.e(MODULE_TAG, "No format cluster found for: " + signalName);
+					}
 	 	    	}
 			}
 		}
@@ -399,6 +407,9 @@ public class ShimmerRecorder {
 	private String calFormat(String signalName) {
 		
 		if (signalName.equals(Shimmer3.ObjectClusterSensorName.EXG1_STATUS)) {
+			return "RAW";
+		}
+		else if (signalName.equals(Shimmer3.ObjectClusterSensorName.EXG2_STATUS)) {
 			return "RAW";
 		}
 		else {

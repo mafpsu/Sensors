@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import com.dsi.ant.plugins.antplus.pcc.defines.DeviceType;
 
 import edu.pdx.cecs.orcyclesensors.ShimmerService.LocalBinder;
+import edu.pdx.cecs.orcyclesensors.shimmer.driver.Configuration;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.content.ComponentName;
@@ -484,8 +485,9 @@ public class MyApplication extends android.app.Application {
     private void ConnectShimmerService() {
 
     	try {
-        Intent intent = new Intent(this, ShimmerService.class);
-        bindService(intent, shimmerServiceConnection, Context.BIND_AUTO_CREATE);
+    		Configuration.setTooLegacyObjectClusterSensorNames();
+	        Intent intent = new Intent(this, ShimmerService.class);
+	        bindService(intent, shimmerServiceConnection, Context.BIND_AUTO_CREATE);
     	}
         catch(SecurityException ex) {
 			Log.d(MODULE_TAG, ex.getMessage());

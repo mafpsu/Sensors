@@ -642,6 +642,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 				mnuSensors.setVisible(true);
 				mnuExg.setVisible(false);
 			}
+			printExGArrays(mService.getShimmer(mBluetoothAddress));
 			break;
 		}
 		currentView = shimmerConfigView;
@@ -789,30 +790,83 @@ public class Activity_ShimmerConfig extends ListActivity {
     	}
 
     	if (shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_3){
+    		
+    		// GSR
         	buttonGsr.setVisibility(View.VISIBLE);
+        	
+        	// 5V Reg
         	cBox5VReg.setEnabled(false);
+        	
+        	// Gyro
         	String currentGyroRange = "("+Configuration.Shimmer3.ListofGyroRange[shimmer.getGyroRange()]+")";
         	buttonGyroRange.setText("Gyro Range"+"\n"+currentGyroRange);
+        	
+        	// Magnetic Range
         	String currentMagRange = "("+Configuration.Shimmer3.ListofMagRange[shimmer.getMagRange()-1]+")";
     		buttonMagRange.setText("Mag Range"+"\n"+currentMagRange);
+    		
+    		// Pressure resolution
     		String currentPressureResolution = "("+Configuration.Shimmer3.ListofPressureResolution[shimmer.getPressureResolution()]+")";
     		buttonPressureResolution.setText("Pressure Res"+"\n"+currentPressureResolution);
         	
+    		// Accel Range
         	if (shimmer.getAccelRange()==0){
         		cBoxLowPowerAccel.setEnabled(false);
         	}
         	
         	//currently not supported for the moment 
     		buttonPressureResolution.setEnabled(true);
+    		
+    		// Reference Electrode
+    		buttonReferenceElectrode.setEnabled(true);
+        	int referenceElectrode = mService.getExGReferenceElectrode(mBluetoothAddress);
+        	if(referenceElectrode==0)
+        		buttonReferenceElectrode.setText("Ref. Electrode"+"\n (Fixed Potencial)");
+        	else if(referenceElectrode==13)
+        		buttonReferenceElectrode.setText("Ref. Electrode"+"\n (Inverse Wilson CT)");
+        	else if(referenceElectrode==3)
+        		buttonReferenceElectrode.setText("Ref. Electrode"+"\n (Inverse of Ch1)");
+        	else
+        		buttonReferenceElectrode.setText("Ref. Electrode"+"\n (No Ref.)");
+        	
+    		// Lead Off Detection
+        	buttonLeadOffDetection.setEnabled(true);
+        	int leadOffDetection = mService.getExGLeadOffDetectionMode(mBluetoothAddress);
+        	if(leadOffDetection!=-1)
+        		buttonLeadOffDetection.setText("Lead-Off Detection"+"\n ("+Configuration.Shimmer3.ListOfExGLeadOffDetection[leadOffDetection]+")");
+        	else
+        		buttonLeadOffDetection.setText("Lead-Off Detection"+"\n (No detec.)");
+        	
+        	// Lead Off Current
+        	buttonLeadOffCurrent.setEnabled(true);
+        	int leadOffCurrent = mService.getExGLeadOffCurrent(mBluetoothAddress);
+        	if(leadOffCurrent!=-1)
+        		buttonLeadOffCurrent.setText("Lead-Off Current"+"\n ("+Configuration.Shimmer3.ListOfExGLeadOffCurrent[leadOffCurrent]+")");
+        	else
+        		buttonLeadOffCurrent.setText("Lead-Off Current"+"\n (No current)");
+        	
+        	// Lead Off Comparator
+        	buttonLeadOffComparator.setEnabled(true);
+        	int leadOffComparator = mService.getExGLeadOffComparatorTreshold(mBluetoothAddress);
+        	if(leadOffComparator!=-1)
+        		buttonLeadOffComparator.setText("Lead-Off Comparator"+"\n ("+Configuration.Shimmer3.ListOfExGLeadOffComparator[leadOffComparator]+")");
+        	else
+        		buttonLeadOffComparator.setText("Lead-Off Comparator"+"\n (No comp.)");
     	}
     	else {
+        	buttonGsr.setVisibility(View.INVISIBLE);
     		cBoxInternalExpPower.setEnabled(false);
+        	cBox5VReg.setEnabled(true);
     		buttonPressureResolution.setEnabled(false);
     		buttonGyroRange.setEnabled(false);
     		cBoxLowPowerAccel.setEnabled(false);
     		cBoxLowPowerGyro.setEnabled(false);
     		String currentMagRange = "("+Configuration.Shimmer2.ListofMagRange[shimmer.getMagRange()]+")";
     		buttonMagRange.setText("Mag Range"+"\n"+currentMagRange);
+    		buttonReferenceElectrode.setEnabled(false);
+        	buttonLeadOffDetection.setEnabled(false);
+        	buttonLeadOffCurrent.setEnabled(false);
+        	buttonLeadOffComparator.setEnabled(false);
     	}
     	
   		//update the view
@@ -862,7 +916,7 @@ public class Activity_ShimmerConfig extends ListActivity {
  		exgChip2Array = shimmer.getExG2Register();
  		
  		chip1Item1.setText(""+exgChip1Array[0]);
- 		chip1Item2.setText(""+exgChip1Array[1]);
+ 		chip1Item2.setText(""+(int)exgChip1Array[1]);
  		chip1Item3.setText(""+exgChip1Array[2]);
  		chip1Item4.setText(""+exgChip1Array[3]);
  		chip1Item5.setText(""+exgChip1Array[4]);
@@ -1812,7 +1866,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 
 		@Override
 		public void onItemClick(AdapterView<?> arg0, View arg1, int clickIndex, long arg3) {
-			
+			// ECG-24
 			if(mService.getShimmerVersion(mBluetoothAddress)==ShimmerVerDetails.HW_ID.SHIMMER_3 && sensorNames[clickIndex].equals("ECG")){
 				int iDBMValue1 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG1"));
 				int iDBMValue3 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG2"));
@@ -1836,7 +1890,8 @@ public class Activity_ShimmerConfig extends ListActivity {
 				lvSensors.setItemChecked(clickIndex+5, false);// Test Signal 16Bit
 				if(lvSensors.isItemChecked(clickIndex))
 					mService.writeEXGSetting(mBluetoothAddress, 0);
-			} 
+			}
+			// ECG-16
 			else if(mService.getShimmerVersion(mBluetoothAddress)==ShimmerVerDetails.HW_ID.SHIMMER_3 && sensorNames[clickIndex].equals("ECG 16Bit")){
 					int iDBMValue1 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG1 16Bit"));
 					int iDBMValue3 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG2 16Bit"));
@@ -1861,6 +1916,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 					if(lvSensors.isItemChecked(clickIndex))
 						mService.writeEXGSetting(mBluetoothAddress, 0);
 			}
+			// EMG-24
 			else if(mService.getShimmerVersion(mBluetoothAddress)==ShimmerVerDetails.HW_ID.SHIMMER_3 && sensorNames[clickIndex].equals("EMG")){
 				int iDBMValue1 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG1"));
 				int iDBMValue3 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG2"));
@@ -1885,6 +1941,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 				if(lvSensors.isItemChecked(clickIndex))
 					mService.writeEXGSetting(mBluetoothAddress, 1);
 			}
+			// EMG-16
 			else if(mService.getShimmerVersion(mBluetoothAddress)==ShimmerVerDetails.HW_ID.SHIMMER_3 && sensorNames[clickIndex].equals("EMG 16Bit")){
 				int iDBMValue1 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG1 16Bit"));
 				int iDBMValue3 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG2 16Bit"));
@@ -1909,6 +1966,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 				if(lvSensors.isItemChecked(clickIndex))
 					mService.writeEXGSetting(mBluetoothAddress, 1);
 			}
+			// Test Signal-24
 			else if(mService.getShimmerVersion(mBluetoothAddress)==ShimmerVerDetails.HW_ID.SHIMMER_3 && sensorNames[clickIndex].equals("Test Signal")){
 				int iDBMValue1 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG1"));
 				int iDBMValue3 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG2"));
@@ -1933,6 +1991,7 @@ public class Activity_ShimmerConfig extends ListActivity {
 				if(lvSensors.isItemChecked(clickIndex))
 				mService.writeEXGSetting(mBluetoothAddress, 2);
 			}
+			// Test Signal-16
 			else if(mService.getShimmerVersion(mBluetoothAddress)==ShimmerVerDetails.HW_ID.SHIMMER_3 && sensorNames[clickIndex].equals("Test Signal 16Bit")){
 				int iDBMValue1 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG1 16Bit"));
 				int iDBMValue3 = Integer.parseInt(sensorBitmaptoName.inverse().get("EXG2 16Bit"));

@@ -361,7 +361,7 @@ public class Activity_Main extends FragmentActivity implements
 		@Override
 		public int getCount() {
 			// Show 3 total pages.
-			return 6;
+			return 7;
 		}
 
 		@Override
