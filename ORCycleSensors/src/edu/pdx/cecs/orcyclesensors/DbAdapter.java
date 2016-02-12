@@ -58,6 +58,8 @@
 
 package edu.pdx.cecs.orcyclesensors;
 
+import java.util.ArrayList;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -89,8 +91,9 @@ public class DbAdapter {
 	private static final int DATABASE_VERSION_HEART_RATE_TABLE = 3;
 	private static final int DATABASE_VERSION_BIKE_POWER_TABLE = 4;
 	private static final int DATABASE_VERSION_SHIMMER_VALUES_TABLE = 5;
+	private static final int DATABASE_VERSION_SHIMMER_EXG_VALUES_TABLE = 6;
 	
-	private static final int DATABASE_VERSION = DATABASE_VERSION_SHIMMER_VALUES_TABLE;
+	private static final int DATABASE_VERSION = DATABASE_VERSION_SHIMMER_EXG_VALUES_TABLE;
 
 	// Table names
 	private static final String DATABASE_NAME = "data";
@@ -99,6 +102,7 @@ public class DbAdapter {
 	private static final String DATA_TABLE_PAUSES = "pauses";
 	private static final String DATA_TABLE_SENSOR_VALUES = "sensor_values";
 	private static final String DATA_TABLE_SHIMMER_VALUES = "shimmer_values";
+	private static final String DATA_TABLE_SHIMMER_EXG_VALUES = "shimmer_exg_values";
 	private static final String DATA_TABLE_HEART_RATE = "heart_rate";
 	private static final String DATA_TABLE_BIKE_POWER = "bike_power";
 
@@ -157,6 +161,11 @@ public class DbAdapter {
 	public static final String K_SHIMMER_STD_0 = "ssd0";
 	public static final String K_SHIMMER_STD_1 = "ssd1";
 	public static final String K_SHIMMER_STD_2 = "ssd2";
+
+	// Shimmer EXG table columns
+	public static final String K_SHIMMER_EXG_TIME = "exg_time";
+	public static final String K_SHIMMER_EXG_SIGNAL = "exg_signal";
+	public static final String K_SHIMMER_EXG_VALUE = "exg_value";
 
 	// Heart rate table columns
 	public static final String K_HR_TIME = "time";
@@ -282,6 +291,14 @@ public class DbAdapter {
 			+ K_SHIMMER_STD_2  + " double, "
 			+ "PRIMARY KEY(" + K_SHIMMER_TIME + ", " + K_SHIMMER_ID + "));";
 
+	private static final String TABLE_CREATE_SHIMMER_EXG_VALUES = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_SHIMMER_EXG_VALUES + " ("
+			+ K_SHIMMER_TIME     + " double, "
+			+ K_SHIMMER_ID       + " text, "
+			+ K_SHIMMER_EXG_SIGNAL  + " text, "
+			+ K_SHIMMER_EXG_TIME  + " double, "
+			+ K_SHIMMER_EXG_VALUE  + " double, "
+			+ "PRIMARY KEY(" + K_SHIMMER_TIME + ", " + K_SHIMMER_ID + ", " + K_SHIMMER_EXG_SIGNAL + ", " + K_SHIMMER_EXG_TIME + "));";
+
 	private static final String TABLE_CREATE_HEART_RATE = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_HEART_RATE + " ("
 			+ K_HR_TIME           + " double, "
 			+ K_HR_NUM_SAMPLES    + " integer, "
@@ -331,6 +348,7 @@ public class DbAdapter {
 			db.execSQL(TABLE_CREATE_HEART_RATE);
 			db.execSQL(TABLE_CREATE_BIKE_POWER);
 			db.execSQL(TABLE_CREATE_SHIMMER_VALUES);
+			db.execSQL(TABLE_CREATE_SHIMMER_EXG_VALUES);
 		}
 
 		@Override
@@ -368,10 +386,20 @@ public class DbAdapter {
 				}
 			}
 
-			// Create table for holding sensor data
+			// Create table for holding shimmer sensor data
 			if (oldVersion < DATABASE_VERSION_SHIMMER_VALUES_TABLE) {
 				try {
 					db.execSQL(TABLE_CREATE_SHIMMER_VALUES);
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+			}
+
+			// Create table for holding Shimmer ExG data
+			if (oldVersion < DATABASE_VERSION_SHIMMER_EXG_VALUES_TABLE) {
+				try {
+					db.execSQL(TABLE_CREATE_SHIMMER_EXG_VALUES);
 				}
 				catch(Exception ex) {
 					Log.e(MODULE_TAG, ex.getMessage());
@@ -595,6 +623,28 @@ public class DbAdapter {
 
 		if (-1 == mDb.insert(DATA_TABLE_SHIMMER_VALUES, null, cv)) {
 			Log.e(MODULE_TAG, "Insert " + DATA_TABLE_SHIMMER_VALUES + ": failed");
+		}
+	}
+
+	public void addShimmerReadingExGData(double currentTime, String sensorId, String signalName, ArrayList<Double> timestamps, ArrayList<Double> signalReadings) {
+		
+		// Add the latest point
+		ContentValues cv = new ContentValues();
+		
+		int numItems = signalReadings.size() < timestamps.size() ? signalReadings.size() : timestamps.size();
+		
+		for (int i = 0; i < numItems; ++i) {
+			
+			cv.put(K_SHIMMER_TIME, currentTime);
+			cv.put(K_SHIMMER_ID, sensorId);
+			cv.put(K_SHIMMER_EXG_SIGNAL, signalName);
+			cv.put(K_SHIMMER_EXG_TIME, timestamps.get(i));
+			cv.put(K_SHIMMER_EXG_VALUE, signalReadings.get(i));
+
+			 if (-1 == mDb.insert(DATA_TABLE_SHIMMER_EXG_VALUES, null, cv)) {
+				Log.e(MODULE_TAG, "Insert " + DATA_TABLE_SHIMMER_EXG_VALUES + ": failed");
+			}
+			cv.clear();
 		}
 	}
 

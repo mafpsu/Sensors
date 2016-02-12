@@ -557,4 +557,23 @@ public class TripData {
 			}
 		}
 	}
+
+	public void addShimmerReadingExGData(double currentTime, String sensorId, String signalName, ArrayList<Double> timestamps, ArrayList<Double> signalReadings) {
+		
+		Log.i(MODULE_TAG, "Sensor(time:" + currentTime + ", name: " + sensorId + ", signalName: " + signalName + ")");
+		
+		if (null != signalReadings) {
+			mDb.open();
+			try {
+				mDb.addShimmerReadingExGData(currentTime, sensorId, signalName, timestamps, signalReadings);
+			}
+			catch (Exception ex) {
+				Log.e(MODULE_TAG, ex.getMessage());
+			}
+			finally {
+				mDb.close();
+			}
+		}
+	}
+
 }

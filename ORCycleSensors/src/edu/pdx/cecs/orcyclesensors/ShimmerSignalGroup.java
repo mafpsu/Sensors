@@ -243,4 +243,32 @@ public class ShimmerSignalGroup {
 		}
 		return signalGroup;
 	}
+
+ 	public static boolean isExgSignalName(String signalName) {
+		// We store ECG data into the database
+		if (signalName.equals(Shimmer3.ObjectClusterSensorName.ECG_LL_RA_24BIT) ||
+				signalName.equals(Shimmer3.ObjectClusterSensorName.ECG_LA_RA_24BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.EMG_CH1_24BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.EMG_CH2_24BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.EXG1_CH1_24BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.EXG1_CH2_24BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.EXG2_CH1_24BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.ECG_VX_RL_24BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.EXG2_CH2_24BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.ECG_LL_RA_16BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.ECG_LA_RA_16BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.EMG_CH1_16BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.EMG_CH2_16BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.EXG1_CH1_16BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.EXG1_CH2_16BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.EXG2_CH1_16BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.ECG_VX_RL_16BIT) ||
+			signalName.equals(Shimmer3.ObjectClusterSensorName.EXG2_CH2_16BIT)) {
+				return true;
+		}
+		return false;
+ 	}
+ 	
+ 	
+
 }

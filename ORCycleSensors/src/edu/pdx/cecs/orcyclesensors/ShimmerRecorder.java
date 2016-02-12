@@ -158,6 +158,7 @@ public class ShimmerRecorder {
 			state = State.RUNNING;
 	        shimmerVersion = mService.getShimmerVersion(bluetoothAddress);
 			Shimmer shimmer = mService.getShimmer(bluetoothAddress);
+			enabledSensors = shimmer.getListofEnabledSensors();
 			isEXGUsingDefaultECGConfiguration = shimmer.isEXGUsingDefaultECGConfiguration();
 			isEXGUsingDefaultEMGConfiguration = shimmer.isEXGUsingDefaultEMGConfiguration();
 			String filenameRoot = "Shimmer" + "(" + String.valueOf(bluetoothAddress) + ") " + String.valueOf(tripId) + " ";
@@ -169,17 +170,14 @@ public class ShimmerRecorder {
 			// Create arrays to hold sensor readings for each signal 
 			// of each enabled sensor (including timestamp)
 			for (String signalName: enabledSignals) {
-				//if (!signalName.equals("Timestamp")) {
-					signalReadings.put(signalName, new ArrayList<Double>());
-					signalNames.add(signalName);
-				//}
+				signalReadings.put(signalName, new ArrayList<Double>());
+				signalNames.add(signalName);
 			}
 			
 			// If flag is set, Create data files for writing the raw data
 			ShimmerSignalGroup signalGroup;
 			
 			if (recordRawData) {
-				enabledSensors = shimmer.getListofEnabledSensors();
 				for (String sensorName: enabledSensors) {
 					signalGroup = ShimmerSignalGroup.create(sensorName, shimmerVersion,
 							isEXGUsingDefaultECGConfiguration, isEXGUsingDefaultEMGConfiguration);
@@ -188,18 +186,23 @@ public class ShimmerRecorder {
 					rawDataFile.open(context);
 					sensorDataFiles.put(sensorName, rawDataFile);
 				}
-				
-				// Remove Timestamp from the group of signal to be recorded in the summary data file
+
+				// Create summary data file
 				if (signalReadings.size() > 0) {
+					
 					ArrayList<String> dataFileSignalNames = new ArrayList<String>(signalNames);
-					dataFileSignalNames.remove("Timestamp");
+					
+					// Remove Timestamp from the group of signals to be recorded in the summary data file
+					dataFileSignalNames.remove(Configuration.Shimmer3.ObjectClusterSensorName.TIMESTAMP);
 					String[] aDataFileSignalNames = dataFileSignalNames.toArray(new String[signalReadings.size() - 1]);
+					
+					// Create summary data file, and open it
 					summaryDataFile = new RawDataFile_Shimmer(filenameRoot + "Upload", tripId, dataDir, aDataFileSignalNames, shimmerVersion);
 					summaryDataFile.open(context);
 				}
 			}
 			
-			// tell the shimmer device to start sending data
+			// Tell the shimmer device to start sending data
 			mService.startStreaming(bluetoothAddress);
     	}
     	catch(Exception ex) {
@@ -223,7 +226,7 @@ public class ShimmerRecorder {
 		ArrayList<Double> signal0 = null;
 		ArrayList<Double> signal1 = null;
 		ArrayList<Double> signal2 = null;
-		ArrayList<Double> timestamps = null;
+		ArrayList<Double> timestamps = signalReadings.get(Configuration.Shimmer3.ObjectClusterSensorName.TIMESTAMP);
 
 		CalcReading result;
 		try {
@@ -232,23 +235,25 @@ public class ShimmerRecorder {
 				
 				signalReading = signalReadings.get(signalName);
 
-				// Timestamps are not averaged like other signal readings, but
-				// they are recorded in the raw data file
-				if (signalName.equalsIgnoreCase("Timestamp")) {
-					timestamps = signalReading;
-				}
-				else {
+				// Timestamps need not be averaged
+				if (!signalName.equalsIgnoreCase(Configuration.Shimmer3.ObjectClusterSensorName.TIMESTAMP)) {
 					if (null != (result = calculateResult(signalName, signalReading))) {
 						results.put(signalName, result);
+					}
+					// We store ExG data into the database
+					if ((ShimmerSignalGroup.isExgSignalName(signalName) && (null != timestamps))) {
+						tripData.addShimmerReadingExGData(currentTimeMillis, bluetoothAddress, signalName, timestamps, signalReading);
 					}
 				}
 			}
 
+			int sensorType;
+			
 			// Cycle thru enabled sensors
 			for (String sensorName: enabledSensors) {
 
 				// Again, timestamps are not averaged like other signal readings
-				if (sensorName.equals("Timestamp")) {
+				if (sensorName.equals(Configuration.Shimmer3.ObjectClusterSensorName.TIMESTAMP)) {
 					continue;
 				}
 
@@ -272,11 +277,12 @@ public class ShimmerRecorder {
 					}
 				}
 				
-				tripData.addShimmerReading(currentTimeMillis, bluetoothAddress,
-						ShimmerFormat.getSensorType(sensorName,
-								shimmerVersion,
-								isEXGUsingDefaultECGConfiguration,
-								isEXGUsingDefaultEMGConfiguration),
+				sensorType = ShimmerFormat.getSensorType(sensorName,
+						shimmerVersion,
+						isEXGUsingDefaultECGConfiguration,
+						isEXGUsingDefaultEMGConfiguration);
+				
+				tripData.addShimmerReading(currentTimeMillis, bluetoothAddress, sensorType,
 						numSamples, averageValues, standardDeviations);
 			}
 
@@ -286,25 +292,25 @@ public class ShimmerRecorder {
 				ShimmerSignalGroup signalGroup;
 				
 				for (String sensorName: enabledSensors) {
-					
-					// For now, we are not going to record the sensor's timestamp
-					//if (sensorName.equalsIgnoreCase("timestamp")) {
-					//	continue;
-					//}
-	
+
+					// get the data file for this sensor's data
 					if (null != (sensorDataFile = sensorDataFiles.get(sensorName))) {
+						
 						// Get the group of signals for the specified sensor
 						if (null != (signalGroup = ShimmerSignalGroup.create(sensorName, shimmerVersion,
 								isEXGUsingDefaultECGConfiguration, isEXGUsingDefaultEMGConfiguration))) {
-						
+
+							// If there is at least one sensor, get the first sensor's readings
 							if ((signalGroup.signalNames.length > 0) && (signalGroup.signalNames[0] != null)) {
 								
 								signal0 = signalReadings.get(signalGroup.signalNames[0]);
-								
+
+								// If there is at least two sensors, get the second sensor's readings
 								if ((signalGroup.signalNames.length > 1) && (signalGroup.signalNames[1] != null)) {
 									
 									signal1 = signalReadings.get(signalGroup.signalNames[1]);
 									
+									// If there is at least three sensors, get the third sensor's readings
 									if ((signalGroup.signalNames.length > 2) && (signalGroup.signalNames[2] != null)) {
 										
 										signal2 = signalReadings.get(signalGroup.signalNames[2]);
@@ -320,6 +326,7 @@ public class ShimmerRecorder {
 							else {
 								signal0 = null;
 							}
+							// Save the readings to the data file
 							sensorDataFile.write(currentTimeMillis, location, timestamps, signal0, signal1, signal2);
 						}
 					}
@@ -338,7 +345,7 @@ public class ShimmerRecorder {
 			reset();
 		}
 	}
-
+ 	
 	private CalcReading calculateResult(String signalName, ArrayList<Double> readings) {
 		double avg_readings;
 		double ssd_readings;
