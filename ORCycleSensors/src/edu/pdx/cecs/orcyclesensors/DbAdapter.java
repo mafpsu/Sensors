@@ -102,7 +102,8 @@ public class DbAdapter {
 	private static final String DATA_TABLE_PAUSES = "pauses";
 	private static final String DATA_TABLE_SENSOR_VALUES = "sensor_values";
 	private static final String DATA_TABLE_SHIMMER_VALUES = "shimmer_values";
-	private static final String DATA_TABLE_SHIMMER_EXG_VALUES = "shimmer_exg_values";
+	private static final String DATA_TABLE_SHIMMER_ECG_VALUES = "shimmer_ecg_values";
+	private static final String DATA_TABLE_SHIMMER_EMG_VALUES = "shimmer_emg_values";
 	private static final String DATA_TABLE_HEART_RATE = "heart_rate";
 	private static final String DATA_TABLE_BIKE_POWER = "bike_power";
 
@@ -162,10 +163,23 @@ public class DbAdapter {
 	public static final String K_SHIMMER_STD_1 = "ssd1";
 	public static final String K_SHIMMER_STD_2 = "ssd2";
 
-	// Shimmer EXG table columns
-	public static final String K_SHIMMER_EXG_TIME = "exg_time";
-	public static final String K_SHIMMER_EXG_SIGNAL = "exg_signal";
-	public static final String K_SHIMMER_EXG_VALUE = "exg_value";
+	// Shimmer ECG table columns
+	public static final String K_SHIMMER_ECG_ID = "ecg_id";
+	public static final String K_SHIMMER_ECG_COORD_TIME = "ecg_coord_time";
+	public static final String K_SHIMMER_ECG_SENSOR_ID = "ecg_sensor_id";
+	public static final String K_SHIMMER_ECG_TIMESTAMP = "ecg_timestamp";
+	public static final String K_SHIMMER_ECG_EXG1_CH1 = "ecg_exg1_ch1";
+	public static final String K_SHIMMER_ECG_EXG1_CH2 = "ecg_exg1_ch2";
+	public static final String K_SHIMMER_ECG_EXG2_CH1 = "ecg_exg2_ch1";
+	public static final String K_SHIMMER_ECG_EXG2_CH2 = "ecg_exg2_ch2";
+
+	// Shimmer EMG table columns
+	public static final String K_SHIMMER_EMG_ID = "emg_id";
+	public static final String K_SHIMMER_EMG_COORD_TIME = "emg_coord_time";
+	public static final String K_SHIMMER_EMG_SENSOR_ID = "emg_sensor_id";
+	public static final String K_SHIMMER_EMG_TIMESTAMP = "emg_timestamp";
+	public static final String K_SHIMMER_EMG_EXG1_CH1 = "emg_exg1_ch1";
+	public static final String K_SHIMMER_EMG_EXG1_CH2 = "emg_exg1_ch2";
 
 	// Heart rate table columns
 	public static final String K_HR_TIME = "time";
@@ -291,13 +305,25 @@ public class DbAdapter {
 			+ K_SHIMMER_STD_2  + " double, "
 			+ "PRIMARY KEY(" + K_SHIMMER_TIME + ", " + K_SHIMMER_ID + "));";
 
-	private static final String TABLE_CREATE_SHIMMER_EXG_VALUES = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_SHIMMER_EXG_VALUES + " ("
-			+ K_SHIMMER_TIME     + " double, "
-			+ K_SHIMMER_ID       + " text, "
-			+ K_SHIMMER_EXG_SIGNAL  + " text, "
-			+ K_SHIMMER_EXG_TIME  + " double, "
-			+ K_SHIMMER_EXG_VALUE  + " double, "
-			+ "PRIMARY KEY(" + K_SHIMMER_TIME + ", " + K_SHIMMER_ID + ", " + K_SHIMMER_EXG_SIGNAL + ", " + K_SHIMMER_EXG_TIME + "));";
+	private static final String TABLE_CREATE_SHIMMER_ECG_VALUES = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_SHIMMER_ECG_VALUES + " ("
+			+ K_SHIMMER_ECG_ID         + " integer, "
+			+ K_SHIMMER_ECG_COORD_TIME + " double, "
+			+ K_SHIMMER_ECG_SENSOR_ID  + " text, "
+			+ K_SHIMMER_ECG_TIMESTAMP  + " double, "
+			+ K_SHIMMER_ECG_EXG1_CH1   + " double, "
+			+ K_SHIMMER_ECG_EXG1_CH2   + " double, "
+			+ K_SHIMMER_ECG_EXG2_CH1   + " double, "
+			+ K_SHIMMER_ECG_EXG2_CH2   + " double, "
+			+ "PRIMARY KEY(" + K_SHIMMER_ECG_ID  + ", " + K_SHIMMER_ECG_COORD_TIME  + ", " + K_SHIMMER_ECG_SENSOR_ID  + ", " + K_SHIMMER_ECG_TIMESTAMP + "));";
+
+	private static final String TABLE_CREATE_SHIMMER_EMG_VALUES = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_SHIMMER_EMG_VALUES + " ("
+			+ K_SHIMMER_EMG_ID         + " integer, "
+			+ K_SHIMMER_EMG_COORD_TIME + " double, "
+			+ K_SHIMMER_EMG_SENSOR_ID  + " text, "
+			+ K_SHIMMER_EMG_TIMESTAMP  + " double, "
+			+ K_SHIMMER_EMG_EXG1_CH1   + " double, "
+			+ K_SHIMMER_EMG_EXG1_CH2   + " double, "
+			+ "PRIMARY KEY(" + K_SHIMMER_EMG_ID  + ", " + K_SHIMMER_EMG_COORD_TIME  + ", " + K_SHIMMER_EMG_SENSOR_ID  + ", " + K_SHIMMER_EMG_TIMESTAMP  + "));";
 
 	private static final String TABLE_CREATE_HEART_RATE = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_HEART_RATE + " ("
 			+ K_HR_TIME           + " double, "
@@ -348,7 +374,8 @@ public class DbAdapter {
 			db.execSQL(TABLE_CREATE_HEART_RATE);
 			db.execSQL(TABLE_CREATE_BIKE_POWER);
 			db.execSQL(TABLE_CREATE_SHIMMER_VALUES);
-			db.execSQL(TABLE_CREATE_SHIMMER_EXG_VALUES);
+			db.execSQL(TABLE_CREATE_SHIMMER_ECG_VALUES);
+			db.execSQL(TABLE_CREATE_SHIMMER_EMG_VALUES);
 		}
 
 		@Override
@@ -396,10 +423,16 @@ public class DbAdapter {
 				}
 			}
 
-			// Create table for holding Shimmer ExG data
+			// Create tables for holding Shimmer ECG and EMG data
 			if (oldVersion < DATABASE_VERSION_SHIMMER_EXG_VALUES_TABLE) {
 				try {
-					db.execSQL(TABLE_CREATE_SHIMMER_EXG_VALUES);
+					db.execSQL(TABLE_CREATE_SHIMMER_ECG_VALUES);
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+				try {
+					db.execSQL(TABLE_CREATE_SHIMMER_EMG_VALUES);
 				}
 				catch(Exception ex) {
 					Log.e(MODULE_TAG, ex.getMessage());
@@ -626,23 +659,72 @@ public class DbAdapter {
 		}
 	}
 
-	public void addShimmerReadingExGData(double currentTime, String sensorId, String signalName, ArrayList<Double> timestamps, ArrayList<Double> signalReadings) {
+	public void addShimmerReadingECGData(double currentTime, String sensorId,
+			ArrayList<Double> timestamps, 
+			ArrayList<Double> exg1Ch1Readings, 
+			ArrayList<Double> exg1Ch2Readings, 
+			ArrayList<Double> exg2Ch1Readings, 
+			ArrayList<Double> exg2Ch2Readings) {
+		
+		mDb.beginTransaction();
+		try {
+		
+			// Add the latest point
+			ContentValues cv = new ContentValues();
+			
+			int numItems = timestamps.size();
+			if (numItems > exg1Ch1Readings.size()) numItems = exg1Ch1Readings.size(); 
+			if (numItems > exg1Ch2Readings.size()) numItems = exg1Ch2Readings.size(); 
+			if (numItems > exg2Ch1Readings.size()) numItems = exg2Ch1Readings.size(); 
+			if (numItems > exg2Ch2Readings.size()) numItems = exg2Ch2Readings.size(); 
+			
+			for (int i = 0; i < numItems; ++i) {
+				
+				cv.put(K_SHIMMER_ECG_COORD_TIME, currentTime);
+				cv.put(K_SHIMMER_ECG_SENSOR_ID, sensorId);
+				cv.put(K_SHIMMER_ECG_TIMESTAMP, timestamps.get(i));
+				cv.put(K_SHIMMER_ECG_EXG1_CH1, exg1Ch1Readings.get(i));
+				cv.put(K_SHIMMER_ECG_EXG1_CH2, exg1Ch2Readings.get(i));
+				cv.put(K_SHIMMER_ECG_EXG2_CH1, exg2Ch1Readings.get(i));
+				cv.put(K_SHIMMER_ECG_EXG2_CH2, exg2Ch2Readings.get(i));
+	
+				if (-1 == mDb.insert(DATA_TABLE_SHIMMER_ECG_VALUES, null, cv)) {
+					Log.e(MODULE_TAG, "Insert " + DATA_TABLE_SHIMMER_ECG_VALUES + ": failed");
+				}
+				cv.clear();
+			}
+			mDb.setTransactionSuccessful();
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, "Insert " + DATA_TABLE_SHIMMER_ECG_VALUES + " failed: " + ex.getMessage());
+		}
+		finally {
+			mDb.endTransaction();
+		}
+	}
+
+	public void addShimmerReadingEMGData(double currentTime, String sensorId,
+		ArrayList<Double> timestamps, 
+		ArrayList<Double> emg1Ch1Readings, 
+		ArrayList<Double> emg1Ch2Readings) {
 		
 		// Add the latest point
 		ContentValues cv = new ContentValues();
 		
-		int numItems = signalReadings.size() < timestamps.size() ? signalReadings.size() : timestamps.size();
+		int numItems = timestamps.size();
+		if (numItems > emg1Ch1Readings.size()) numItems = emg1Ch1Readings.size(); 
+		if (numItems > emg1Ch2Readings.size()) numItems = emg1Ch2Readings.size(); 
 		
 		for (int i = 0; i < numItems; ++i) {
 			
-			cv.put(K_SHIMMER_TIME, currentTime);
-			cv.put(K_SHIMMER_ID, sensorId);
-			cv.put(K_SHIMMER_EXG_SIGNAL, signalName);
-			cv.put(K_SHIMMER_EXG_TIME, timestamps.get(i));
-			cv.put(K_SHIMMER_EXG_VALUE, signalReadings.get(i));
+			cv.put(K_SHIMMER_EMG_COORD_TIME, currentTime);
+			cv.put(K_SHIMMER_EMG_SENSOR_ID, sensorId);
+			cv.put(K_SHIMMER_EMG_TIMESTAMP, timestamps.get(i));
+			cv.put(K_SHIMMER_EMG_EXG1_CH1, emg1Ch1Readings.get(i));
+			cv.put(K_SHIMMER_EMG_EXG1_CH2, emg1Ch2Readings.get(i));
 
-			 if (-1 == mDb.insert(DATA_TABLE_SHIMMER_EXG_VALUES, null, cv)) {
-				Log.e(MODULE_TAG, "Insert " + DATA_TABLE_SHIMMER_EXG_VALUES + ": failed");
+			if (-1 == mDb.insert(DATA_TABLE_SHIMMER_EMG_VALUES, null, cv)) {
+				Log.e(MODULE_TAG, "Insert " + DATA_TABLE_SHIMMER_EMG_VALUES + ": failed");
 			}
 			cv.clear();
 		}

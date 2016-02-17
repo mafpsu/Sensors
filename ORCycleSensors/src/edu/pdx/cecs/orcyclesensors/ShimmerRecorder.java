@@ -52,7 +52,15 @@ public class ShimmerRecorder {
 	private List<String> enabledSensors = null;
 	private String[] enabledSignals = null;
     
-	HashMap<String, ArrayList<Double>> signalReadings = new HashMap<String, ArrayList<Double>>();
+	private HashMap<String, ArrayList<Double>> signalReadings = new HashMap<String, ArrayList<Double>>();
+	private ArrayList<Double> ecg1Ch1Readings = null;
+	private ArrayList<Double> ecg1Ch2Readings = null;
+	private ArrayList<Double> ecg2Ch1Readings = null;
+	private ArrayList<Double> ecg2Ch2Readings = null;
+	private ArrayList<Double> emg1Ch1Readings = null;
+	private ArrayList<Double> emg1Ch2Readings = null;
+	private boolean isEcgEnabled;
+	private boolean isEmgEnabled;
 	
     // ---------------------------------------------------------
 	
@@ -151,6 +159,8 @@ public class ShimmerRecorder {
 
 	synchronized private void init(Message msg) {
 		
+		ArrayList<Double> dataBuffer = null;
+		
     	if (state == State.RUNNING) 
     		return;
     	
@@ -167,22 +177,45 @@ public class ShimmerRecorder {
 			enabledSignals = shimmer.getListofEnabledSensorSignals();
 			ArrayList<String> signalNames = new ArrayList<String>(); 
 
+			isEcgEnabled = false;
+			isEmgEnabled = false;
 			// Create arrays to hold sensor readings for each signal 
 			// of each enabled sensor (including timestamp)
 			for (String signalName: enabledSignals) {
-				signalReadings.put(signalName, new ArrayList<Double>());
+				
+				dataBuffer = new ArrayList<Double>();
+				signalReadings.put(signalName, dataBuffer);
 				signalNames.add(signalName);
+				
+				// In order to improve performance, we keep references to ECG and EMG data buffers
+				if (signalName.equals(Shimmer3.ObjectClusterSensorName.ECG_LL_RA_24BIT))      { ecg1Ch1Readings = dataBuffer; isEcgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.ECG_LA_RA_24BIT)) { ecg1Ch2Readings = dataBuffer; isEcgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.EMG_CH1_24BIT))   { emg1Ch1Readings = dataBuffer; isEmgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.EMG_CH2_24BIT))   { emg1Ch2Readings = dataBuffer; isEmgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.EXG1_CH1_24BIT))  { ecg1Ch1Readings = dataBuffer; isEcgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.EXG1_CH2_24BIT))  { ecg1Ch2Readings = dataBuffer; isEcgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.EXG2_CH1_24BIT))  { ecg2Ch1Readings = dataBuffer; isEcgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.ECG_VX_RL_24BIT)) { ecg2Ch2Readings = dataBuffer; isEcgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.EXG2_CH2_24BIT))  { ecg2Ch2Readings = dataBuffer; isEcgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.ECG_LL_RA_16BIT)) { ecg1Ch1Readings = dataBuffer; isEcgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.ECG_LA_RA_16BIT)) { ecg1Ch2Readings = dataBuffer; isEcgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.EMG_CH1_16BIT))   { emg1Ch1Readings = dataBuffer; isEmgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.EMG_CH2_16BIT))   { emg1Ch2Readings = dataBuffer; isEmgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.EXG1_CH1_16BIT))  { ecg1Ch1Readings = dataBuffer; isEcgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.EXG1_CH2_16BIT))  { ecg1Ch2Readings = dataBuffer; isEcgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.EXG2_CH1_16BIT))  { ecg2Ch1Readings = dataBuffer; isEcgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.ECG_VX_RL_16BIT)) { ecg2Ch2Readings = dataBuffer; isEcgEnabled = true;}
+				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.EXG2_CH2_16BIT))  { ecg2Ch2Readings = dataBuffer; isEcgEnabled = true;}
 			}
 			
 			// If flag is set, Create data files for writing the raw data
-			ShimmerSignalGroup signalGroup;
+			String[] signalGroup;
 			
 			if (recordRawData) {
+				RawDataFile_ShimmerSensor rawDataFile;
 				for (String sensorName: enabledSensors) {
-					signalGroup = ShimmerSignalGroup.create(sensorName, shimmerVersion,
-							isEXGUsingDefaultECGConfiguration, isEXGUsingDefaultEMGConfiguration);
-					RawDataFile_ShimmerSensor rawDataFile = 
-							new RawDataFile_ShimmerSensor(filenameRoot + sensorName, tripId, dataDir, signalGroup.signalNames, shimmerVersion);
+					signalGroup = ShimmerSignalGroup.get(sensorName, shimmerVersion, isEXGUsingDefaultECGConfiguration, isEXGUsingDefaultEMGConfiguration);
+					rawDataFile = new RawDataFile_ShimmerSensor(filenameRoot + sensorName, tripId, dataDir, signalGroup, shimmerVersion);
 					rawDataFile.open(context);
 					sensorDataFiles.put(sensorName, rawDataFile);
 				}
@@ -230,24 +263,31 @@ public class ShimmerRecorder {
 
 		CalcReading result;
 		try {
-			// For each enabled signal extract the array containing the signal data
+			// For each enabled signal (except timestamp) Calculate averages and standard deviation
 			for (String signalName: enabledSignals) {
 				
 				signalReading = signalReadings.get(signalName);
 
 				// Timestamps need not be averaged
-				if (!signalName.equalsIgnoreCase(Configuration.Shimmer3.ObjectClusterSensorName.TIMESTAMP)) {
+				if (!signalName.equals(Configuration.Shimmer3.ObjectClusterSensorName.TIMESTAMP)) {
+					// Calculate averages and standard deviation
 					if (null != (result = calculateResult(signalName, signalReading))) {
 						results.put(signalName, result);
-					}
-					// We store ExG data into the database
-					if ((ShimmerSignalGroup.isExgSignalName(signalName) && (null != timestamps))) {
-						tripData.addShimmerReadingExGData(currentTimeMillis, bluetoothAddress, signalName, timestamps, signalReading);
 					}
 				}
 			}
 
+			if (isEcgEnabled) {
+				tripData.addShimmerReadingsECGData(currentTimeMillis, bluetoothAddress, timestamps, ecg1Ch1Readings,
+						ecg1Ch2Readings, ecg2Ch1Readings, ecg2Ch2Readings);
+			}
+			else if (isEmgEnabled) {
+				tripData.addShimmerReadingsEMGData(currentTimeMillis, bluetoothAddress, timestamps, emg1Ch1Readings,
+						emg1Ch2Readings);
+			}
+
 			int sensorType;
+			String[] signalGroup;
 			
 			// Cycle thru enabled sensors
 			for (String sensorName: enabledSensors) {
@@ -258,19 +298,19 @@ public class ShimmerRecorder {
 				}
 
 				// Get the readings for the group of signals specified
-				ShimmerSignalGroup signalGroup = ShimmerSignalGroup.create(sensorName, shimmerVersion,
+				signalGroup = ShimmerSignalGroup.get(sensorName, shimmerVersion,
 						isEXGUsingDefaultECGConfiguration, isEXGUsingDefaultEMGConfiguration);
 				// Get calculated values
-				double[] standardDeviations = new double[signalGroup.signalNames.length];
-				double[] averageValues = new double[signalGroup.signalNames.length];
+				double[] standardDeviations = new double[signalGroup.length];
+				double[] averageValues = new double[signalGroup.length];
 				int numSamples = 0;
 				
 				// Move results into arrays
-				for (int i = 0; i < signalGroup.signalNames.length; ++i) {
-					if (null != (result = results.get(signalGroup.signalNames[i]))) {
+				for (int i = 0; i < signalGroup.length; ++i) {
+					if (null != (result = results.get(signalGroup[i]))) {
 						averageValues[i] = result.avg;
 						standardDeviations[i] = result.std;
-						numSamples = result.size;
+						numSamples = result.numSamples;
 					}
 					else {
 						Log.i(MODULE_TAG, "Null sample: " + sensorName);
@@ -282,14 +322,12 @@ public class ShimmerRecorder {
 						isEXGUsingDefaultECGConfiguration,
 						isEXGUsingDefaultEMGConfiguration);
 				
-				tripData.addShimmerReading(currentTimeMillis, bluetoothAddress, sensorType,
+				tripData.addShimmerReadings(currentTimeMillis, bluetoothAddress, sensorType,
 						numSamples, averageValues, standardDeviations);
 			}
 
 			// Copy the readings to the sensor data file
 			if (recordRawData) {
-				
-				ShimmerSignalGroup signalGroup;
 				
 				for (String sensorName: enabledSensors) {
 
@@ -297,23 +335,23 @@ public class ShimmerRecorder {
 					if (null != (sensorDataFile = sensorDataFiles.get(sensorName))) {
 						
 						// Get the group of signals for the specified sensor
-						if (null != (signalGroup = ShimmerSignalGroup.create(sensorName, shimmerVersion,
+						if (null != (signalGroup = ShimmerSignalGroup.get(sensorName, shimmerVersion,
 								isEXGUsingDefaultECGConfiguration, isEXGUsingDefaultEMGConfiguration))) {
 
 							// If there is at least one sensor, get the first sensor's readings
-							if ((signalGroup.signalNames.length > 0) && (signalGroup.signalNames[0] != null)) {
+							if ((signalGroup.length > 0) && (signalGroup[0] != null)) {
 								
-								signal0 = signalReadings.get(signalGroup.signalNames[0]);
+								signal0 = signalReadings.get(signalGroup[0]);
 
 								// If there is at least two sensors, get the second sensor's readings
-								if ((signalGroup.signalNames.length > 1) && (signalGroup.signalNames[1] != null)) {
+								if ((signalGroup.length > 1) && (signalGroup[1] != null)) {
 									
-									signal1 = signalReadings.get(signalGroup.signalNames[1]);
+									signal1 = signalReadings.get(signalGroup[1]);
 									
 									// If there is at least three sensors, get the third sensor's readings
-									if ((signalGroup.signalNames.length > 2) && (signalGroup.signalNames[2] != null)) {
+									if ((signalGroup.length > 2) && (signalGroup[2] != null)) {
 										
-										signal2 = signalReadings.get(signalGroup.signalNames[2]);
+										signal2 = signalReadings.get(signalGroup[2]);
 									}
 									else {
 										signal2 = null;
@@ -501,13 +539,13 @@ public class ShimmerRecorder {
 
 	public class CalcReading {
 		public String signalName;
-		public int size;
+		public int numSamples;
 		public double avg;
 		public double std;
 		
 		public CalcReading(String signalName, int size, double avg, double std) {
 			this.signalName = signalName;
-			this.size = size;
+			this.numSamples = size;
 			this.avg = avg;
 			this.std = std;
 		}
