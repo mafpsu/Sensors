@@ -133,6 +133,18 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	public static final String TRIP_COORD_SHIMMER_STD_1 = "sh_s1";
 	public static final String TRIP_COORD_SHIMMER_STD_2 = "sh_s2";
 	
+	public static final String TRIP_COORD_SHIMMER_ECG = "sh_ecg";
+	public static final String TRIP_COORD_SHIMMER_ECG_EXG1_CH1 = "shc_11";
+	public static final String TRIP_COORD_SHIMMER_ECG_EXG1_CH2 = "shc_12";
+	public static final String TRIP_COORD_SHIMMER_ECG_EXG2_CH1 = "shc_21";
+	public static final String TRIP_COORD_SHIMMER_ECG_EXG2_CH2 = "shc_22";
+
+	public static final String TRIP_COORD_SHIMMER_EMG = "sh_emg";
+	public static final String TRIP_COORD_SHIMMER_EMG_EXG1_CH1 = "shm_11";
+	public static final String TRIP_COORD_SHIMMER_EMG_EXG1_CH2 = "shm_12";
+	public static final String TRIP_COORD_SHIMMER_EMG_EXG2_CH1 = "shm_21";
+	public static final String TRIP_COORD_SHIMMER_EMG_EXG2_CH2 = "shm_22";
+
 	public static final String TRIP_COORD_HR_SAMPLES = "hr_ns";
 	public static final String TRIP_COORD_HR_AVG_HEART_RATE = "hr_avg";
 	public static final String TRIP_COORD_HR_STD_HEART_RATE = "hr_ssd";
@@ -360,6 +372,8 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	 */
 	private JSONArray getJsonShimmerReadings(double coordTime) {
 		JSONArray jsonShimmerReadings = null;
+		JSONArray jsonECG = null;
+		JSONArray jsonEMG = null;
 		JSONObject jsonShimmerReading;
 		int numVals;
 		Cursor cursorSV = null;
@@ -416,7 +430,20 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 						break;
 					}
 	
+					if (null != (jsonECG = getJsonShimmerECGReadings(coordTime))) {
+						if (jsonECG.length() > 0) {
+							jsonShimmerReading.put(TRIP_COORD_SHIMMER_ECG, jsonECG);
+						}
+					}
+
+					if (null != (jsonEMG = getJsonShimmerEMGReadings(coordTime))) {
+						if (jsonEMG.length() > 0) {
+							jsonShimmerReading.put(TRIP_COORD_SHIMMER_EMG, jsonEMG);
+						}
+					}
+
 					jsonShimmerReadings.put(jsonShimmerReading);
+
 					cursorSV.moveToNext();
 				}
 			}
@@ -432,6 +459,97 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		return jsonShimmerReadings;
 	}
 	
+	/**
+	 * Get all shimmer ECG readings corresponding to this time index
+	 * @return
+	 */
+	private JSONArray getJsonShimmerECGReadings(double coordTime) {
+		JSONArray jsonECGs = null;
+		JSONObject jsonECG;
+		Cursor cursorECG = null;
+		
+		try {
+			if (null != (cursorECG = mDb.fetchShimmerECGValues(coordTime))) {
+
+				// Get column indexes
+				final int EXG1_CH1 = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_EXG1_CH1);
+				final int EXG1_CH2 = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_EXG1_CH2);
+				final int EXG2_CH1 = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_EXG2_CH1);
+				final int EXG2_CH2 = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_EXG2_CH2);
+				
+				if ((EXG1_CH1 < 0) || (EXG1_CH2 < 0) || (EXG2_CH1 < 0) || (EXG2_CH2 < 0))
+					return null;
+	
+				// Collect shimmer readings into a json object
+				jsonECGs = new JSONArray();
+				
+				while (!cursorECG.isAfterLast()) {
+					
+					jsonECG = new JSONObject();
+					jsonECG.put(TRIP_COORD_SHIMMER_EMG_EXG1_CH1, cursorECG.getDouble(EXG1_CH1));
+					jsonECG.put(TRIP_COORD_SHIMMER_EMG_EXG1_CH2, cursorECG.getDouble(EXG1_CH2));
+					jsonECG.put(TRIP_COORD_SHIMMER_EMG_EXG2_CH1, cursorECG.getDouble(EXG2_CH1));
+					jsonECG.put(TRIP_COORD_SHIMMER_EMG_EXG2_CH2, cursorECG.getDouble(EXG2_CH2));
+
+					jsonECGs.put(jsonECG);
+
+					cursorECG.moveToNext();
+				}
+			}
+		}
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		finally {
+			if (null != cursorECG) {
+				cursorECG.close();
+			}
+		}
+		return jsonECGs;
+	}
+
+	/**
+	 * Get all shimmer ECG readings corresponding to this time index
+	 * @return
+	 */
+	private JSONArray getJsonShimmerEMGReadings(double coordTime) {
+		JSONArray jsonEMGs = null;
+		JSONObject jsonEMG;
+		Cursor cursorEMG = null;
+		
+		try {
+			if (null != (cursorEMG = mDb.fetchShimmerEMGValues(coordTime))) {
+
+				// Get column indexes
+				final int EXG1_CH1 = cursorEMG.getColumnIndex(DbAdapter.K_SHIMMER_EMG_EXG1_CH1);
+				final int EXG1_CH2 = cursorEMG.getColumnIndex(DbAdapter.K_SHIMMER_EMG_EXG1_CH2);
+	
+				// Collect shimmer readings into a json object
+				jsonEMGs = new JSONArray();
+				
+				while (!cursorEMG.isAfterLast()) {
+					
+					jsonEMG = new JSONObject();
+					jsonEMG.put(TRIP_COORD_SHIMMER_EMG_EXG1_CH1, cursorEMG.getDouble(EXG1_CH1));
+					jsonEMG.put(TRIP_COORD_SHIMMER_EMG_EXG1_CH2, cursorEMG.getDouble(EXG1_CH2));
+
+					jsonEMGs.put(jsonEMG);
+
+					cursorEMG.moveToNext();
+				}
+			}
+		}
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		finally {
+			if (null != cursorEMG) {
+				cursorEMG.close();
+			}
+		}
+		return jsonEMGs;
+	}
+		
 	/**
 	 * Returns the number of decimal places to round standard 
 	 * deviation to for the given shimmer sensor type

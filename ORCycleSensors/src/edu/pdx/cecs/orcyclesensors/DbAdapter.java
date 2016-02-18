@@ -172,7 +172,7 @@ public class DbAdapter {
 	public static final String K_SHIMMER_ECG_EXG1_CH2 = "ecg_exg1_ch2";
 	public static final String K_SHIMMER_ECG_EXG2_CH1 = "ecg_exg2_ch1";
 	public static final String K_SHIMMER_ECG_EXG2_CH2 = "ecg_exg2_ch2";
-
+	
 	// Shimmer EMG table columns
 	public static final String K_SHIMMER_EMG_ID = "emg_id";
 	public static final String K_SHIMMER_EMG_COORD_TIME = "emg_coord_time";
@@ -306,24 +306,22 @@ public class DbAdapter {
 			+ "PRIMARY KEY(" + K_SHIMMER_TIME + ", " + K_SHIMMER_ID + "));";
 
 	private static final String TABLE_CREATE_SHIMMER_ECG_VALUES = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_SHIMMER_ECG_VALUES + " ("
-			+ K_SHIMMER_ECG_ID         + " integer, "
+			+ K_SHIMMER_ECG_ID         + " integer primary key autoincrement, "
 			+ K_SHIMMER_ECG_COORD_TIME + " double, "
 			+ K_SHIMMER_ECG_SENSOR_ID  + " text, "
 			+ K_SHIMMER_ECG_TIMESTAMP  + " double, "
 			+ K_SHIMMER_ECG_EXG1_CH1   + " double, "
 			+ K_SHIMMER_ECG_EXG1_CH2   + " double, "
 			+ K_SHIMMER_ECG_EXG2_CH1   + " double, "
-			+ K_SHIMMER_ECG_EXG2_CH2   + " double, "
-			+ "PRIMARY KEY(" + K_SHIMMER_ECG_ID  + ", " + K_SHIMMER_ECG_COORD_TIME  + ", " + K_SHIMMER_ECG_SENSOR_ID  + ", " + K_SHIMMER_ECG_TIMESTAMP + "));";
+			+ K_SHIMMER_ECG_EXG2_CH2   + " double);";
 
 	private static final String TABLE_CREATE_SHIMMER_EMG_VALUES = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_SHIMMER_EMG_VALUES + " ("
-			+ K_SHIMMER_EMG_ID         + " integer, "
+			+ K_SHIMMER_EMG_ID         + " integer primary key autoincrement, "
 			+ K_SHIMMER_EMG_COORD_TIME + " double, "
 			+ K_SHIMMER_EMG_SENSOR_ID  + " text, "
 			+ K_SHIMMER_EMG_TIMESTAMP  + " double, "
 			+ K_SHIMMER_EMG_EXG1_CH1   + " double, "
-			+ K_SHIMMER_EMG_EXG1_CH2   + " double, "
-			+ "PRIMARY KEY(" + K_SHIMMER_EMG_ID  + ", " + K_SHIMMER_EMG_COORD_TIME  + ", " + K_SHIMMER_EMG_SENSOR_ID  + ", " + K_SHIMMER_EMG_TIMESTAMP  + "));";
+			+ K_SHIMMER_EMG_EXG1_CH2   + " double);";
 
 	private static final String TABLE_CREATE_HEART_RATE = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_HEART_RATE + " ("
 			+ K_HR_TIME           + " double, "
@@ -730,27 +728,92 @@ public class DbAdapter {
 		}
 	}
 
-	public Cursor fetchShimmerValues(double time) {
+	private final static String[] SHIMMER_SENSOR_COLUMNS = new String[] {
+			K_SHIMMER_ID, K_SHIMMER_TYPE, K_SHIMMER_SAMPLES, K_SHIMMER_NUM_VALS,
+			K_SHIMMER_AVG_0, K_SHIMMER_AVG_1, K_SHIMMER_AVG_2,
+			K_SHIMMER_STD_0, K_SHIMMER_STD_1, K_SHIMMER_STD_2};
+	
+	public Cursor fetchShimmerValues(double coordTime) {
+		
+		Cursor cursor = null;
 		
 		try {
-			String[] columns = new String[] {
-					K_SHIMMER_ID, K_SHIMMER_TYPE, K_SHIMMER_SAMPLES, K_SHIMMER_NUM_VALS,
-					K_SHIMMER_AVG_0, K_SHIMMER_AVG_1, K_SHIMMER_AVG_2,
-					K_SHIMMER_STD_0, K_SHIMMER_STD_1, K_SHIMMER_STD_2};
-			
-			Cursor cursor = mDb.query(true, DATA_TABLE_SHIMMER_VALUES, columns, 
-					K_SHIMMER_TIME + "=" + time,
+			cursor = mDb.query(true, DATA_TABLE_SHIMMER_VALUES, SHIMMER_SENSOR_COLUMNS, 
+					K_SHIMMER_TIME + "=" + coordTime,
 					null, null, null, null, null);
 
 			if (cursor != null) {
 				cursor.moveToFirst();
 			}
-			return cursor;
 		}
-		catch (Exception e) {
-			Log.e(MODULE_TAG, e.toString());
-			return null;
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.toString());
 		}
+		return cursor;
+	}
+
+	private static final String[] SHIMMER_ECG_COLUMNS = new String[] {
+		K_SHIMMER_ECG_ID, 
+		K_SHIMMER_ECG_TIMESTAMP, 
+		K_SHIMMER_ECG_EXG1_CH1, 
+		K_SHIMMER_ECG_EXG1_CH2, 
+		K_SHIMMER_ECG_EXG2_CH1,
+		K_SHIMMER_ECG_EXG2_CH2 };
+	
+	public Cursor fetchShimmerECGValues(double coordTime) {
+		
+		Cursor cursor = null;
+		
+		try {
+			cursor = mDb.query(
+					DATA_TABLE_SHIMMER_ECG_VALUES,				// Table 
+					SHIMMER_ECG_COLUMNS,						// Columns
+					K_SHIMMER_ECG_COORD_TIME + "=" + coordTime, // Selection
+					null,										// Selection args 
+					null,										// Group By
+					null,										// Having
+					K_SHIMMER_ECG_ID,							// Order by
+					null);										// Limit
+
+			if (cursor != null) {
+				cursor.moveToFirst();
+			}
+		}
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.toString());
+		}
+		return cursor;
+	}
+
+	private static final String[] SHIMMER_EMG_COLUMNS = new String[] {
+		K_SHIMMER_EMG_ID, 
+		K_SHIMMER_EMG_TIMESTAMP, 
+		K_SHIMMER_EMG_EXG1_CH1, 
+		K_SHIMMER_EMG_EXG1_CH2 };
+	
+	public Cursor fetchShimmerEMGValues(double coordTime) {
+		
+		Cursor cursor = null;
+		
+		try {
+			cursor = mDb.query(
+					DATA_TABLE_SHIMMER_EMG_VALUES,				// Table 
+					SHIMMER_EMG_COLUMNS,						// Columns
+					K_SHIMMER_EMG_COORD_TIME + "=" + coordTime,	// Selection
+					null,										// Selection args 
+					null,										// Group By
+					null,										// Having
+					K_SHIMMER_EMG_ID,							// Order by
+					null);										// Limit
+
+			if (cursor != null) {
+				cursor.moveToFirst();
+			}
+		}
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.toString());
+		}
+		return cursor;
 	}
 
 	// ************************************************************************
