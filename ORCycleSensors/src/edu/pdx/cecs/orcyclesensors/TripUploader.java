@@ -134,12 +134,14 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	public static final String TRIP_COORD_SHIMMER_STD_2 = "sh_s2";
 	
 	public static final String TRIP_COORD_SHIMMER_ECG = "sh_ecg";
+	public static final String TRIP_COORD_SHIMMER_ECG_TIMESTAMP = "shc_t";
 	public static final String TRIP_COORD_SHIMMER_ECG_EXG1_CH1 = "shc_11";
 	public static final String TRIP_COORD_SHIMMER_ECG_EXG1_CH2 = "shc_12";
 	public static final String TRIP_COORD_SHIMMER_ECG_EXG2_CH1 = "shc_21";
 	public static final String TRIP_COORD_SHIMMER_ECG_EXG2_CH2 = "shc_22";
 
 	public static final String TRIP_COORD_SHIMMER_EMG = "sh_emg";
+	public static final String TRIP_COORD_SHIMMER_EMG_TIMESTAMP = "shm_t";
 	public static final String TRIP_COORD_SHIMMER_EMG_EXG1_CH1 = "shm_11";
 	public static final String TRIP_COORD_SHIMMER_EMG_EXG1_CH2 = "shm_12";
 	public static final String TRIP_COORD_SHIMMER_EMG_EXG2_CH1 = "shm_21";
@@ -472,12 +474,13 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 			if (null != (cursorECG = mDb.fetchShimmerECGValues(coordTime))) {
 
 				// Get column indexes
-				final int EXG1_CH1 = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_EXG1_CH1);
-				final int EXG1_CH2 = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_EXG1_CH2);
-				final int EXG2_CH1 = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_EXG2_CH1);
-				final int EXG2_CH2 = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_EXG2_CH2);
+				final int colTimestamp = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_TIMESTAMP);
+				final int colExg1Ch1 = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_EXG1_CH1);
+				final int colExg1Ch2 = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_EXG1_CH2);
+				final int colExg2Ch1 = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_EXG2_CH1);
+				final int colExg2Ch2 = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_EXG2_CH2);
 				
-				if ((EXG1_CH1 < 0) || (EXG1_CH2 < 0) || (EXG2_CH1 < 0) || (EXG2_CH2 < 0))
+				if ((colExg1Ch1 < 0) || (colExg1Ch2 < 0) || (colExg2Ch1 < 0) || (colExg2Ch2 < 0))
 					return null;
 	
 				// Collect shimmer readings into a json object
@@ -486,11 +489,11 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 				while (!cursorECG.isAfterLast()) {
 					
 					jsonECG = new JSONObject();
-					jsonECG.put(TRIP_COORD_SHIMMER_EMG_EXG1_CH1, cursorECG.getDouble(EXG1_CH1));
-					jsonECG.put(TRIP_COORD_SHIMMER_EMG_EXG1_CH2, cursorECG.getDouble(EXG1_CH2));
-					jsonECG.put(TRIP_COORD_SHIMMER_EMG_EXG2_CH1, cursorECG.getDouble(EXG2_CH1));
-					jsonECG.put(TRIP_COORD_SHIMMER_EMG_EXG2_CH2, cursorECG.getDouble(EXG2_CH2));
-
+					jsonECG.put(TRIP_COORD_SHIMMER_ECG_TIMESTAMP, cursorECG.getDouble(colTimestamp));
+					jsonECG.put(TRIP_COORD_SHIMMER_ECG_EXG1_CH1, cursorECG.getDouble(colExg1Ch1));
+					jsonECG.put(TRIP_COORD_SHIMMER_ECG_EXG1_CH2, cursorECG.getDouble(colExg1Ch2));
+					jsonECG.put(TRIP_COORD_SHIMMER_ECG_EXG2_CH1, cursorECG.getDouble(colExg2Ch1));
+					jsonECG.put(TRIP_COORD_SHIMMER_ECG_EXG2_CH2, cursorECG.getDouble(colExg2Ch2));
 					jsonECGs.put(jsonECG);
 
 					cursorECG.moveToNext();
@@ -521,8 +524,9 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 			if (null != (cursorEMG = mDb.fetchShimmerEMGValues(coordTime))) {
 
 				// Get column indexes
-				final int EXG1_CH1 = cursorEMG.getColumnIndex(DbAdapter.K_SHIMMER_EMG_EXG1_CH1);
-				final int EXG1_CH2 = cursorEMG.getColumnIndex(DbAdapter.K_SHIMMER_EMG_EXG1_CH2);
+				final int colTimestamp = cursorEMG.getColumnIndex(DbAdapter.K_SHIMMER_EMG_TIMESTAMP);
+				final int colExg1Ch1 = cursorEMG.getColumnIndex(DbAdapter.K_SHIMMER_EMG_EXG1_CH1);
+				final int colExg1Ch2 = cursorEMG.getColumnIndex(DbAdapter.K_SHIMMER_EMG_EXG1_CH2);
 	
 				// Collect shimmer readings into a json object
 				jsonEMGs = new JSONArray();
@@ -530,9 +534,9 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 				while (!cursorEMG.isAfterLast()) {
 					
 					jsonEMG = new JSONObject();
-					jsonEMG.put(TRIP_COORD_SHIMMER_EMG_EXG1_CH1, cursorEMG.getDouble(EXG1_CH1));
-					jsonEMG.put(TRIP_COORD_SHIMMER_EMG_EXG1_CH2, cursorEMG.getDouble(EXG1_CH2));
-
+					jsonEMG.put(TRIP_COORD_SHIMMER_EMG_TIMESTAMP, cursorEMG.getDouble(colTimestamp));
+					jsonEMG.put(TRIP_COORD_SHIMMER_EMG_EXG1_CH1, cursorEMG.getDouble(colExg1Ch1));
+					jsonEMG.put(TRIP_COORD_SHIMMER_EMG_EXG1_CH2, cursorEMG.getDouble(colExg1Ch2));
 					jsonEMGs.put(jsonEMG);
 
 					cursorEMG.moveToNext();
