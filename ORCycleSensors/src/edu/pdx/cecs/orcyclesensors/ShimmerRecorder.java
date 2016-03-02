@@ -61,6 +61,8 @@ public class ShimmerRecorder {
 	private ArrayList<Double> emg1Ch2Readings = null;
 	private boolean isEcgEnabled;
 	private boolean isEmgEnabled;
+	private boolean configWrittenToDatabase = false;
+	private ShimmerConfig shimmerConfig = null;
 	
     // ---------------------------------------------------------
 	
@@ -101,6 +103,7 @@ public class ShimmerRecorder {
 		mService.setEnableLogging(true);
 		mService.connectShimmer(bluetoothAddress, "Device");
     	state = State.CONNECTING;
+    	configWrittenToDatabase = false;
 	}
 	
 	synchronized public void pause() {
@@ -168,6 +171,7 @@ public class ShimmerRecorder {
 			state = State.RUNNING;
 	        shimmerVersion = mService.getShimmerVersion(bluetoothAddress);
 			Shimmer shimmer = mService.getShimmer(bluetoothAddress);
+			shimmerConfig = new ShimmerConfig(shimmer, bluetoothAddress, shimmerVersion);
 			enabledSensors = shimmer.getListofEnabledSensors();
 			isEXGUsingDefaultECGConfiguration = shimmer.isEXGUsingDefaultECGConfiguration();
 			isEXGUsingDefaultEMGConfiguration = shimmer.isEXGUsingDefaultEMGConfiguration();
@@ -260,6 +264,11 @@ public class ShimmerRecorder {
 		ArrayList<Double> signal1 = null;
 		ArrayList<Double> signal2 = null;
 		ArrayList<Double> timestamps = signalReadings.get(Configuration.Shimmer3.ObjectClusterSensorName.TIMESTAMP);
+
+		if (!configWrittenToDatabase) {
+			tripData.updateTrip(shimmerConfig);
+			configWrittenToDatabase = true;
+		}
 
 		CalcReading result;
 		try {

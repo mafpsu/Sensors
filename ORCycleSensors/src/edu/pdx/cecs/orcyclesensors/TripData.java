@@ -528,6 +528,19 @@ public class TripData {
 		mDb.close();
 	}
 
+	public void updateTrip(ShimmerConfig shimmerConfig) {
+		mDb.open();
+		try {
+			mDb.updateTrip(tripid, shimmerConfig);
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		finally {
+			mDb.close();
+		}
+	}
+	
 	public String getNoteComment() {
 		return noteComment;
 	}
