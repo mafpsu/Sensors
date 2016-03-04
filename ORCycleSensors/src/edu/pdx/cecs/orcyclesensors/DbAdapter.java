@@ -186,7 +186,7 @@ public class DbAdapter {
 	// Simmer Configuration table columns
 	public static final String K_SHIMMER_CONFIG_TRIP_ID = "sc_trip_id";
 	public static final String K_SHIMMER_CONFIG_BLUETOOTH_ID = "sc_bluetooth_id";
-	public static final String K_SHIMMER_CONFIG_SAMPLING_RATE = "sc_samplig_rate";
+	public static final String K_SHIMMER_CONFIG_SAMPLING_RATE = "sc_sampling_rate";
 	public static final String K_SHIMMER_CONFIG_ACCEL_RANGE = "sc_accel_range";
 	public static final String K_SHIMMER_CONFIG_GSR_RANGE = "sc_gsr_range";
 	public static final String K_SHIMMER_CONFIG_BATTERY_LIMIT = "sc_battery_limit";
@@ -1204,6 +1204,52 @@ public class DbAdapter {
 		}
 	}
 
+	/**
+	 * Return a Cursor positioned at the shimmer config that matches the given rowId
+	 *
+	 * @param tripId
+	 *            id of trip to retrieve
+	 * @return Cursor positioned to matching trip, if found
+	 */
+	public Cursor fetchShimmerConfigs(long tripId) {
+
+		Cursor cursor = null;
+		final String[] columns = new String[] { 
+				K_SHIMMER_CONFIG_BLUETOOTH_ID, 
+				K_SHIMMER_CONFIG_SAMPLING_RATE, 
+				K_SHIMMER_CONFIG_ACCEL_RANGE, 
+				K_SHIMMER_CONFIG_GSR_RANGE, 
+				K_SHIMMER_CONFIG_BATTERY_LIMIT, 
+				K_SHIMMER_CONFIG_INT_EXP_POWER, 
+				K_SHIMMER_CONFIG_LOW_PWR_MAG, 
+				K_SHIMMER_CONFIG_LOW_PWR_ACCEL, 
+				K_SHIMMER_CONFIG_LOW_PWR_GYRO, 
+				K_SHIMMER_CONFIG_5V_REG, 
+				K_SHIMMER_CONFIG_GYRO_RANGE, 
+				K_SHIMMER_CONFIG_MAG_RANGE, 
+				K_SHIMMER_CONFIG_PRESSURE_RES, 
+				K_SHIMMER_CONFIG_REF_ELECTRODE, 
+				K_SHIMMER_CONFIG_LEAD_OFF_DETECTION, 
+				K_SHIMMER_CONFIG_LEAD_OFF_CURRENT, 
+				K_SHIMMER_CONFIG_LEAD_OFF_COMPARATOR, 
+				K_SHIMMER_CONFIG_EXG_GAIN, 
+				K_SHIMMER_CONFIG_EXG_RES };
+
+		try {
+			String whereClause = K_SHIMMER_CONFIG_TRIP_ID + "=" + tripId;
+	
+			if (null != (cursor = mDb.query(true, DATA_TABLE_SHIMMER_CONFIG, columns, whereClause, 
+					null, null, null, null, null))) {
+				cursor.moveToFirst();
+			}
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+
+		return cursor;
+	}
+	
 	// ************************************************************************
 	// *                       Pauses table methods
 	// ************************************************************************
@@ -1257,6 +1303,4 @@ public class DbAdapter {
 
 		return cursor;
 	}
-
-
 }
