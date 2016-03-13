@@ -528,6 +528,19 @@ public class TripData {
 		mDb.close();
 	}
 
+	public void updateTrip(ShimmerConfig shimmerConfig) {
+		mDb.open();
+		try {
+			mDb.updateTrip(tripid, shimmerConfig);
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		finally {
+			mDb.close();
+		}
+	}
+	
 	public String getNoteComment() {
 		return noteComment;
 	}
@@ -540,7 +553,7 @@ public class TripData {
 		return status;
 	}
 
-	public void addShimmerReading(double currentTime, String sensorId, int sensorType, int numSamples, double[] averageValues, double[] standardDeviations) {
+	public void addShimmerReadings(double currentTime, String sensorId, int sensorType, int numSamples, double[] averageValues, double[] standardDeviations) {
 		
 		Log.i(MODULE_TAG, "Sensor(time:" + currentTime + ", name: " + sensorId + ", type: " + sensorType + ", numSamples: " + numSamples + ")");
 		
@@ -555,6 +568,44 @@ public class TripData {
 			finally {
 				mDb.close();
 			}
+		}
+	}
+
+	public void addShimmerReadingsECGData(double currentTime, String sensorId,
+		ArrayList<Double> timestamps, 
+		ArrayList<Double> ecg1Ch1Readings, 
+		ArrayList<Double> ecg1Ch2Readings,
+		ArrayList<Double> ecg2Ch1Readings,
+		ArrayList<Double> ecg2Ch2Readings) {
+		
+		mDb.open();
+		try {
+			mDb.addShimmerReadingECGData(currentTime, sensorId, timestamps, ecg1Ch1Readings, 
+					ecg1Ch2Readings, ecg2Ch1Readings, ecg2Ch2Readings);
+		}
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		finally {
+			mDb.close();
+		}
+	}
+
+	public void addShimmerReadingsEMGData(double currentTime, String sensorId,
+		ArrayList<Double> timestamps,
+		ArrayList<Double> emg1Ch1Readings,
+		ArrayList<Double> emg1Ch2Readings) {
+		
+		mDb.open();
+		try {
+			mDb.addShimmerReadingEMGData(currentTime, sensorId, timestamps,  
+					emg1Ch1Readings, emg1Ch2Readings);
+		}
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		finally {
+			mDb.close();
 		}
 	}
 }

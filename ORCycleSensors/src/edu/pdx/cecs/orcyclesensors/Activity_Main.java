@@ -3,8 +3,10 @@ package edu.pdx.cecs.orcyclesensors;
 import java.util.Locale;
 
 import android.app.ActionBar;
+import android.app.Activity;
 import android.app.FragmentTransaction;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.Fragment;
@@ -38,7 +40,8 @@ public class Activity_Main extends FragmentActivity implements
 	private static final int FRAG_INDEX_EMOTIV = 5;
 	private static final int FRAG_INDEX_DATA_FILES = 6;
 
-	private int fragmentToShow = FRAG_INDEX_RECORD;
+	private int fragmentToShow = -1;
+	private static final String PREF_TAB_INDEX = "PREF_TAB_INDEX";
 
 	/**
 	 * The {@link ViewPager} that will host the section contents.
@@ -111,15 +114,20 @@ public class Activity_Main extends FragmentActivity implements
 
 		Intent intent;
 		Bundle bundle;
-		fragmentToShow = FRAG_INDEX_RECORD;
+
 		if (null != (intent = getIntent())) {
 			if (null != (bundle = intent.getExtras())) {
 				setFragmentToShow(bundle, Controller.EXTRA_SHOW_FRAGMENT_RECORD);
 			}
+			else if (intent.getAction().equals("android.intent.action.MAIN") && 
+					intent.hasCategory("android.intent.category.LAUNCHER")) {
+				saveTabIndex(FRAG_INDEX_RECORD);
+			} 
 		}
 	}
 	
 	private void setFragmentToShow(Bundle bundle, int defaultFragment) {
+		
 		switch(bundle.getInt(Controller.EXTRA_SHOW_FRAGMENT, Controller.EXTRA_SHOW_FRAGMENT_RECORD)) {
 
 		case Controller.EXTRA_SHOW_FRAGMENT_RECORD:
@@ -142,6 +150,10 @@ public class Activity_Main extends FragmentActivity implements
 			fragmentToShow = FRAG_INDEX_SHIMMERS;
 			break;
 		
+		case Controller.EXTRA_SHOW_FRAGMENT_EMOTIV:
+			fragmentToShow = FRAG_INDEX_EMOTIV;
+			break;
+		
 		case Controller.EXTRA_SHOW_FRAGMENT_DATA_FILES:
 			fragmentToShow = FRAG_INDEX_DATA_FILES;
 			break;
@@ -150,7 +162,7 @@ public class Activity_Main extends FragmentActivity implements
 			break;
 		}
 	}
-	
+
 	@Override
 	public void onResume() {
 		super.onResume();
@@ -158,6 +170,10 @@ public class Activity_Main extends FragmentActivity implements
 		Log.v(MODULE_TAG, "Cycle: TabsConfig onResume");
 
 		try {
+			if ((fragmentToShow = getTabState()) < 0) {
+				fragmentToShow = FRAG_INDEX_RECORD;
+			}
+
 			final ActionBar actionBar = getActionBar();
 			actionBar.selectTab(actionBar.getTabAt(fragmentToShow));
 			MyApplication.getInstance().ResumeNotification();
@@ -165,36 +181,6 @@ public class Activity_Main extends FragmentActivity implements
 		catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}
-	}
-
-	@Override
-	public void onSaveInstanceState(Bundle outState) {
-
-		Log.v(MODULE_TAG, "Cycle: TabsConfig onResume");
-
-		try {
-			outState.putInt(Controller.EXTRA_SHOW_FRAGMENT, tabIndex);
-		}
-		catch(Exception ex) {
-			Log.e(MODULE_TAG, ex.getMessage());
-		}
-		super.onSaveInstanceState(outState);
-	}
-
-	@Override
-	public void onRestoreInstanceState(Bundle outState) {
-
-		Log.v(MODULE_TAG, "Cycle: TabsConfig onRestoreInstanceState");
-
-		try {
-			if (null != outState) {
-				setFragmentToShow(outState, Controller.EXTRA_SHOW_FRAGMENT_UNDEFINED);
-			}
-		}
-		catch(Exception ex) {
-			Log.e(MODULE_TAG, ex.getMessage());
-		}
-		super.onSaveInstanceState(outState);
 	}
 
 	@Override
@@ -261,12 +247,35 @@ public class Activity_Main extends FragmentActivity implements
 				actionBar.setTitle(R.string.app_name);
 				break;
 			}
+			
+			saveTabIndex(tabIndex);
 		}
 		catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
 		}
 	}
 
+	/**
+	 * Save the current tab index to shared preferences
+	 * @param tabIndex
+	 */
+	private void saveTabIndex(int index) {
+		SharedPreferences prefs = getPreferences(Activity.MODE_PRIVATE);
+		SharedPreferences.Editor editor = prefs.edit();
+		editor.putInt(PREF_TAB_INDEX, index);
+		editor.apply();
+	}
+
+	/**
+	 * Save the current tab index to shared preferences
+	 * @param tabIndex
+	 */
+	private int getTabState() {
+		SharedPreferences prefs = getPreferences(Activity.MODE_PRIVATE);
+		return prefs.getInt(PREF_TAB_INDEX, -1);
+	}
+	
+	
 	@Override
 	public void onTabUnselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
 
@@ -352,7 +361,7 @@ public class Activity_Main extends FragmentActivity implements
 		@Override
 		public int getCount() {
 			// Show 3 total pages.
-			return 6;
+			return 7;
 		}
 
 		@Override

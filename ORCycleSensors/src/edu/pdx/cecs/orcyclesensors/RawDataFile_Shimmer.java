@@ -81,7 +81,7 @@ public class RawDataFile_Shimmer extends RawDataFile {
 				}
 				else {
 					row.append(COMMA);
-					row.append(calcReading.size);
+					row.append(calcReading.numSamples);
 					row.append(COMMA);
 					row.append(calcReading.avg);
 					row.append(COMMA);

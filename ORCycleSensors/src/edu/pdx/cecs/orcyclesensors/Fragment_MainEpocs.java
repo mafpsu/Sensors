@@ -431,7 +431,7 @@ public class Fragment_MainEpocs extends Fragment {
 				for (long index: indexes) {
 					try {
 						EpocDeviceInfo info = savedEpocsAdapter.getItem((int)index);
-						MyApplication.getInstance().deleteEpocDevice(info.getName());
+						MyApplication.getInstance().deleteEpocDevice(info.getAddress());
 					}
 					catch(Exception ex) {
 						Log.e(MODULE_TAG, ex.getMessage());

@@ -11,6 +11,7 @@ public class Controller {
 	public static final int EXTRA_SHOW_FRAGMENT_SENSORS = 3;
 	public static final int EXTRA_SHOW_FRAGMENT_SHIMMERS = 4;
 	public static final int EXTRA_SHOW_FRAGMENT_DATA_FILES = 5;
+	public static final int EXTRA_SHOW_FRAGMENT_EMOTIV = 6;
 
 	public static final String EXTRA_TRIP_ID = "EXTRA_TRIP_ID";
 	public static final int EXTRA_TRIP_ID_UNDEFINED = -1;

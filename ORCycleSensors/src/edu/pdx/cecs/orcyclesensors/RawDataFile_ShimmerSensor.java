@@ -33,13 +33,13 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 		
 		StringBuilder sbHeader = new StringBuilder();
 		
-		sbHeader.append("Time,Latitude,Longitude");
+		sbHeader.append("Time,Latitude,Longitude,Timestamp");
 		for (int i = 0; i < signalNames.length; ++i) {
 			sbHeader.append(COMMA);
 			sbHeader.append(signalNames[i]);
 		}
 		sbHeader.append(NEWLINE);
-		sbHeader.append(",,");
+		sbHeader.append(",,,mSecs");
 		for (int i = 0; i < signalNames.length; ++i) {
 			sbHeader.append(COMMA);
 			sbHeader.append(ShimmerFormat.getSignalUnits(signalNames[i], shimmerVersion));
@@ -62,7 +62,7 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 	 * @param location
 	 * @param readings
 	 */
-	public void write(long currentTimeMillis, Location location, 
+	public void write(long currentTimeMillis, Location location, ArrayList<Double> timestamps,
 			ArrayList<Double> readings0, ArrayList<Double> readings1, ArrayList<Double> readings2) {
 		
 		final StringBuilder row = new StringBuilder();
@@ -74,10 +74,14 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 		// Note: it is possible to not have an equal number of readings, so
 		// in order to include only complete rows of values
 		int maxNumReadings = 0;
+		int numTimestamps = 0;
 		int numReadings0 = 0;
 		int numReadings1 = 0;
 		int numReadings2 = 0;
 
+		if (null != timestamps) {
+			numTimestamps = timestamps.size();
+		}
 		if (null != readings0) {
 			numReadings0 = readings0.size();
 		}
@@ -87,22 +91,25 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 		if (null != readings2) {
 			numReadings2 = readings2.size();
 		}
+		if (numTimestamps > maxNumReadings) maxNumReadings = numTimestamps;
 		if (numReadings0 > maxNumReadings) maxNumReadings = numReadings0;
 		if (numReadings1 > maxNumReadings) maxNumReadings = numReadings1;
 		if (numReadings2 > maxNumReadings) maxNumReadings = numReadings2;
 		
 		long lat = (int) (location.getLatitude() * 1E6);
 		long lgt = (int) (location.getLongitude() * 1E6);
-		String timestamp = df.format(currentTimeMillis);
+		String currentTime = df.format(currentTimeMillis);
 
 		// Write the data to file
 		try {
 			if (maxNumReadings == 0) {
-				row.append(timestamp);
+				row.append(currentTime);
 				row.append(COMMA);
 				row.append(((double)lat) / 1E6);
 				row.append(COMMA);
 				row.append(((double)lgt) / 1E6);
+				row.append(COMMA);
+				row.append("null");
 				row.append(NEWLINE);
 				if (null != readings0) {
 					row.append(COMMA);
@@ -120,13 +127,21 @@ public class RawDataFile_ShimmerSensor extends RawDataFile {
 			}
 			else {
 				for (int i = 0; i < maxNumReadings; ++i) {
-					// Clear previous string output
-					row.append(timestamp);
+
+					row.append(currentTime);
 					row.append(COMMA);
 					row.append(((double)lat) / 1E6);
 					row.append(COMMA);
 					row.append(((double)lgt) / 1E6);
-					
+					row.append(COMMA);
+
+					if (null != timestamps) {
+						if (i < numTimestamps)
+							row.append(timestamps.get(i));
+						else
+							row.append("null");
+					}
+
 					if (null != readings0) {
 						row.append(COMMA);
 						if (i < numReadings0)

@@ -58,6 +58,8 @@
 
 package edu.pdx.cecs.orcyclesensors;
 
+import java.util.ArrayList;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -89,8 +91,10 @@ public class DbAdapter {
 	private static final int DATABASE_VERSION_HEART_RATE_TABLE = 3;
 	private static final int DATABASE_VERSION_BIKE_POWER_TABLE = 4;
 	private static final int DATABASE_VERSION_SHIMMER_VALUES_TABLE = 5;
+	private static final int DATABASE_VERSION_SHIMMER_EXG_VALUES_TABLE = 6;
+	private static final int DATABASE_VERSION_SHIMMER_CONFIG_TABLE = 7;
 	
-	private static final int DATABASE_VERSION = DATABASE_VERSION_SHIMMER_VALUES_TABLE;
+	private static final int DATABASE_VERSION = DATABASE_VERSION_SHIMMER_CONFIG_TABLE;
 
 	// Table names
 	private static final String DATABASE_NAME = "data";
@@ -99,6 +103,9 @@ public class DbAdapter {
 	private static final String DATA_TABLE_PAUSES = "pauses";
 	private static final String DATA_TABLE_SENSOR_VALUES = "sensor_values";
 	private static final String DATA_TABLE_SHIMMER_VALUES = "shimmer_values";
+	private static final String DATA_TABLE_SHIMMER_ECG_VALUES = "shimmer_ecg_values";
+	private static final String DATA_TABLE_SHIMMER_EMG_VALUES = "shimmer_emg_values";
+	private static final String DATA_TABLE_SHIMMER_CONFIG = "shimmer_config";
 	private static final String DATA_TABLE_HEART_RATE = "heart_rate";
 	private static final String DATA_TABLE_BIKE_POWER = "bike_power";
 
@@ -157,6 +164,46 @@ public class DbAdapter {
 	public static final String K_SHIMMER_STD_0 = "ssd0";
 	public static final String K_SHIMMER_STD_1 = "ssd1";
 	public static final String K_SHIMMER_STD_2 = "ssd2";
+
+	// Shimmer ECG table columns
+	public static final String K_SHIMMER_ECG_ID = "ecg_id";
+	public static final String K_SHIMMER_ECG_COORD_TIME = "ecg_coord_time";
+	public static final String K_SHIMMER_ECG_SENSOR_ID = "ecg_sensor_id";
+	public static final String K_SHIMMER_ECG_TIMESTAMP = "ecg_timestamp";
+	public static final String K_SHIMMER_ECG_EXG1_CH1 = "ecg_exg1_ch1";
+	public static final String K_SHIMMER_ECG_EXG1_CH2 = "ecg_exg1_ch2";
+	public static final String K_SHIMMER_ECG_EXG2_CH1 = "ecg_exg2_ch1";
+	public static final String K_SHIMMER_ECG_EXG2_CH2 = "ecg_exg2_ch2";
+	
+	// Shimmer EMG table columns
+	public static final String K_SHIMMER_EMG_ID = "emg_id";
+	public static final String K_SHIMMER_EMG_COORD_TIME = "emg_coord_time";
+	public static final String K_SHIMMER_EMG_SENSOR_ID = "emg_sensor_id";
+	public static final String K_SHIMMER_EMG_TIMESTAMP = "emg_timestamp";
+	public static final String K_SHIMMER_EMG_EXG1_CH1 = "emg_exg1_ch1";
+	public static final String K_SHIMMER_EMG_EXG1_CH2 = "emg_exg1_ch2";
+
+	// Simmer Configuration table columns
+	public static final String K_SHIMMER_CONFIG_TRIP_ID = "sc_trip_id";
+	public static final String K_SHIMMER_CONFIG_BLUETOOTH_ID = "sc_bluetooth_id";
+	public static final String K_SHIMMER_CONFIG_SAMPLING_RATE = "sc_sampling_rate";
+	public static final String K_SHIMMER_CONFIG_ACCEL_RANGE = "sc_accel_range";
+	public static final String K_SHIMMER_CONFIG_GSR_RANGE = "sc_gsr_range";
+	public static final String K_SHIMMER_CONFIG_BATTERY_LIMIT = "sc_battery_limit";
+	public static final String K_SHIMMER_CONFIG_INT_EXP_POWER = "sc_int_exp_power";
+	public static final String K_SHIMMER_CONFIG_LOW_PWR_MAG = "sc_low_pwr_mag";
+	public static final String K_SHIMMER_CONFIG_LOW_PWR_ACCEL = "sc_low_pwr_accel";
+	public static final String K_SHIMMER_CONFIG_LOW_PWR_GYRO = "sc_gyro";
+	public static final String K_SHIMMER_CONFIG_5V_REG = "sc_5v_reg";
+	public static final String K_SHIMMER_CONFIG_GYRO_RANGE = "sc_gyro_range";
+	public static final String K_SHIMMER_CONFIG_MAG_RANGE = "sc_mag_range";
+	public static final String K_SHIMMER_CONFIG_PRESSURE_RES = "sc_pressure_range";
+	public static final String K_SHIMMER_CONFIG_REF_ELECTRODE = "sc_ref_electrode";
+	public static final String K_SHIMMER_CONFIG_LEAD_OFF_DETECTION = "sc_lead_off_detection";
+	public static final String K_SHIMMER_CONFIG_LEAD_OFF_CURRENT = "sc_lead_off_current";
+	public static final String K_SHIMMER_CONFIG_LEAD_OFF_COMPARATOR = "sc_lead_off_comparator";
+	public static final String K_SHIMMER_CONFIG_EXG_GAIN = "sc_exg_gain";
+	public static final String K_SHIMMER_CONFIG_EXG_RES = "sc_exg_res";
 
 	// Heart rate table columns
 	public static final String K_HR_TIME = "time";
@@ -282,6 +329,46 @@ public class DbAdapter {
 			+ K_SHIMMER_STD_2  + " double, "
 			+ "PRIMARY KEY(" + K_SHIMMER_TIME + ", " + K_SHIMMER_ID + "));";
 
+	private static final String TABLE_CREATE_SHIMMER_ECG_VALUES = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_SHIMMER_ECG_VALUES + " ("
+			+ K_SHIMMER_ECG_ID         + " integer primary key autoincrement, "
+			+ K_SHIMMER_ECG_COORD_TIME + " double, "
+			+ K_SHIMMER_ECG_SENSOR_ID  + " text, "
+			+ K_SHIMMER_ECG_TIMESTAMP  + " double, "
+			+ K_SHIMMER_ECG_EXG1_CH1   + " double, "
+			+ K_SHIMMER_ECG_EXG1_CH2   + " double, "
+			+ K_SHIMMER_ECG_EXG2_CH1   + " double, "
+			+ K_SHIMMER_ECG_EXG2_CH2   + " double);";
+
+	private static final String TABLE_CREATE_SHIMMER_EMG_VALUES = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_SHIMMER_EMG_VALUES + " ("
+			+ K_SHIMMER_EMG_ID         + " integer primary key autoincrement, "
+			+ K_SHIMMER_EMG_COORD_TIME + " double, "
+			+ K_SHIMMER_EMG_SENSOR_ID  + " text, "
+			+ K_SHIMMER_EMG_TIMESTAMP  + " double, "
+			+ K_SHIMMER_EMG_EXG1_CH1   + " double, "
+			+ K_SHIMMER_EMG_EXG1_CH2   + " double);";
+
+	private static final String TABLE_CREATE_SHIMMER_CONFIG = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_SHIMMER_CONFIG + " ("
+			+ K_SHIMMER_CONFIG_TRIP_ID             + " integer primary key, "
+			+ K_SHIMMER_CONFIG_BLUETOOTH_ID        + " text, "
+			+ K_SHIMMER_CONFIG_SAMPLING_RATE       + " double, "
+			+ K_SHIMMER_CONFIG_ACCEL_RANGE         + " integer, "
+			+ K_SHIMMER_CONFIG_GSR_RANGE           + " integer, "
+			+ K_SHIMMER_CONFIG_BATTERY_LIMIT       + " double, "
+			+ K_SHIMMER_CONFIG_INT_EXP_POWER       + " integer, "
+			+ K_SHIMMER_CONFIG_LOW_PWR_MAG         + " integer, "
+			+ K_SHIMMER_CONFIG_LOW_PWR_ACCEL       + " integer, "
+			+ K_SHIMMER_CONFIG_LOW_PWR_GYRO        + " integer, "
+			+ K_SHIMMER_CONFIG_5V_REG              + " integer, "
+			+ K_SHIMMER_CONFIG_GYRO_RANGE          + " integer, "
+			+ K_SHIMMER_CONFIG_MAG_RANGE           + " integer, "
+			+ K_SHIMMER_CONFIG_PRESSURE_RES        + " integer, "
+			+ K_SHIMMER_CONFIG_REF_ELECTRODE       + " integer, "
+			+ K_SHIMMER_CONFIG_LEAD_OFF_DETECTION  + " integer, "
+			+ K_SHIMMER_CONFIG_LEAD_OFF_CURRENT    + " integer, "
+			+ K_SHIMMER_CONFIG_LEAD_OFF_COMPARATOR + " integer, "
+			+ K_SHIMMER_CONFIG_EXG_GAIN            + " integer, "
+			+ K_SHIMMER_CONFIG_EXG_RES             + " integer );";
+
 	private static final String TABLE_CREATE_HEART_RATE = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_HEART_RATE + " ("
 			+ K_HR_TIME           + " double, "
 			+ K_HR_NUM_SAMPLES    + " integer, "
@@ -331,6 +418,9 @@ public class DbAdapter {
 			db.execSQL(TABLE_CREATE_HEART_RATE);
 			db.execSQL(TABLE_CREATE_BIKE_POWER);
 			db.execSQL(TABLE_CREATE_SHIMMER_VALUES);
+			db.execSQL(TABLE_CREATE_SHIMMER_ECG_VALUES);
+			db.execSQL(TABLE_CREATE_SHIMMER_EMG_VALUES);
+			db.execSQL(TABLE_CREATE_SHIMMER_CONFIG);
 		}
 
 		@Override
@@ -368,10 +458,36 @@ public class DbAdapter {
 				}
 			}
 
-			// Create table for holding sensor data
+			// Create table for holding shimmer sensor data
 			if (oldVersion < DATABASE_VERSION_SHIMMER_VALUES_TABLE) {
 				try {
 					db.execSQL(TABLE_CREATE_SHIMMER_VALUES);
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+			}
+
+			// Create tables for holding Shimmer ECG and EMG data
+			if (oldVersion < DATABASE_VERSION_SHIMMER_EXG_VALUES_TABLE) {
+				try {
+					db.execSQL(TABLE_CREATE_SHIMMER_ECG_VALUES);
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+				try {
+					db.execSQL(TABLE_CREATE_SHIMMER_EMG_VALUES);
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+			}
+
+			// Create table for holding shimmer configuration data
+			if (oldVersion < DATABASE_VERSION_SHIMMER_CONFIG_TABLE) {
+				try {
+					db.execSQL(TABLE_CREATE_SHIMMER_CONFIG);
 				}
 				catch(Exception ex) {
 					Log.e(MODULE_TAG, ex.getMessage());
@@ -598,27 +714,165 @@ public class DbAdapter {
 		}
 	}
 
-	public Cursor fetchShimmerValues(double time) {
+	public void addShimmerReadingECGData(double currentTime, String sensorId,
+			ArrayList<Double> timestamps, 
+			ArrayList<Double> exg1Ch1Readings, 
+			ArrayList<Double> exg1Ch2Readings, 
+			ArrayList<Double> exg2Ch1Readings, 
+			ArrayList<Double> exg2Ch2Readings) {
+		
+		mDb.beginTransaction();
+		try {
+		
+			// Add the latest point
+			ContentValues cv = new ContentValues();
+			
+			int numItems = timestamps.size();
+			if (numItems > exg1Ch1Readings.size()) numItems = exg1Ch1Readings.size(); 
+			if (numItems > exg1Ch2Readings.size()) numItems = exg1Ch2Readings.size(); 
+			if (numItems > exg2Ch1Readings.size()) numItems = exg2Ch1Readings.size(); 
+			if (numItems > exg2Ch2Readings.size()) numItems = exg2Ch2Readings.size(); 
+			
+			for (int i = 0; i < numItems; ++i) {
+				
+				cv.put(K_SHIMMER_ECG_COORD_TIME, currentTime);
+				cv.put(K_SHIMMER_ECG_SENSOR_ID, sensorId);
+				cv.put(K_SHIMMER_ECG_TIMESTAMP, timestamps.get(i));
+				cv.put(K_SHIMMER_ECG_EXG1_CH1, exg1Ch1Readings.get(i));
+				cv.put(K_SHIMMER_ECG_EXG1_CH2, exg1Ch2Readings.get(i));
+				cv.put(K_SHIMMER_ECG_EXG2_CH1, exg2Ch1Readings.get(i));
+				cv.put(K_SHIMMER_ECG_EXG2_CH2, exg2Ch2Readings.get(i));
+	
+				if (-1 == mDb.insert(DATA_TABLE_SHIMMER_ECG_VALUES, null, cv)) {
+					Log.e(MODULE_TAG, "Insert " + DATA_TABLE_SHIMMER_ECG_VALUES + ": failed");
+				}
+				cv.clear();
+			}
+			mDb.setTransactionSuccessful();
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, "Insert " + DATA_TABLE_SHIMMER_ECG_VALUES + " failed: " + ex.getMessage());
+		}
+		finally {
+			mDb.endTransaction();
+		}
+	}
+
+	public void addShimmerReadingEMGData(double currentTime, String sensorId,
+		ArrayList<Double> timestamps, 
+		ArrayList<Double> emg1Ch1Readings, 
+		ArrayList<Double> emg1Ch2Readings) {
+		
+		// Add the latest point
+		ContentValues cv = new ContentValues();
+		
+		int numItems = timestamps.size();
+		if (numItems > emg1Ch1Readings.size()) numItems = emg1Ch1Readings.size(); 
+		if (numItems > emg1Ch2Readings.size()) numItems = emg1Ch2Readings.size(); 
+		
+		for (int i = 0; i < numItems; ++i) {
+			
+			cv.put(K_SHIMMER_EMG_COORD_TIME, currentTime);
+			cv.put(K_SHIMMER_EMG_SENSOR_ID, sensorId);
+			cv.put(K_SHIMMER_EMG_TIMESTAMP, timestamps.get(i));
+			cv.put(K_SHIMMER_EMG_EXG1_CH1, emg1Ch1Readings.get(i));
+			cv.put(K_SHIMMER_EMG_EXG1_CH2, emg1Ch2Readings.get(i));
+
+			if (-1 == mDb.insert(DATA_TABLE_SHIMMER_EMG_VALUES, null, cv)) {
+				Log.e(MODULE_TAG, "Insert " + DATA_TABLE_SHIMMER_EMG_VALUES + ": failed");
+			}
+			cv.clear();
+		}
+	}
+
+	private final static String[] SHIMMER_SENSOR_COLUMNS = new String[] {
+			K_SHIMMER_ID, K_SHIMMER_TYPE, K_SHIMMER_SAMPLES, K_SHIMMER_NUM_VALS,
+			K_SHIMMER_AVG_0, K_SHIMMER_AVG_1, K_SHIMMER_AVG_2,
+			K_SHIMMER_STD_0, K_SHIMMER_STD_1, K_SHIMMER_STD_2};
+	
+	public Cursor fetchShimmerValues(double coordTime) {
+		
+		Cursor cursor = null;
 		
 		try {
-			String[] columns = new String[] {
-					K_SHIMMER_ID, K_SHIMMER_TYPE, K_SHIMMER_SAMPLES, K_SHIMMER_NUM_VALS,
-					K_SHIMMER_AVG_0, K_SHIMMER_AVG_1, K_SHIMMER_AVG_2,
-					K_SHIMMER_STD_0, K_SHIMMER_STD_1, K_SHIMMER_STD_2};
-			
-			Cursor cursor = mDb.query(true, DATA_TABLE_SHIMMER_VALUES, columns, 
-					K_SHIMMER_TIME + "=" + time,
+			cursor = mDb.query(true, DATA_TABLE_SHIMMER_VALUES, SHIMMER_SENSOR_COLUMNS, 
+					K_SHIMMER_TIME + "=" + coordTime,
 					null, null, null, null, null);
 
 			if (cursor != null) {
 				cursor.moveToFirst();
 			}
-			return cursor;
 		}
-		catch (Exception e) {
-			Log.e(MODULE_TAG, e.toString());
-			return null;
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.toString());
 		}
+		return cursor;
+	}
+
+	private static final String[] SHIMMER_ECG_COLUMNS = new String[] {
+		K_SHIMMER_ECG_ID, 
+		K_SHIMMER_ECG_TIMESTAMP, 
+		K_SHIMMER_ECG_EXG1_CH1, 
+		K_SHIMMER_ECG_EXG1_CH2, 
+		K_SHIMMER_ECG_EXG2_CH1,
+		K_SHIMMER_ECG_EXG2_CH2 };
+	
+	public Cursor fetchShimmerECGValues(double coordTime) {
+		
+		Cursor cursor = null;
+		
+		try {
+			cursor = mDb.query(
+					DATA_TABLE_SHIMMER_ECG_VALUES,				// Table 
+					SHIMMER_ECG_COLUMNS,						// Columns
+					K_SHIMMER_ECG_COORD_TIME + "=" + coordTime, // Selection
+					null,										// Selection args 
+					null,										// Group By
+					null,										// Having
+					//K_SHIMMER_ECG_ID,							// Order by
+					null,										// Order by
+					null);										// Limit
+
+			if (cursor != null) {
+				cursor.moveToFirst();
+			}
+		}
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.toString());
+		}
+		return cursor;
+	}
+
+	private static final String[] SHIMMER_EMG_COLUMNS = new String[] {
+		K_SHIMMER_EMG_ID, 
+		K_SHIMMER_EMG_TIMESTAMP, 
+		K_SHIMMER_EMG_EXG1_CH1, 
+		K_SHIMMER_EMG_EXG1_CH2 };
+	
+	public Cursor fetchShimmerEMGValues(double coordTime) {
+		
+		Cursor cursor = null;
+		
+		try {
+			cursor = mDb.query(
+					DATA_TABLE_SHIMMER_EMG_VALUES,				// Table 
+					SHIMMER_EMG_COLUMNS,						// Columns
+					K_SHIMMER_EMG_COORD_TIME + "=" + coordTime,	// Selection
+					null,										// Selection args 
+					null,										// Group By
+					null,										// Having
+					//K_SHIMMER_EMG_ID,							// Order by
+					null,										// Order by
+					null);										// Limit
+
+			if (cursor != null) {
+				cursor.moveToFirst();
+			}
+		}
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.toString());
+		}
+		return cursor;
 	}
 
 	// ************************************************************************
@@ -915,6 +1169,87 @@ public class DbAdapter {
 		return numRows > 0;
 	}
 
+	public void updateTrip(long tripId, ShimmerConfig shimmerConfig) {
+
+		ContentValues row = new ContentValues();
+		
+		try {
+			row.put(K_SHIMMER_CONFIG_TRIP_ID, tripId);
+			row.put(K_SHIMMER_CONFIG_BLUETOOTH_ID, shimmerConfig.getBluetoothAddress());
+			row.put(K_SHIMMER_CONFIG_SAMPLING_RATE, shimmerConfig.getSamplingRate());
+			row.put(K_SHIMMER_CONFIG_ACCEL_RANGE, shimmerConfig.getAccelerometerRange());
+			row.put(K_SHIMMER_CONFIG_GSR_RANGE, shimmerConfig.getGSRRange());
+			row.put(K_SHIMMER_CONFIG_BATTERY_LIMIT, shimmerConfig.getBatteryLimit());
+			row.put(K_SHIMMER_CONFIG_INT_EXP_POWER, shimmerConfig.getInternalExpPower());
+			row.put(K_SHIMMER_CONFIG_LOW_PWR_MAG, shimmerConfig.isLowPowerMagEnabled());
+			row.put(K_SHIMMER_CONFIG_LOW_PWR_ACCEL, shimmerConfig.isLowPowerAccelEnabled());
+			row.put(K_SHIMMER_CONFIG_LOW_PWR_GYRO, shimmerConfig.isLowPowerGyroEnabled());
+			row.put(K_SHIMMER_CONFIG_5V_REG, shimmerConfig.get5VReg());
+			row.put(K_SHIMMER_CONFIG_GYRO_RANGE, shimmerConfig.getGyroRange());
+			row.put(K_SHIMMER_CONFIG_MAG_RANGE, shimmerConfig.getMagRange());
+			row.put(K_SHIMMER_CONFIG_PRESSURE_RES, shimmerConfig.getPressureResolution());
+			row.put(K_SHIMMER_CONFIG_REF_ELECTRODE, shimmerConfig.getReferenceElectrode());
+			row.put(K_SHIMMER_CONFIG_LEAD_OFF_DETECTION, shimmerConfig.getLeadOffDetection());
+			row.put(K_SHIMMER_CONFIG_LEAD_OFF_CURRENT, shimmerConfig.getLeadOffCurrent());
+			row.put(K_SHIMMER_CONFIG_LEAD_OFF_COMPARATOR, shimmerConfig.getLadOffComparator());
+			row.put(K_SHIMMER_CONFIG_EXG_GAIN, shimmerConfig.getExgGain());
+			row.put(K_SHIMMER_CONFIG_EXG_RES, shimmerConfig.getExgRes());
+
+			if (-1 == mDb.insert(DATA_TABLE_SHIMMER_CONFIG, null, row)) {
+				Log.e(MODULE_TAG, "failed to insert row into DATA_TABLE_SHIMMER_CONFIG");
+			}
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+	}
+
+	/**
+	 * Return a Cursor positioned at the shimmer config that matches the given rowId
+	 *
+	 * @param tripId
+	 *            id of trip to retrieve
+	 * @return Cursor positioned to matching trip, if found
+	 */
+	public Cursor fetchShimmerConfigs(long tripId) {
+
+		Cursor cursor = null;
+		final String[] columns = new String[] { 
+				K_SHIMMER_CONFIG_BLUETOOTH_ID, 
+				K_SHIMMER_CONFIG_SAMPLING_RATE, 
+				K_SHIMMER_CONFIG_ACCEL_RANGE, 
+				K_SHIMMER_CONFIG_GSR_RANGE, 
+				K_SHIMMER_CONFIG_BATTERY_LIMIT, 
+				K_SHIMMER_CONFIG_INT_EXP_POWER, 
+				K_SHIMMER_CONFIG_LOW_PWR_MAG, 
+				K_SHIMMER_CONFIG_LOW_PWR_ACCEL, 
+				K_SHIMMER_CONFIG_LOW_PWR_GYRO, 
+				K_SHIMMER_CONFIG_5V_REG, 
+				K_SHIMMER_CONFIG_GYRO_RANGE, 
+				K_SHIMMER_CONFIG_MAG_RANGE, 
+				K_SHIMMER_CONFIG_PRESSURE_RES, 
+				K_SHIMMER_CONFIG_REF_ELECTRODE, 
+				K_SHIMMER_CONFIG_LEAD_OFF_DETECTION, 
+				K_SHIMMER_CONFIG_LEAD_OFF_CURRENT, 
+				K_SHIMMER_CONFIG_LEAD_OFF_COMPARATOR, 
+				K_SHIMMER_CONFIG_EXG_GAIN, 
+				K_SHIMMER_CONFIG_EXG_RES };
+
+		try {
+			String whereClause = K_SHIMMER_CONFIG_TRIP_ID + "=" + tripId;
+	
+			if (null != (cursor = mDb.query(true, DATA_TABLE_SHIMMER_CONFIG, columns, whereClause, 
+					null, null, null, null, null))) {
+				cursor.moveToFirst();
+			}
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+
+		return cursor;
+	}
+	
 	// ************************************************************************
 	// *                       Pauses table methods
 	// ************************************************************************
@@ -968,5 +1303,4 @@ public class DbAdapter {
 
 		return cursor;
 	}
-
 }
