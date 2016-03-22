@@ -171,7 +171,6 @@ public class ShimmerRecorder {
 			state = State.RUNNING;
 	        shimmerVersion = mService.getShimmerVersion(bluetoothAddress);
 			Shimmer shimmer = mService.getShimmer(bluetoothAddress);
-			shimmerConfig = new ShimmerConfig(shimmer, bluetoothAddress, shimmerVersion);
 			enabledSensors = shimmer.getListofEnabledSensors();
 			isEXGUsingDefaultECGConfiguration = shimmer.isEXGUsingDefaultECGConfiguration();
 			isEXGUsingDefaultEMGConfiguration = shimmer.isEXGUsingDefaultEMGConfiguration();
@@ -212,6 +211,8 @@ public class ShimmerRecorder {
 				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.EXG2_CH2_16BIT))  { ecg2Ch2Readings = dataBuffer; isEcgEnabled = true;}
 			}
 			
+			shimmerConfig = new ShimmerConfig(shimmer, bluetoothAddress, shimmerVersion, isEcgEnabled, isEmgEnabled);
+
 			// If flag is set, Create data files for writing the raw data
 			String[] signalGroup;
 			

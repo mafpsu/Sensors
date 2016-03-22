@@ -216,6 +216,11 @@ public class RecordingService extends Service
 			long minTimeBetweenReadings,
 			boolean recordRawData, String dataFileDir) throws Exception {
 		
+		boolean hasSensorData = false;
+		boolean hasAntDeviceData = false;
+		boolean hasShimmerData = false;
+		boolean hasEpocData = false;
+
 		this.trip = trip;
 		this.pauseId = -1;
 		this.distanceMeters = 0.0f;
@@ -236,6 +241,7 @@ public class RecordingService extends Service
 				sensorRecorders.put(sensorItem.getName(), 
 						SensorRecorder.create(sensorItem.getName(), 
 								sensorItem.getType(), sensorItem.getRate(), recordRawData, trip.tripid, dataFileDir));
+				hasSensorData = true;
 			}
 		}
 
@@ -244,20 +250,26 @@ public class RecordingService extends Service
 			antDeviceRecorders.put(antDeviceInfo.getNumber(), 
 					AntDeviceRecorder.create(antDeviceInfo.getNumber(),
 							antDeviceInfo.getDeviceType(), recordRawData, trip.tripid, dataFileDir));
+			hasAntDeviceData = true;
 		}
 
 		// Create a recorder for each Shimmer device
 		for (ShimmerDeviceInfo shimmerDeviceInfo: this.shimmerDeviceInfos) {
 			shimmerRecorders.put(shimmerDeviceInfo.getAddress(), 
 					ShimmerRecorder.create(this, shimmerDeviceInfo.getAddress(), recordRawData, trip.tripid, dataFileDir));
+			hasShimmerData = true;
 		}
 
 		// Create a recorder for each Epoc device
 		for (EpocDeviceInfo epocDeviceInfo: this.epocDeviceInfos) {
 			epocRecorders.put(epocDeviceInfo.getAddress(), 
 					EpocRecorder.create(this, epocDeviceInfo.getAddress(), recordRawData, trip.tripid, dataFileDir));
+			hasEpocData = true;
 		}
 
+		trip.updateTrip(hasSensorData, hasAntDeviceData, hasShimmerData, hasEpocData);
+		
+		
 		// Start listening for GPS updates!
 		// registerLocationUpdates(minTimeBetweenReadings);
 

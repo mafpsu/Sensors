@@ -97,6 +97,10 @@ public class TripData {
 	private String fancystart;
 	private String purp;
 	private String noteComment;
+	private boolean hasSensorData;
+	private boolean hasAntDeviceData;
+	private boolean hasShimmerData;
+	private boolean hasEpocData;
 
 	private ArrayList<CyclePoint> gpspoints = new ArrayList<CyclePoint>();
 	CyclePoint startpoint, endpoint;
@@ -211,6 +215,10 @@ public class TripData {
 					fancystart = tripdetails.getString(tripdetails.getColumnIndex(DbAdapter.K_TRIP_FANCYSTART));
 					info = tripdetails.getString(tripdetails.getColumnIndex(DbAdapter.K_TRIP_FANCYINFO));
 					noteComment = tripdetails.getString(tripdetails.getColumnIndex(DbAdapter.K_TRIP_NOTE));
+					hasSensorData = tripdetails.getInt(tripdetails.getColumnIndex(DbAdapter.K_TRIP_HAS_SENSOR_DATA)) == 1 ? true : false;
+					hasAntDeviceData = tripdetails.getInt(tripdetails.getColumnIndex(DbAdapter.K_TRIP_HAS_ANT_DEVICE_DATA)) == 1 ? true : false;
+					hasShimmerData = tripdetails.getInt(tripdetails.getColumnIndex(DbAdapter.K_TRIP_HAS_SHIMMER_DATA)) == 1 ? true : false;
+					hasEpocData = tripdetails.getInt(tripdetails.getColumnIndex(DbAdapter.K_TRIP_HAS_EPOC_DATA)) == 1 ? true : false;
 				}
 				finally {
 					tripdetails.close();
@@ -227,8 +235,24 @@ public class TripData {
 			mDb.close();
 		}
 	}
+	
+	public boolean hasSensorData() {
+		return this.hasSensorData;
+	}
+	
+	public boolean hasAntDeviceData() {
+		return this.hasAntDeviceData;
+	}
+	
+	public boolean hasShimmerData() {
+		return this.hasShimmerData;
+	}
+	
+	public boolean hasEpocData() {
+		return this.hasEpocData;
+	}
 
-	void dropTrip() {
+	public void dropTrip() {
 		mDb.open();
 		mDb.deleteAllCoordsForTrip(tripid);
 		mDb.deletePauses(tripid);
@@ -532,6 +556,19 @@ public class TripData {
 		mDb.open();
 		try {
 			mDb.updateTrip(tripid, shimmerConfig);
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		finally {
+			mDb.close();
+		}
+	}
+	
+	public void updateTrip(boolean hasSensorData, boolean hasAntDeviceData, boolean hasShimmerData, boolean hasEpocData) {
+		mDb.open();
+		try {
+			mDb.updateTrip(tripid, hasSensorData, hasAntDeviceData, hasShimmerData, hasEpocData);
 		}
 		catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
