@@ -93,8 +93,9 @@ public class DbAdapter {
 	private static final int DATABASE_VERSION_SHIMMER_VALUES_TABLE = 5;
 	private static final int DATABASE_VERSION_SHIMMER_EXG_VALUES_TABLE = 6;
 	private static final int DATABASE_VERSION_SHIMMER_CONFIG_TABLE = 7;
+	private static final int DATABASE_VERSION_SHIMMER_EXG_INDEXES = 8;
 	
-	private static final int DATABASE_VERSION = DATABASE_VERSION_SHIMMER_CONFIG_TABLE;
+	private static final int DATABASE_VERSION = DATABASE_VERSION_SHIMMER_EXG_INDEXES;
 
 	// Table names
 	private static final String DATABASE_NAME = "data";
@@ -109,6 +110,11 @@ public class DbAdapter {
 	private static final String DATA_TABLE_HEART_RATE = "heart_rate";
 	private static final String DATA_TABLE_BIKE_POWER = "bike_power";
 
+	// Index names
+	private static final String INDEX_SHIMMER_ECG_VALUES = "index_shimmer_ecg_values";
+	private static final String INDEX_SHIMMER_EMG_VALUES = "index_shimmer_emg_values";
+
+	
 	// Trips table columns
 	public static final String K_TRIP_ROWID = "_id";
 	public static final String K_TRIP_PURP = "purp";
@@ -123,6 +129,10 @@ public class DbAdapter {
 	public static final String K_TRIP_LGTHI = "lgthi";
 	public static final String K_TRIP_LGTLO = "lgtlo";
 	public static final String K_TRIP_STATUS = "status";
+	public static final String K_TRIP_HAS_SENSOR_DATA = "has_sensor_data";
+	public static final String K_TRIP_HAS_ANT_DEVICE_DATA = "has_ant_device_data";
+	public static final String K_TRIP_HAS_SHIMMER_DATA = "has_shimmer_data";
+	public static final String K_TRIP_HAS_EPOC_DATA = "has_epoc_data";
 
 	// Coords table columns
 	public static final String K_POINT_ROWID = "_id";
@@ -204,6 +214,8 @@ public class DbAdapter {
 	public static final String K_SHIMMER_CONFIG_LEAD_OFF_COMPARATOR = "sc_lead_off_comparator";
 	public static final String K_SHIMMER_CONFIG_EXG_GAIN = "sc_exg_gain";
 	public static final String K_SHIMMER_CONFIG_EXG_RES = "sc_exg_res";
+	public static final String K_SHIMMER_CONFIG_HAS_ECG_DATA = "sc_has_ecg";
+	public static final String K_SHIMMER_CONFIG_HAS_EMG_DATA = "sc_has_emg";
 
 	// Heart rate table columns
 	public static final String K_HR_TIME = "time";
@@ -269,6 +281,8 @@ public class DbAdapter {
 
 	private static final String SQL_CREATE_TABLE_CMD = "create table";
 	
+	private static final String SQL_CREATE_INDEX_CMD = "create index";
+	
 	private static final String TABLE_CREATE_TRIPS = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_TRIPS + " ("
 			+ K_TRIP_ROWID      + " integer primary key autoincrement, "
 			+ K_TRIP_PURP       + " text, " 
@@ -282,6 +296,10 @@ public class DbAdapter {
 			+ K_TRIP_LATLO      + " integer, "
 			+ K_TRIP_LGTHI      + " integer, "
 			+ K_TRIP_LGTLO      + " integer, "
+			+ K_TRIP_HAS_SENSOR_DATA     + " integer, "
+			+ K_TRIP_HAS_ANT_DEVICE_DATA + " integer, "
+			+ K_TRIP_HAS_SHIMMER_DATA    + " integer, "
+			+ K_TRIP_HAS_EPOC_DATA       + " integer, "
 			+ K_TRIP_STATUS     + " integer);";
 
 	private static final String TABLE_CREATE_COORDS = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_COORDS + " ("
@@ -338,6 +356,9 @@ public class DbAdapter {
 			+ K_SHIMMER_ECG_EXG1_CH2   + " double, "
 			+ K_SHIMMER_ECG_EXG2_CH1   + " double, "
 			+ K_SHIMMER_ECG_EXG2_CH2   + " double);";
+	
+	private static final String INDEX_CREATE_SHIMMER_ECG_VALUES = SQL_CREATE_INDEX_CMD + " " + INDEX_SHIMMER_ECG_VALUES + " ON " +
+			DATA_TABLE_SHIMMER_ECG_VALUES + "(" + K_SHIMMER_ECG_COORD_TIME + ")";
 
 	private static final String TABLE_CREATE_SHIMMER_EMG_VALUES = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_SHIMMER_EMG_VALUES + " ("
 			+ K_SHIMMER_EMG_ID         + " integer primary key autoincrement, "
@@ -346,6 +367,9 @@ public class DbAdapter {
 			+ K_SHIMMER_EMG_TIMESTAMP  + " double, "
 			+ K_SHIMMER_EMG_EXG1_CH1   + " double, "
 			+ K_SHIMMER_EMG_EXG1_CH2   + " double);";
+
+	private static final String INDEX_CREATE_SHIMMER_EMG_VALUES = SQL_CREATE_INDEX_CMD + " " + INDEX_SHIMMER_EMG_VALUES + " ON " +
+			DATA_TABLE_SHIMMER_EMG_VALUES + "(" + K_SHIMMER_EMG_COORD_TIME + ")";
 
 	private static final String TABLE_CREATE_SHIMMER_CONFIG = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_SHIMMER_CONFIG + " ("
 			+ K_SHIMMER_CONFIG_TRIP_ID             + " integer primary key, "
@@ -367,7 +391,9 @@ public class DbAdapter {
 			+ K_SHIMMER_CONFIG_LEAD_OFF_CURRENT    + " integer, "
 			+ K_SHIMMER_CONFIG_LEAD_OFF_COMPARATOR + " integer, "
 			+ K_SHIMMER_CONFIG_EXG_GAIN            + " integer, "
-			+ K_SHIMMER_CONFIG_EXG_RES             + " integer );";
+			+ K_SHIMMER_CONFIG_EXG_RES             + " integer, "
+			+ K_SHIMMER_CONFIG_HAS_ECG_DATA        + " integer, "
+			+ K_SHIMMER_CONFIG_HAS_EMG_DATA        + " integer );";
 
 	private static final String TABLE_CREATE_HEART_RATE = SQL_CREATE_TABLE_CMD + " " + DATA_TABLE_HEART_RATE + " ("
 			+ K_HR_TIME           + " double, "
@@ -421,6 +447,8 @@ public class DbAdapter {
 			db.execSQL(TABLE_CREATE_SHIMMER_ECG_VALUES);
 			db.execSQL(TABLE_CREATE_SHIMMER_EMG_VALUES);
 			db.execSQL(TABLE_CREATE_SHIMMER_CONFIG);
+			db.execSQL(INDEX_CREATE_SHIMMER_ECG_VALUES);
+			db.execSQL(INDEX_CREATE_SHIMMER_EMG_VALUES);
 		}
 
 		@Override
@@ -493,6 +521,23 @@ public class DbAdapter {
 					Log.e(MODULE_TAG, ex.getMessage());
 				}
 			}
+
+			// Create index for Shimmer ECG and EMG data
+			if (oldVersion < DATABASE_VERSION_SHIMMER_EXG_INDEXES) {
+				try {
+					db.execSQL(INDEX_CREATE_SHIMMER_ECG_VALUES);
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+				try {
+					db.execSQL(INDEX_CREATE_SHIMMER_EMG_VALUES);
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+			}
+
 		}
 
 		@Override
@@ -993,6 +1038,10 @@ public class DbAdapter {
 		initialValues.put(K_TRIP_FANCYSTART, fancystart);
 		initialValues.put(K_TRIP_NOTE, note);
 		initialValues.put(K_TRIP_STATUS, TripData.STATUS_INCOMPLETE);
+		initialValues.put(K_TRIP_HAS_SENSOR_DATA, 0);
+		initialValues.put(K_TRIP_HAS_ANT_DEVICE_DATA, 0);
+		initialValues.put(K_TRIP_HAS_SHIMMER_DATA, 0);
+		initialValues.put(K_TRIP_HAS_EPOC_DATA, 0);
 
 		Long rowId = mDb.insert(DATA_TABLE_TRIPS, null, initialValues);
 
@@ -1087,7 +1136,31 @@ public class DbAdapter {
 				K_TRIP_ROWID, K_TRIP_PURP, K_TRIP_START, K_TRIP_FANCYSTART,
 				K_TRIP_NOTE, K_TRIP_LATHI, K_TRIP_LATLO, K_TRIP_LGTHI,
 				K_TRIP_LGTLO, K_TRIP_STATUS, K_TRIP_END, K_TRIP_FANCYINFO,
-				K_TRIP_DISTANCE },
+				K_TRIP_DISTANCE, K_TRIP_HAS_SENSOR_DATA, K_TRIP_HAS_ANT_DEVICE_DATA,
+				K_TRIP_HAS_SHIMMER_DATA, K_TRIP_HAS_EPOC_DATA },
+
+		K_TRIP_ROWID + "=" + rowId,
+
+		null, null, null, null, null);
+		if (mCursor != null) {
+			mCursor.moveToFirst();
+		}
+		return mCursor;
+	}
+
+	/**
+	 * Return a Cursor positioned at the trip that matches the given rowId
+	 *
+	 * @param rowId
+	 *            id of trip to retrieve
+	 * @return Cursor positioned to matching trip, if found
+	 * @throws SQLException
+	 *             if trip could not be found/retrieved
+	 */
+	public Cursor fetchTripDetails(long rowId) throws SQLException {
+		Cursor mCursor = mDb.query(true, DATA_TABLE_TRIPS, new String[] {
+				K_TRIP_HAS_SENSOR_DATA, K_TRIP_HAS_ANT_DEVICE_DATA,
+				K_TRIP_HAS_SHIMMER_DATA, K_TRIP_HAS_EPOC_DATA },
 
 		K_TRIP_ROWID + "=" + rowId,
 
@@ -1194,6 +1267,8 @@ public class DbAdapter {
 			row.put(K_SHIMMER_CONFIG_LEAD_OFF_COMPARATOR, shimmerConfig.getLadOffComparator());
 			row.put(K_SHIMMER_CONFIG_EXG_GAIN, shimmerConfig.getExgGain());
 			row.put(K_SHIMMER_CONFIG_EXG_RES, shimmerConfig.getExgRes());
+			row.put(K_SHIMMER_CONFIG_HAS_ECG_DATA, shimmerConfig.isEcgEnabled() ? 1 : 0);
+			row.put(K_SHIMMER_CONFIG_HAS_EMG_DATA, shimmerConfig.isEmgEnabled() ? 1 : 0);
 
 			if (-1 == mDb.insert(DATA_TABLE_SHIMMER_CONFIG, null, row)) {
 				Log.e(MODULE_TAG, "failed to insert row into DATA_TABLE_SHIMMER_CONFIG");
@@ -1201,6 +1276,20 @@ public class DbAdapter {
 		}
 		catch(Exception ex) {
 			Log.e(MODULE_TAG, ex.getMessage());
+		}
+	}
+
+	public void updateTrip(long tripId, boolean hasSensorData, boolean hasAntDeviceData, boolean hasShimmerData, boolean hasEpocData) {
+
+		ContentValues vals = new ContentValues();
+		
+		vals.put(K_TRIP_HAS_SENSOR_DATA,     hasSensorData    ? 1 : 0);
+		vals.put(K_TRIP_HAS_ANT_DEVICE_DATA, hasAntDeviceData ? 1 : 0);
+		vals.put(K_TRIP_HAS_SHIMMER_DATA,    hasShimmerData   ? 1 : 0);
+		vals.put(K_TRIP_HAS_EPOC_DATA,       hasEpocData      ? 1 : 0);
+
+		if (1 != mDb.update(DATA_TABLE_TRIPS, vals, K_TRIP_ROWID + "=" + tripId, null)) {
+			Log.e(MODULE_TAG, "failed to update row in DATA_TABLE_TRIPS");
 		}
 	}
 
@@ -1233,7 +1322,9 @@ public class DbAdapter {
 				K_SHIMMER_CONFIG_LEAD_OFF_CURRENT, 
 				K_SHIMMER_CONFIG_LEAD_OFF_COMPARATOR, 
 				K_SHIMMER_CONFIG_EXG_GAIN, 
-				K_SHIMMER_CONFIG_EXG_RES };
+				K_SHIMMER_CONFIG_EXG_RES,
+				K_SHIMMER_CONFIG_HAS_ECG_DATA,
+				K_SHIMMER_CONFIG_HAS_EMG_DATA };
 
 		try {
 			String whereClause = K_SHIMMER_CONFIG_TRIP_ID + "=" + tripId;

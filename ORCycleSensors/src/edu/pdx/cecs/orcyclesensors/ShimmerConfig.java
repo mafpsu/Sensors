@@ -6,7 +6,6 @@ import edu.pdx.cecs.orcyclesensors.shimmer.driver.ShimmerVerDetails;
 public class ShimmerConfig {
 
 	private final String bluetoothAddress;
-	private final int version;
 
 	private final double samplingRate;
 	private final int accelerometerRange;
@@ -26,10 +25,11 @@ public class ShimmerConfig {
 	private final int fiveVReg;
 	private final int exgGain;
 	private final int exgRes;
+	private final boolean isEcgEnabled;
+	private final boolean isEmgEnabled;
 	
-	public ShimmerConfig(Shimmer shimmer, String bluetoothAddress, int shimmerVersion) {
+	public ShimmerConfig(Shimmer shimmer, String bluetoothAddress, int shimmerVersion, boolean isEcgEnabled, boolean isEmgEnabled) {
 
-		this.version = shimmerVersion;
 		this.bluetoothAddress = bluetoothAddress;
 		this.samplingRate = shimmer.getSamplingRate();
 		this.accelerometerRange = shimmer.getAccelRange();
@@ -40,6 +40,8 @@ public class ShimmerConfig {
 		this.isLowPowerAccelEnabled = shimmer.isLowPowerAccelEnabled();
 		this.isLowPowerGyroEnabled = shimmer.isLowPowerGyroEnabled();
 		this.fiveVReg = shimmer.get5VReg();
+		this.isEcgEnabled = isEcgEnabled;
+		this.isEmgEnabled = isEmgEnabled;
 
     	// Shimmer version dependent
     	if (shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_3){
@@ -168,5 +170,13 @@ public class ShimmerConfig {
 
 	public int getExgRes() {
 		return this.exgRes;
+	}
+	
+	public boolean isEcgEnabled() {
+		return this.isEcgEnabled;
+	}
+	
+	public boolean isEmgEnabled() {
+		return this.isEmgEnabled;
 	}
 }
