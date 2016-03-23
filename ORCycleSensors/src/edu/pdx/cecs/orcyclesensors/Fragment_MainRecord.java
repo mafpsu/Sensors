@@ -70,13 +70,15 @@ public class Fragment_MainRecord extends Fragment implements
 	private TextView txtAvgSpeed = null;
 	private TextView txtWaitingDeviceConnect = null;
 	
+	private AlertDialog dlgFailedDeviceConnection = null;
+	
 	private Timer statusUpdateTimer;
 	
 	final Handler serviceConnectionHandler = new Handler();
 	private Timer serviceConnectionTimer;
 
 	final Handler deviceConnectionHandler = new Handler();
-	private Timer deviceConnectionTimer;
+	private Timer deviceConnect;
 
 	final Handler taskHandler = new Handler();
 	
@@ -290,7 +292,7 @@ public class Fragment_MainRecord extends Fragment implements
 
 		case RecordingService.STATE_DEVICE_CONNECT_FAILED:
 			setupButtons();
-			dialogFailedDeviceConnection();
+			showFailedDeviceConnectionDialog();
 			break;
 
 		default:
@@ -341,8 +343,8 @@ public class Fragment_MainRecord extends Fragment implements
 	 * Creates and schedules a timer to connect to the recording service.
 	 */
 	private void scheduleDeviceConnect() {
-		deviceConnectionTimer = new Timer();
-		deviceConnectionTimer.schedule(new TimerTask() {
+		deviceConnect = new Timer();
+		deviceConnect.schedule(new TimerTask() {
 			@Override
 			public void run() {
 				try {
@@ -425,7 +427,7 @@ public class Fragment_MainRecord extends Fragment implements
 					Log.v(MODULE_TAG, "doWaitDeviceConnection(): device timed-out!");
 
 					// The connection failed so cancel the timer
-					deviceConnectionTimer.cancel();
+					deviceConnect.cancel();
 					syncDisplayToRecordingState();
 				}
 				else if (IRecordService.STATE_RECORDING == state) {
@@ -433,7 +435,7 @@ public class Fragment_MainRecord extends Fragment implements
 					Log.v(MODULE_TAG, "doWaitDeviceConnection(): got connection!");
 
 					// We now have connection to the device so cancel the timer
-					deviceConnectionTimer.cancel();
+					deviceConnect.cancel();
 					syncDisplayToRecordingState();
 				}
 			}
@@ -756,22 +758,28 @@ public class Fragment_MainRecord extends Fragment implements
 	}
 
 	// *********************************************************************************
-	// *                            Dialog Faild
+	// *                         Connection Failed Dialog
 	// *********************************************************************************
 
 	/**
-	 * Build dialog telling user that the GPS is not available
+	 * Build dialog telling user that a device has failed to connect
 	 */
-	private void dialogFailedDeviceConnection() {
-		final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-		builder.setTitle(R.string.fmr_dnc_title);
-		builder.setMessage(R.string.fmr_dnc_message);
-		builder.setPositiveButton(R.string.fmr_dnc_button_ok, new DialogDeviceNotConnected());
-		final AlertDialog alert = builder.create();
-		alert.show();
+	private void showFailedDeviceConnectionDialog() {
+		
+		if (null == dlgFailedDeviceConnection) {
+			final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+			builder.setTitle(R.string.fmr_dnc_title);
+			builder.setMessage(R.string.fmr_dnc_message);
+			builder.setPositiveButton(R.string.fmr_dnc_button_ok, new FailedDeviceConnectionDialog_OkListener());
+			dlgFailedDeviceConnection = builder.create();
+			dlgFailedDeviceConnection.show();
+		}
 	}
 
-	private final class DialogDeviceNotConnected implements DialogInterface.OnClickListener {
+	/**
+	 * This class handles the dialogFailedDeviceConnection dialog's OK button event
+	 */
+	private final class FailedDeviceConnectionDialog_OkListener implements DialogInterface.OnClickListener {
 		public void onClick(final DialogInterface dialog, final int id) {
 			try {
 				dialog.cancel();
@@ -779,6 +787,9 @@ public class Fragment_MainRecord extends Fragment implements
 			}
 			catch(Exception ex) {
 				Log.e(MODULE_TAG, ex.getMessage());
+			}
+			finally {
+				dlgFailedDeviceConnection = null;
 			}
 		}
 	}
