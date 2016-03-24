@@ -675,17 +675,17 @@ public class RecordingService extends Service
 		ShimmerRecorder shimmerRecorder;
 		EpocRecorder epocRecorder;
 		boolean oneFailed = false;
-		boolean notAllConnected = false;
+		boolean connectDone = true;
 
 		// Check all Ant+ device recorders for state
 		for (Integer key : antDeviceRecorders.keySet()) {
 			antDeviceRecorder = antDeviceRecorders.get(key);
 			switch(antDeviceRecorder.getState()) {
 			case IDLE:
-				notAllConnected = true;
+				connectDone = false;
 				break;
 			case CONNECTING:
-				notAllConnected = true;
+				connectDone = false;
 				break;
 			case RUNNING:
 				break;
@@ -702,10 +702,10 @@ public class RecordingService extends Service
 			shimmerRecorder = shimmerRecorders.get(key);
 			switch(shimmerRecorder.getState()) {
 			case IDLE:
-				notAllConnected = true;
+				connectDone = false;
 				break;
 			case CONNECTING:
-				notAllConnected = true;
+				connectDone = false;
 				break;
 			case RUNNING:
 				break;
@@ -722,10 +722,10 @@ public class RecordingService extends Service
 			epocRecorder = epocRecorders.get(key);
 			switch(epocRecorder.getState()) {
 			case IDLE:
-				notAllConnected = true;
+				connectDone = false;
 				break;
 			case CONNECTING:
-				notAllConnected = true;
+				connectDone = false;
 				break;
 			case RUNNING:
 				break;
@@ -738,13 +738,14 @@ public class RecordingService extends Service
 		}
 		
 		// Summarize connect state
-		if (oneFailed) {
-			return DEVICES_STATE_ATLEAST_ONE_FAILED_CONNECT;
-		}
-		else if (notAllConnected) {
+		if (!connectDone) {
 			return DEVICES_STATE_NOT_ALL_CONNECTED;
 		}
+		else if (oneFailed) {
+			return DEVICES_STATE_ATLEAST_ONE_FAILED_CONNECT;
+		} 
 		else {
+			// Turn on speed monitor
 			speedMonitor.start();
 			// Start listening for GPS updates!
 			startLocationUpdates();

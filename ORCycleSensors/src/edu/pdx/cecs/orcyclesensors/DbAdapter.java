@@ -862,21 +862,23 @@ public class DbAdapter {
 		K_SHIMMER_ECG_EXG2_CH1,
 		K_SHIMMER_ECG_EXG2_CH2 };
 	
-	public Cursor fetchShimmerECGValues(double coordTime) {
+	public Cursor fetchShimmerECGValues(double coordTime, String ecgSensorId) {
 		
 		Cursor cursor = null;
+		String selection = K_SHIMMER_ECG_COORD_TIME + "=" + coordTime + " AND " +
+				K_SHIMMER_ECG_SENSOR_ID + "=\"" + ecgSensorId + "\"";
 		
 		try {
 			cursor = mDb.query(
-					DATA_TABLE_SHIMMER_ECG_VALUES,				// Table 
-					SHIMMER_ECG_COLUMNS,						// Columns
-					K_SHIMMER_ECG_COORD_TIME + "=" + coordTime, // Selection
-					null,										// Selection args 
-					null,										// Group By
-					null,										// Having
-					//K_SHIMMER_ECG_ID,							// Order by
-					null,										// Order by
-					null);										// Limit
+					DATA_TABLE_SHIMMER_ECG_VALUES,	// Table 
+					SHIMMER_ECG_COLUMNS,			// Columns
+					selection,					// Selection
+					null,							// Selection args 
+					null,							// Group By
+					null,							// Having
+					//K_SHIMMER_ECG_ID,				// Order by
+					null,							// Order by
+					null);							// Limit
 
 			if (cursor != null) {
 				cursor.moveToFirst();
