@@ -456,6 +456,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		Cursor cursorSV = null;
 		int shimmerType;
 		int sdp;
+		String ecgSensorId;
 		
 		try {
 			if (null != (cursorSV = mDb.fetchShimmerValues(coordTime))) {
@@ -481,7 +482,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 				while (!cursorSV.isAfterLast()) {
 					
 					jsonShimmerReading = new JSONObject();
-					jsonShimmerReading.put(TRIP_COORD_SHIMMER_ID,      cursorSV.getString(colShimmerId));
+					jsonShimmerReading.put(TRIP_COORD_SHIMMER_ID,      ecgSensorId = cursorSV.getString(colShimmerId));
 					jsonShimmerReading.put(TRIP_COORD_SHIMMER_TYPE,    (shimmerType = cursorSV.getInt(colShimmerType)));
 					jsonShimmerReading.put(TRIP_COORD_SHIMMER_SAMPLES, cursorSV.getInt(colShimmerSamples));
 					
@@ -511,7 +512,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 					}
 	
 					if (hasEcgData) {
-						if (null != (jsonECG = getJsonShimmerECGReadings(coordTime))) {
+						if (null != (jsonECG = getJsonShimmerECGReadings(coordTime, ecgSensorId))) {
 							if (jsonECG.length() > 0) {
 								jsonShimmerReading.put(TRIP_COORD_SHIMMER_ECG, jsonECG);
 							}
@@ -553,13 +554,13 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	 * Get all shimmer ECG readings corresponding to this time index
 	 * @return
 	 */
-	private JSONArray getJsonShimmerECGReadings(double coordTime) {
+	private JSONArray getJsonShimmerECGReadings(double coordTime, String ecgSensorId) {
 		JSONArray jsonECGs = null;
 		JSONObject jsonECG;
 		Cursor cursorECG = null;
 		
 		try {
-			if (null != (cursorECG = mDb.fetchShimmerECGValues(coordTime))) {
+			if (null != (cursorECG = mDb.fetchShimmerECGValues(coordTime, ecgSensorId))) {
 
 				if (!gotEcgColIndexes) {
 					// Get column indexes
@@ -1123,7 +1124,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 			JSONObject responseData = new JSONObject(responseString);
 			if (responseData.getString("status").equals("success")) {
 				mDb.open();
-				//mDb.updateTripStatus(currentTripId, TripData.STATUS_SENT);
+				mDb.updateTripStatus(currentTripId, TripData.STATUS_SENT);
 				mDb.close();
 				result = true;
 			}
