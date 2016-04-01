@@ -1007,15 +1007,12 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		}
 	}
 
-	private String getPostData(long tripId) throws JSONException {
+	private StringBuilder getPostData(long tripId) throws JSONException {
+		
 		
 		//PerformanceTimer.start();
 		JSONArray shimmerConfigs = getShimmerConfigsJSON(tripId);
 
-		//PerformanceTimer.mark();
-		JSONObject coords = getCoordsJSON(tripId);
-		//PerformanceTimer.check("getCoordsJSON(tripId)");
-		
 		JSONArray pauses = getPausesJSON(tripId);
 		String deviceId = userId;
 		Vector<String> tripData = getTripData(tripId);
@@ -1024,6 +1021,8 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		String startTime = tripData.get(2);
 
 		StringBuilder postdata = new StringBuilder();
+		postdata.ensureCapacity(16000000);
+		
 		postdata.append("purpose=");
 		postdata.append(purpose);
 		postdata.append("&tripid=");
@@ -1034,9 +1033,22 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		postdata.append("&coords=");
 
 		//PerformanceTimer.mark();
-		postdata.append(coords.toString());
-		//PerformanceTimer.check("coords.toString()");
+		//JSONObject coords = getCoordsJSON(tripId);
+		//PerformanceTimer.check("getCoordsJSON(tripId)");
+		
+		//String tmp1 = coords.toString();
+		
 
+		//StringBuilder sbTmp2 = new StringBuilder();
+		getCoordsSB(postdata, tripId);
+		//String tmp2 = sbTmp2.toString();
+		
+		//long length = tmp2.length();
+		
+		//PerformanceTimer.mark();
+		//postdata.append(tmp2);
+		//PerformanceTimer.check("coords.toString()");
+		
 		postdata.append("&pauses=");
 		postdata.append(pauses.toString());
 		postdata.append("&version=");
@@ -1049,9 +1061,222 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		postdata.append(shimmerConfigs);
 
 		//PerformanceTimer.mark();
-		return postdata.toString();
+		return postdata;
 	}
 
+	private void getCoordsSB(StringBuilder sbPostData, long tripId) throws JSONException {
+		
+		StringBuilder sbTripCoords = new StringBuilder();
+		sbTripCoords.ensureCapacity(0xffff);
+		sbTripCoords.append("{");
+
+		JSONObject jsonHeartRateDeviceReadings = null;
+		JSONObject jsonBikePowerDeviceReadings = null;
+		JSONArray jsonSensorReadings = null;
+		JSONArray jsonShimmerReadings = null;
+		double coordTime;
+		boolean firstAntDevice = true;
+		
+		mDb.openReadOnly();
+
+		// ******************************************************************************
+		// Get coordinate details
+		// ******************************************************************************
+
+		Cursor coordDetails = null;
+		hasSensorData = false;
+		hasAntDeviceData = false;
+		hasShimmerData = false;
+		hasEpocData = false;
+
+		try {
+			if (null != (coordDetails = mDb.fetchTripDetails(tripId))) {
+				if (coordDetails.getCount() > 0) {
+					try {
+						hasSensorData = coordDetails.getInt(coordDetails.getColumnIndex(DbAdapter.K_TRIP_HAS_SENSOR_DATA)) == 1 ? true : false;
+						hasAntDeviceData = coordDetails.getInt(coordDetails.getColumnIndex(DbAdapter.K_TRIP_HAS_ANT_DEVICE_DATA)) == 1 ? true : false;
+						hasShimmerData = coordDetails.getInt(coordDetails.getColumnIndex(DbAdapter.K_TRIP_HAS_SHIMMER_DATA)) == 1 ? true : false;
+						hasEpocData = coordDetails.getInt(coordDetails.getColumnIndex(DbAdapter.K_TRIP_HAS_EPOC_DATA)) == 1 ? true : false;
+					}
+					catch(Exception ex) {
+						Log.e(MODULE_TAG, ex.getMessage());
+					}
+				}
+				coordDetails.close();
+			}
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		
+		// ******************************************************************************
+		// Process coordinates
+		// ******************************************************************************
+		
+		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String fCoordTime;
+
+		try {
+			Cursor cursorTripCoords = mDb.fetchAllCoordsForTrip(tripId);
+	
+			if (!gotCoordsColIndexes) {
+				colCoordsTime  = cursorTripCoords.getColumnIndex(DbAdapter.K_POINT_TIME);
+				colCoordsLat   = cursorTripCoords.getColumnIndex(DbAdapter.K_POINT_LAT);
+				colCoordsLng   = cursorTripCoords.getColumnIndex(DbAdapter.K_POINT_LGT);
+				colCoordsAlt   = cursorTripCoords.getColumnIndex(DbAdapter.K_POINT_ALT);
+				colCoordsSpeed = cursorTripCoords.getColumnIndex(DbAdapter.K_POINT_SPEED);
+				colCoordsHAcc  = cursorTripCoords.getColumnIndex(DbAdapter.K_POINT_ACC);
+				colCoordsVAcc  = cursorTripCoords.getColumnIndex(DbAdapter.K_POINT_ACC);
+				gotCoordsColIndexes = true;
+			}
+			
+			// Build JSON objects for each coordinate:
+			
+			while (!cursorTripCoords.isAfterLast()) {
+
+				jsonSensorReadings = null;
+				jsonShimmerReadings = null;
+				jsonSensorReadings = null;
+				jsonSensorReadings = null;
+				
+				// *****************
+				// * Get coordinates
+				// *****************
+				
+				coordTime = cursorTripCoords.getDouble(colCoordsTime);
+				fCoordTime = df.format(coordTime);
+				
+				// 
+				sbTripCoords.append("\"");
+				sbTripCoords.append(fCoordTime);
+				sbTripCoords.append("\":");
+
+				// {"r":"2015-09-09 11:30:07",
+				sbTripCoords.append("{\"r\":\"");
+				sbTripCoords.append(fCoordTime);
+
+				// "l":45.644564
+				sbTripCoords.append("\",\"l\":");
+				sbTripCoords.append(cursorTripCoords.getDouble(colCoordsLat) / 1E6);
+				
+				// "n":-122.534299
+				sbTripCoords.append(",\"n\":");
+				sbTripCoords.append(cursorTripCoords.getDouble(colCoordsLng) / 1E6);
+				
+				// "a":42
+				sbTripCoords.append(",\"a\":");
+				sbTripCoords.append(cursorTripCoords.getDouble(colCoordsAlt));
+				
+				// "s":0
+				sbTripCoords.append(",\"s\":");
+				sbTripCoords.append(cursorTripCoords.getDouble(colCoordsSpeed));
+				
+				// "h":0
+				sbTripCoords.append(",\"h\":");
+				sbTripCoords.append((int) cursorTripCoords.getDouble(colCoordsHAcc));
+				
+				// "v":0
+				sbTripCoords.append(",\"v\":");
+				sbTripCoords.append((int) cursorTripCoords.getDouble(colCoordsVAcc));
+	
+				// **********************************************************
+				// * Get all sensor readings corresponding to this time index
+				// **********************************************************
+				
+				if (hasSensorData) {
+					jsonSensorReadings = getJsonSensorReadings(coordTime);
+				}
+				
+				// insert sensor readings into coordinate jSON object
+				if ((null != jsonSensorReadings) && (jsonSensorReadings.length() > 0)) {
+					
+					// sbTripCoords.put(TRIP_COORDS_SENSOR_READINGS, jsonSensorReadings);
+					// ,"sr":[{ ... }]
+					
+					sbTripCoords.append(",\"sr\":");
+					sbTripCoords.append(jsonSensorReadings.toString());
+				}
+
+				// **********************************************************
+				// * Get all sensor readings corresponding to this time index
+				// **********************************************************
+				
+				if (hasShimmerData) {
+					jsonShimmerReadings = getJsonShimmerReadings(coordTime);
+				}
+				
+				// insert shimmer readings into coordinate jSON object
+				if ((null != jsonShimmerReadings) && (jsonShimmerReadings.length() > 0)) {
+					// sbTripCoords.put(TRIP_COORDS_SHIMMER_READINGS, jsonShimmerReadings);
+					// ,"shr":[{ ... }]
+					
+					sbTripCoords.append(",\"shr\":");
+					sbTripCoords.append(jsonShimmerReadings.toString());
+				}
+
+				if (hasAntDeviceData) {
+					
+					// *****************************************************************
+					// * Get heart rate device readings corresponding to this time index
+					// *****************************************************************
+						
+					jsonHeartRateDeviceReadings = getJsonHeartRateDeviceReadings(coordTime);
+					
+					// insert heart rate readings into coordinate jSON object
+					if ((null != jsonHeartRateDeviceReadings) && (jsonHeartRateDeviceReadings.length() > 0)) {
+						// sbTripCoords.put(TRIP_COORDS_ANT_DEVICE_PREFIX + DeviceType.HEARTRATE.getIntValue(), jsonHeartRateDeviceReadings);
+						// ,"ant_37":[{ ... }]
+						
+						sbTripCoords.append(",\"ant_");
+						sbTripCoords.append(DeviceType.HEARTRATE.getIntValue());
+						sbTripCoords.append("\":");
+						sbTripCoords.append(jsonHeartRateDeviceReadings.toString());
+					}
+	
+					// *****************************************************************
+					// * Get bike power device readings corresponding to this time index
+					// *****************************************************************
+						
+					jsonBikePowerDeviceReadings = getJsonBikePowerDeviceReadings(coordTime);
+					
+					// insert bike power readings into coordinate jSON object
+					if ((null != jsonBikePowerDeviceReadings) && (jsonBikePowerDeviceReadings.length() > 0)) {
+						// sbTripCoords.put(TRIP_COORDS_ANT_DEVICE_PREFIX + DeviceType.BIKE_POWER.getIntValue(), jsonBikePowerDeviceReadings);
+						// ,"ant_37":[{ ... }]
+						
+						sbTripCoords.append(",\"ant_");
+						sbTripCoords.append(DeviceType.BIKE_POWER.getIntValue());
+						sbTripCoords.append("\":");
+						sbTripCoords.append(jsonBikePowerDeviceReadings.toString());
+					}
+				}
+
+				// ****************************************************
+				// * Insert sensor readings into jSON coordinate object
+				// ****************************************************
+
+				sbTripCoords.append("}"); // end of point 
+
+				// move to next coordinate
+				if (cursorTripCoords.moveToNext()) {
+					sbTripCoords.append(","); // point to follow
+				}
+				else {
+					sbTripCoords.append("}"); // end of all points
+				}
+			}
+			cursorTripCoords.close();
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		finally {
+			mDb.close();
+			sbPostData.append(sbTripCoords);
+		}
+	}
+	
+	
 	private static String convertStreamToString(InputStream is) {
 		/*
 		 * To convert the InputStream to String we use the
@@ -1091,24 +1316,26 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 
 	boolean uploadOneTrip(long currentTripId) {
 		boolean result = false;
-
 		byte[] postBodyDataZipped;
-
-		String postBodyData;
+		StringBuilder postBodyData;
+		String responseString;
+		
+		// Assemble data to post
 		try {
 			postBodyData = getPostData(currentTripId);
-			PerformanceTimer.check("after getPostData(currentTripId)");
+			// PerformanceTimer.check("after getPostData(currentTripId)");
 		} catch (JSONException e) {
 			e.printStackTrace();
 			return result;
 		}
 
+		// Post data to server
 		HttpClient client = new DefaultHttpClient();
 		// TODO: Server URL
 		HttpPost postRequest = new HttpPost(POST_URL);
 
 		try {
-			postBodyDataZipped = compress(postBodyData);
+			postBodyDataZipped = compress(postBodyData.toString());
 			postBodyData = null;
 
 			postRequest.setHeader("Cycleatl-Protocol-Version", "3");
@@ -1119,25 +1346,48 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 			postBodyDataZipped = null;
 
 			HttpResponse response = client.execute(postRequest);
-			String responseString = convertStreamToString(response.getEntity().getContent());
+			responseString = convertStreamToString(response.getEntity().getContent());
 
-			JSONObject responseData = new JSONObject(responseString);
-			if (responseData.getString("status").equals("success")) {
-				mDb.open();
-				mDb.updateTripStatus(currentTripId, TripData.STATUS_SENT);
-				mDb.close();
-				result = true;
-			}
 		} catch (IllegalStateException e) {
 			e.printStackTrace();
 			return false;
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;
-		} catch (JSONException e) {
+		}
+		
+		// Process server response
+		JSONObject responseData;
+		try {
+			responseData = new JSONObject(responseString);
+		}
+		catch (JSONException e) {
 			e.printStackTrace();
 			return false;
 		}
+
+		try {
+			if ((null == responseData) || (!responseData.getString("status").equals("success"))) {
+				return false;
+			}
+			result = true;
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		
+		//mDb.open();
+		try {
+			//mDb.updateTripStatus(currentTripId, TripData.STATUS_SENT);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		finally {
+			//mDb.close();
+		}
+		
 		return result;
 	}
 
@@ -1158,15 +1408,17 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 
 		// Send all previously-completed trips
 		// that were not sent successfully.
-		Vector<Long> unsentTrips = getUnsentTrips(tripid[0]);
-		for (Long trip : unsentTrips) {
-			try {
-				result &= uploadOneTrip(trip);
-				Thread.sleep(250);
-			}
-			catch(Exception ex) {
-				Log.e(MODULE_TAG, ex.getMessage());
-				result = false;
+		Vector<Long> unsentTrips;
+		if (null != (unsentTrips = getUnsentTrips(tripid[0]))) {
+			for (Long trip : unsentTrips) {
+				try {
+					result &= uploadOneTrip(trip);
+					Thread.sleep(250);
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+					result = false;
+				}
 			}
 		}
 
@@ -1237,6 +1489,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 			}
 		} catch (Exception e) {
 			// Just don't toast if the view has gone out of context
+			Log.e(MODULE_TAG, e.getMessage());
 		}
 	}
 }
