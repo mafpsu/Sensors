@@ -200,7 +200,8 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	private int colCoordsSpeed;
 	private int colCoordsHAcc;
 	private int colCoordsVAcc;
-	
+
+	/*
 	private JSONObject getCoordsJSON(long tripId) throws JSONException {
 		
 		JSONObject jsonTripCoords = null;
@@ -359,7 +360,8 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		}
 		return jsonTripCoords;
 	}
-
+*/
+	
 	/**
 	 * Get all sensor readings corresponding to this time index
 	 * @return
@@ -443,6 +445,161 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	private int colShimmerStd1;
 	private int colShimmerStd2;
 	
+	/**
+	 * Get all shimmer sensor readings corresponding to this time index
+	 * @return
+	 */
+	private void addJsonShimmerReadings(StringBuilder jsonShimmerReadings, double coordTime) {
+		JSONArray jsonECG = null;
+		JSONArray jsonEMG = null;
+		
+		//StringBuilder jsonShimmerReading = new StringBuilder();
+		//jsonShimmerReading.ensureCapacity(4096);
+
+		int numVals;
+		Cursor cursorSV = null;
+		int shimmerType;
+		int sdp;
+		String ecgSensorId;
+		
+		try {
+			if (null != (cursorSV = mDb.fetchShimmerValues(coordTime))) {
+
+				// Construct a map between cursor column index
+				if (!gotShimmerColIndexes) {
+					colShimmerId      = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_ID);
+					colShimmerType    = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_TYPE);
+					colShimmerSamples = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_SAMPLES);
+					colShimmerNumVals = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_NUM_VALS);
+					colShimmerAvg0    = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_AVG_0);
+					colShimmerAvg1    = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_AVG_1);
+					colShimmerAvg2    = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_AVG_2);
+					colShimmerStd0    = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_STD_0);
+					colShimmerStd1    = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_STD_1);
+					colShimmerStd2    = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_STD_2);
+					gotShimmerColIndexes = true;
+				}
+	
+				jsonShimmerReadings.append(",\"shr\":[");
+
+				while (!cursorSV.isAfterLast()) {
+					
+					ecgSensorId = cursorSV.getString(colShimmerId);
+					shimmerType = cursorSV.getInt(colShimmerType);
+					
+					//jsonShimmerReading = new JSONObject();
+					//jsonShimmerReading.put(TRIP_COORD_SHIMMER_ID,      ecgSensorId);
+					//jsonShimmerReading.put(TRIP_COORD_SHIMMER_TYPE,    shimmerType);
+					//jsonShimmerReading.put(TRIP_COORD_SHIMMER_SAMPLES, cursorSV.getInt(colShimmerSamples));
+					
+					jsonShimmerReadings.append("{\"sh_id\":\"");
+					jsonShimmerReadings.append(ecgSensorId);
+					jsonShimmerReadings.append("\",\"sh_t\":");
+					jsonShimmerReadings.append(shimmerType);
+					jsonShimmerReadings.append(",\"sh_ns\":");
+					jsonShimmerReadings.append(cursorSV.getInt(colShimmerSamples));
+
+					numVals = cursorSV.getInt(colShimmerNumVals);
+					
+					sdp = getSDP(shimmerType);
+	
+					switch(numVals) {
+					case 1:
+						
+						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_0, cursorSV.getDouble(colShimmerAvg0));
+						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, MyMath.rnd(cursorSV.getDouble(colShimmerStd0), sdp));
+						
+						jsonShimmerReadings.append(",\"sh_a0\":");
+						jsonShimmerReadings.append(cursorSV.getDouble(colShimmerAvg0));
+						jsonShimmerReadings.append(",\"sh_s0\":");
+						jsonShimmerReadings.append(MyMath.rnd(cursorSV.getDouble(colShimmerStd0), sdp));
+						break;
+
+					case 2:
+					
+						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_0, cursorSV.getDouble(colShimmerAvg0));
+						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_1, cursorSV.getDouble(colShimmerAvg1));
+						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, MyMath.rnd(cursorSV.getDouble(colShimmerStd0), sdp));
+						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_1, MyMath.rnd(cursorSV.getDouble(colShimmerStd1), sdp));
+						
+						jsonShimmerReadings.append(",\"sh_a0\":");
+						jsonShimmerReadings.append(cursorSV.getDouble(colShimmerAvg0));
+						jsonShimmerReadings.append(",\"sh_a1\":");
+						jsonShimmerReadings.append(cursorSV.getDouble(colShimmerAvg1));
+						
+						jsonShimmerReadings.append(",\"sh_s0\":");
+						jsonShimmerReadings.append(MyMath.rnd(cursorSV.getDouble(colShimmerStd0), sdp));
+						jsonShimmerReadings.append(",\"sh_s1\":");
+						jsonShimmerReadings.append(MyMath.rnd(cursorSV.getDouble(colShimmerStd1), sdp));
+						break;
+
+					case 3:
+						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_0, cursorSV.getDouble(colShimmerAvg0));
+						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_1, cursorSV.getDouble(colShimmerAvg1));
+						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_2, cursorSV.getDouble(colShimmerAvg2));
+						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, MyMath.rnd(cursorSV.getDouble(colShimmerStd0), sdp));
+						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_1, MyMath.rnd(cursorSV.getDouble(colShimmerStd1), sdp));
+						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_2, MyMath.rnd(cursorSV.getDouble(colShimmerStd2), sdp));
+
+						jsonShimmerReadings.append(",\"sh_a0\":");
+						jsonShimmerReadings.append(cursorSV.getDouble(colShimmerAvg0));
+						jsonShimmerReadings.append(",\"sh_a1\":");
+						jsonShimmerReadings.append(cursorSV.getDouble(colShimmerAvg1));
+						jsonShimmerReadings.append(",\"sh_a2\":");
+						jsonShimmerReadings.append(cursorSV.getDouble(colShimmerAvg2));
+
+						jsonShimmerReadings.append(",\"sh_s0\":");
+						jsonShimmerReadings.append(MyMath.rnd(cursorSV.getDouble(colShimmerStd0), sdp));
+						jsonShimmerReadings.append(",\"sh_s1\":");
+						jsonShimmerReadings.append(MyMath.rnd(cursorSV.getDouble(colShimmerStd1), sdp));
+						jsonShimmerReadings.append(",\"sh_s2\":");
+						jsonShimmerReadings.append(MyMath.rnd(cursorSV.getDouble(colShimmerStd2), sdp));
+						break;
+					}
+	
+					if (hasEcgData) {
+						if (null != (jsonECG = getJsonShimmerECGReadings(coordTime, ecgSensorId))) {
+							if (jsonECG.length() > 0) {
+								//jsonShimmerReading.put(TRIP_COORD_SHIMMER_ECG, jsonECG);
+								
+								jsonShimmerReadings.append(",\"sh_ecg\":");
+								jsonShimmerReadings.append(jsonECG.toString());
+							}
+						}
+					}
+					else if (hasEmgData) {
+						if (null != (jsonEMG = getJsonShimmerEMGReadings(coordTime))) {
+							if (jsonEMG.length() > 0) {
+								//jsonShimmerReading.put(TRIP_COORD_SHIMMER_EMG, jsonEMG);
+								
+								jsonShimmerReadings.append(",\"sh_emg\":");
+								jsonShimmerReadings.append(jsonEMG.toString());
+							}
+						}
+					}
+
+					jsonShimmerReadings.append("}"); // End of shimmer reading
+					
+					//jsonShimmerReadings.put(jsonShimmerReading);
+					//jsonShimmerReadings.append(jsonShimmerReading);
+					
+					if (cursorSV.moveToNext()) {
+						jsonShimmerReadings.append(",");
+					}
+				}
+				jsonShimmerReadings.append("]"); // end of array of shimmer devices "sh_ecg":[]
+			}
+		}
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		finally {
+			if (null != cursorSV) {
+				cursorSV.close();
+			}
+		}
+	}
+
 	/**
 	 * Get all shimmer sensor readings corresponding to this time index
 	 * @return
@@ -1064,10 +1221,10 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		return postdata;
 	}
 
-	private void getCoordsSB(StringBuilder sbPostData, long tripId) throws JSONException {
+	private void getCoordsSB(StringBuilder sbTripCoords, long tripId) throws JSONException {
 		
-		StringBuilder sbTripCoords = new StringBuilder();
-		sbTripCoords.ensureCapacity(0xffff);
+		//StringBuilder sbTripCoords = new StringBuilder();
+		//sbTripCoords.ensureCapacity(0xffff);
 		sbTripCoords.append("{");
 
 		JSONObject jsonHeartRateDeviceReadings = null;
@@ -1202,17 +1359,17 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 				// **********************************************************
 				
 				if (hasShimmerData) {
-					jsonShimmerReadings = getJsonShimmerReadings(coordTime);
+					addJsonShimmerReadings(sbTripCoords, coordTime);
+					//jsonShimmerReadings = getJsonShimmerReadings(coordTime);
 				}
 				
 				// insert shimmer readings into coordinate jSON object
-				if ((null != jsonShimmerReadings) && (jsonShimmerReadings.length() > 0)) {
-					// sbTripCoords.put(TRIP_COORDS_SHIMMER_READINGS, jsonShimmerReadings);
-					// ,"shr":[{ ... }]
+				//if ((null != jsonShimmerReadings) && (jsonShimmerReadings.length() > 0)) {
+					////sbTripCoords.put(TRIP_COORDS_SHIMMER_READINGS, jsonShimmerReadings);	// ,"shr":[{ ... }]
 					
-					sbTripCoords.append(",\"shr\":");
-					sbTripCoords.append(jsonShimmerReadings.toString());
-				}
+					//sbTripCoords.append(",\"shr\":");
+					//sbTripCoords.append(jsonShimmerReadings.toString());
+				//}
 
 				if (hasAntDeviceData) {
 					
@@ -1272,7 +1429,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		}
 		finally {
 			mDb.close();
-			sbPostData.append(sbTripCoords);
+			//sbPostData.append(sbTripCoords);
 		}
 	}
 	
