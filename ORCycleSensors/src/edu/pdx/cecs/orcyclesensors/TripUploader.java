@@ -68,7 +68,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 import java.util.zip.GZIPOutputStream;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -77,9 +76,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import com.dsi.ant.plugins.antplus.pcc.defines.DeviceType;
-
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -87,7 +85,6 @@ import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.util.Log;
-import android.widget.ListView;
 import android.widget.Toast;
 
 public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
@@ -201,167 +198,6 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	private int colCoordsHAcc;
 	private int colCoordsVAcc;
 
-	/*
-	private JSONObject getCoordsJSON(long tripId) throws JSONException {
-		
-		JSONObject jsonTripCoords = null;
-		JSONObject jsonHeartRateDeviceReadings = null;
-		JSONObject jsonBikePowerDeviceReadings = null;
-		JSONArray jsonSensorReadings = null;
-		JSONArray jsonShimmerReadings = null;
-		JSONObject jsonCoord = null;
-		double coordTime;
-		
-		mDb.openReadOnly();
-
-		// ******************************************************************************
-		// Get coordinate details
-		// ******************************************************************************
-
-		Cursor coordDetails = null;
-		hasSensorData = false;
-		hasAntDeviceData = false;
-		hasShimmerData = false;
-		hasEpocData = false;
-
-		try {
-			if (null != (coordDetails = mDb.fetchTripDetails(tripId))) {
-				if (coordDetails.getCount() > 0) {
-					try {
-						hasSensorData = coordDetails.getInt(coordDetails.getColumnIndex(DbAdapter.K_TRIP_HAS_SENSOR_DATA)) == 1 ? true : false;
-						hasAntDeviceData = coordDetails.getInt(coordDetails.getColumnIndex(DbAdapter.K_TRIP_HAS_ANT_DEVICE_DATA)) == 1 ? true : false;
-						hasShimmerData = coordDetails.getInt(coordDetails.getColumnIndex(DbAdapter.K_TRIP_HAS_SHIMMER_DATA)) == 1 ? true : false;
-						hasEpocData = coordDetails.getInt(coordDetails.getColumnIndex(DbAdapter.K_TRIP_HAS_EPOC_DATA)) == 1 ? true : false;
-					}
-					catch(Exception ex) {
-						Log.e(MODULE_TAG, ex.getMessage());
-					}
-				}
-				coordDetails.close();
-			}
-		}
-		catch(Exception ex) {
-			Log.e(MODULE_TAG, ex.getMessage());
-		}
-		
-		// ******************************************************************************
-		// Process coordinates
-		// ******************************************************************************
-		
-		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-		try {
-			Cursor cursorTripCoords = mDb.fetchAllCoordsForTrip(tripId);
-	
-			if (!gotCoordsColIndexes) {
-				colCoordsTime  = cursorTripCoords.getColumnIndex(DbAdapter.K_POINT_TIME);
-				colCoordsLat   = cursorTripCoords.getColumnIndex(DbAdapter.K_POINT_LAT);
-				colCoordsLng   = cursorTripCoords.getColumnIndex(DbAdapter.K_POINT_LGT);
-				colCoordsAlt   = cursorTripCoords.getColumnIndex(DbAdapter.K_POINT_ALT);
-				colCoordsSpeed = cursorTripCoords.getColumnIndex(DbAdapter.K_POINT_SPEED);
-				colCoordsHAcc  = cursorTripCoords.getColumnIndex(DbAdapter.K_POINT_ACC);
-				colCoordsVAcc  = cursorTripCoords.getColumnIndex(DbAdapter.K_POINT_ACC);
-				gotCoordsColIndexes = true;
-			}
-			
-			// Build JSON objects for each coordinate:
-			jsonTripCoords = new JSONObject();
-			while (!cursorTripCoords.isAfterLast()) {
-
-				jsonSensorReadings = null;
-				jsonShimmerReadings = null;
-				jsonSensorReadings = null;
-				jsonSensorReadings = null;
-				
-				// *****************
-				// * Get coordinates
-				// *****************
-				
-				coordTime = cursorTripCoords.getDouble(colCoordsTime);
-				
-				jsonCoord = new JSONObject();
-	
-				jsonCoord.put(TRIP_COORDS_TIME,      df.format(coordTime));
-				jsonCoord.put(TRIP_COORDS_LAT,       cursorTripCoords.getDouble(colCoordsLat) / 1E6);
-				jsonCoord.put(TRIP_COORDS_LON,       cursorTripCoords.getDouble(colCoordsLng) / 1E6);
-				jsonCoord.put(TRIP_COORDS_ALT,       cursorTripCoords.getDouble(colCoordsAlt));
-				jsonCoord.put(TRIP_COORDS_SPEED,     cursorTripCoords.getDouble(colCoordsSpeed));
-				jsonCoord.put(TRIP_COORDS_HACCURACY, cursorTripCoords.getDouble(colCoordsHAcc));
-				jsonCoord.put(TRIP_COORDS_VACCURACY, cursorTripCoords.getDouble(colCoordsVAcc));
-	
-				// **********************************************************
-				// * Get all sensor readings corresponding to this time index
-				// **********************************************************
-				
-				if (hasSensorData) {
-					jsonSensorReadings = getJsonSensorReadings(coordTime);
-				}
-				
-				// insert sensor readings into coordinate jSON object
-				if ((null != jsonSensorReadings) && (jsonSensorReadings.length() > 0)) {
-					jsonCoord.put(TRIP_COORDS_SENSOR_READINGS, jsonSensorReadings);
-				}
-
-				// **********************************************************
-				// * Get all sensor readings corresponding to this time index
-				// **********************************************************
-				
-				if (hasShimmerData) {
-					jsonShimmerReadings = getJsonShimmerReadings(coordTime);
-				}
-				
-				// insert shimmer readings into coordinate jSON object
-				if ((null != jsonShimmerReadings) && (jsonShimmerReadings.length() > 0)) {
-					jsonCoord.put(TRIP_COORDS_SHIMMER_READINGS, jsonShimmerReadings);
-				}
-
-				if (hasAntDeviceData) {
-					
-					// *****************************************************************
-					// * Get heart rate device readings corresponding to this time index
-					// *****************************************************************
-						
-					jsonHeartRateDeviceReadings = getJsonHeartRateDeviceReadings(coordTime);
-					
-					// insert heart rate readings into coordinate jSON object
-					if ((null != jsonHeartRateDeviceReadings) && (jsonHeartRateDeviceReadings.length() > 0)) {
-						jsonCoord.put(TRIP_COORDS_ANT_DEVICE_PREFIX + DeviceType.HEARTRATE.getIntValue(), jsonHeartRateDeviceReadings);
-					}
-	
-					// *****************************************************************
-					// * Get bike power device readings corresponding to this time index
-					// *****************************************************************
-						
-					jsonBikePowerDeviceReadings = getJsonBikePowerDeviceReadings(coordTime);
-					
-					// insert bike power readings into coordinate jSON object
-					if ((null != jsonBikePowerDeviceReadings) && (jsonBikePowerDeviceReadings.length() > 0)) {
-						jsonCoord.put(TRIP_COORDS_ANT_DEVICE_PREFIX + DeviceType.BIKE_POWER.getIntValue(), jsonBikePowerDeviceReadings);
-					}
-				}
-
-				// ****************************************************
-				// * Insert sensor readings into jSON coordinate object
-				// ****************************************************
-
-				// TODO - I don't really understand this choice
-				jsonTripCoords.put(jsonCoord.getString("r"), jsonCoord);
-
-				// move to next coordinate
-				cursorTripCoords.moveToNext();
-			}
-			cursorTripCoords.close();
-		}
-		catch(Exception ex) {
-			Log.e(MODULE_TAG, ex.getMessage());
-		}
-		finally {
-			mDb.close();
-		}
-		return jsonTripCoords;
-	}
-*/
-	
 	/**
 	 * Get all sensor readings corresponding to this time index
 	 * @return
@@ -450,12 +286,6 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	 * @return
 	 */
 	private void addJsonShimmerReadings(StringBuilder jsonShimmerReadings, double coordTime) {
-		JSONArray jsonECG = null;
-		JSONArray jsonEMG = null;
-		
-		//StringBuilder jsonShimmerReading = new StringBuilder();
-		//jsonShimmerReading.ensureCapacity(4096);
-
 		int numVals;
 		Cursor cursorSV = null;
 		int shimmerType;
@@ -487,11 +317,6 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 					ecgSensorId = cursorSV.getString(colShimmerId);
 					shimmerType = cursorSV.getInt(colShimmerType);
 					
-					//jsonShimmerReading = new JSONObject();
-					//jsonShimmerReading.put(TRIP_COORD_SHIMMER_ID,      ecgSensorId);
-					//jsonShimmerReading.put(TRIP_COORD_SHIMMER_TYPE,    shimmerType);
-					//jsonShimmerReading.put(TRIP_COORD_SHIMMER_SAMPLES, cursorSV.getInt(colShimmerSamples));
-					
 					jsonShimmerReadings.append("{\"sh_id\":\"");
 					jsonShimmerReadings.append(ecgSensorId);
 					jsonShimmerReadings.append("\",\"sh_t\":");
@@ -504,10 +329,8 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 					sdp = getSDP(shimmerType);
 	
 					switch(numVals) {
+
 					case 1:
-						
-						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_0, cursorSV.getDouble(colShimmerAvg0));
-						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, MyMath.rnd(cursorSV.getDouble(colShimmerStd0), sdp));
 						
 						jsonShimmerReadings.append(",\"sh_a0\":");
 						jsonShimmerReadings.append(cursorSV.getDouble(colShimmerAvg0));
@@ -517,11 +340,6 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 
 					case 2:
 					
-						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_0, cursorSV.getDouble(colShimmerAvg0));
-						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_1, cursorSV.getDouble(colShimmerAvg1));
-						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, MyMath.rnd(cursorSV.getDouble(colShimmerStd0), sdp));
-						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_1, MyMath.rnd(cursorSV.getDouble(colShimmerStd1), sdp));
-						
 						jsonShimmerReadings.append(",\"sh_a0\":");
 						jsonShimmerReadings.append(cursorSV.getDouble(colShimmerAvg0));
 						jsonShimmerReadings.append(",\"sh_a1\":");
@@ -534,12 +352,6 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 						break;
 
 					case 3:
-						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_0, cursorSV.getDouble(colShimmerAvg0));
-						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_1, cursorSV.getDouble(colShimmerAvg1));
-						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_2, cursorSV.getDouble(colShimmerAvg2));
-						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, MyMath.rnd(cursorSV.getDouble(colShimmerStd0), sdp));
-						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_1, MyMath.rnd(cursorSV.getDouble(colShimmerStd1), sdp));
-						//jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_2, MyMath.rnd(cursorSV.getDouble(colShimmerStd2), sdp));
 
 						jsonShimmerReadings.append(",\"sh_a0\":");
 						jsonShimmerReadings.append(cursorSV.getDouble(colShimmerAvg0));
@@ -558,24 +370,10 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 					}
 	
 					if (hasEcgData) {
-						if (null != (jsonECG = getJsonShimmerECGReadings(coordTime, ecgSensorId))) {
-							if (jsonECG.length() > 0) {
-								//jsonShimmerReading.put(TRIP_COORD_SHIMMER_ECG, jsonECG);
-								
-								jsonShimmerReadings.append(",\"sh_ecg\":");
-								jsonShimmerReadings.append(jsonECG.toString());
-							}
-						}
+						addJsonShimmerECGReadings(jsonShimmerReadings, coordTime, ecgSensorId);
 					}
 					else if (hasEmgData) {
-						if (null != (jsonEMG = getJsonShimmerEMGReadings(coordTime))) {
-							if (jsonEMG.length() > 0) {
-								//jsonShimmerReading.put(TRIP_COORD_SHIMMER_EMG, jsonEMG);
-								
-								jsonShimmerReadings.append(",\"sh_emg\":");
-								jsonShimmerReadings.append(jsonEMG.toString());
-							}
-						}
+						addJsonShimmerEMGReadings(jsonShimmerReadings, coordTime, ecgSensorId);
 					}
 
 					jsonShimmerReadings.append("}"); // End of shimmer reading
@@ -600,108 +398,8 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		}
 	}
 
-	/**
-	 * Get all shimmer sensor readings corresponding to this time index
-	 * @return
-	 */
-	private JSONArray getJsonShimmerReadings(double coordTime) {
-		JSONArray jsonShimmerReadings = null;
-		JSONArray jsonECG = null;
-		JSONArray jsonEMG = null;
-		JSONObject jsonShimmerReading;
-		int numVals;
-		Cursor cursorSV = null;
-		int shimmerType;
-		int sdp;
-		String ecgSensorId;
-		
-		try {
-			if (null != (cursorSV = mDb.fetchShimmerValues(coordTime))) {
-				
-				// Collect shimmer readings into a json object
-				jsonShimmerReadings = new JSONArray();
-				
-				// Construct a map between cursor column index
-				if (!gotShimmerColIndexes) {
-					colShimmerId      = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_ID);
-					colShimmerType    = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_TYPE);
-					colShimmerSamples = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_SAMPLES);
-					colShimmerNumVals = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_NUM_VALS);
-					colShimmerAvg0    = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_AVG_0);
-					colShimmerAvg1    = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_AVG_1);
-					colShimmerAvg2    = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_AVG_2);
-					colShimmerStd0    = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_STD_0);
-					colShimmerStd1    = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_STD_1);
-					colShimmerStd2    = cursorSV.getColumnIndex(DbAdapter.K_SHIMMER_STD_2);
-					gotShimmerColIndexes = true;
-				}
-	
-				while (!cursorSV.isAfterLast()) {
-					
-					jsonShimmerReading = new JSONObject();
-					jsonShimmerReading.put(TRIP_COORD_SHIMMER_ID,      ecgSensorId = cursorSV.getString(colShimmerId));
-					jsonShimmerReading.put(TRIP_COORD_SHIMMER_TYPE,    (shimmerType = cursorSV.getInt(colShimmerType)));
-					jsonShimmerReading.put(TRIP_COORD_SHIMMER_SAMPLES, cursorSV.getInt(colShimmerSamples));
-					
-					numVals = cursorSV.getInt(colShimmerNumVals);
-					
-					sdp = getSDP(shimmerType);
-	
-					switch(numVals) {
-					case 1:
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_0, cursorSV.getDouble(colShimmerAvg0));
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, MyMath.rnd(cursorSV.getDouble(colShimmerStd0), sdp));
-						break;
-					case 2:
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_0, cursorSV.getDouble(colShimmerAvg0));
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_1, cursorSV.getDouble(colShimmerAvg1));
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, MyMath.rnd(cursorSV.getDouble(colShimmerStd0), sdp));
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_1, MyMath.rnd(cursorSV.getDouble(colShimmerStd1), sdp));
-						break;
-					case 3:
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_0, cursorSV.getDouble(colShimmerAvg0));
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_1, cursorSV.getDouble(colShimmerAvg1));
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_AVG_2, cursorSV.getDouble(colShimmerAvg2));
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_0, MyMath.rnd(cursorSV.getDouble(colShimmerStd0), sdp));
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_1, MyMath.rnd(cursorSV.getDouble(colShimmerStd1), sdp));
-						jsonShimmerReading.put(TRIP_COORD_SHIMMER_STD_2, MyMath.rnd(cursorSV.getDouble(colShimmerStd2), sdp));
-						break;
-					}
-	
-					if (hasEcgData) {
-						if (null != (jsonECG = getJsonShimmerECGReadings(coordTime, ecgSensorId))) {
-							if (jsonECG.length() > 0) {
-								jsonShimmerReading.put(TRIP_COORD_SHIMMER_ECG, jsonECG);
-							}
-						}
-					}
-					else if (hasEmgData) {
-						if (null != (jsonEMG = getJsonShimmerEMGReadings(coordTime))) {
-							if (jsonEMG.length() > 0) {
-								jsonShimmerReading.put(TRIP_COORD_SHIMMER_EMG, jsonEMG);
-							}
-						}
-					}
-					
-					jsonShimmerReadings.put(jsonShimmerReading);
-
-					cursorSV.moveToNext();
-				}
-			}
-		}
-		catch (Exception ex) {
-			Log.e(MODULE_TAG, ex.getMessage());
-		}
-		finally {
-			if (null != cursorSV) {
-				cursorSV.close();
-			}
-		}
-		return jsonShimmerReadings;
-	}
-
 	private boolean gotEcgColIndexes = false;
-	private int colTimestamp;
+	private int colEcgTimestamp;
 	private int colEcg1Ch1;
 	private int colEcg1Ch2;
 	private int colEcg2Ch1;
@@ -711,9 +409,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	 * Get all shimmer ECG readings corresponding to this time index
 	 * @return
 	 */
-	private JSONArray getJsonShimmerECGReadings(double coordTime, String ecgSensorId) {
-		JSONArray jsonECGs = null;
-		JSONObject jsonECG;
+	private void addJsonShimmerECGReadings(StringBuilder sbECG, double coordTime, String ecgSensorId) {
 		Cursor cursorECG = null;
 		
 		try {
@@ -721,7 +417,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 
 				if (!gotEcgColIndexes) {
 					// Get column indexes
-					colTimestamp = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_TIMESTAMP);
+					colEcgTimestamp = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_TIMESTAMP);
 					colEcg1Ch1 = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_EXG1_CH1);
 					colEcg1Ch2 = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_EXG1_CH2);
 					colEcg2Ch1 = cursorECG.getColumnIndex(DbAdapter.K_SHIMMER_ECG_EXG2_CH1);
@@ -730,22 +426,31 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 				}
 				
 				if ((colEcg1Ch1 < 0) || (colEcg1Ch2 < 0) || (colEcg2Ch1 < 0) || (colEcg2Ch2 < 0))
-					return null;
+					return;
 	
-				// Collect shimmer readings into a json object
-				jsonECGs = new JSONArray();
+				if (cursorECG.getCount() > 0) {
 				
-				while (!cursorECG.isAfterLast()) {
-					
-					jsonECG = new JSONObject();
-					jsonECG.put(TRIP_COORD_SHIMMER_ECG_TIMESTAMP, cursorECG.getDouble(colTimestamp));
-					jsonECG.put(TRIP_COORD_SHIMMER_ECG_EXG1_CH1, cursorECG.getDouble(colEcg1Ch1));
-					jsonECG.put(TRIP_COORD_SHIMMER_ECG_EXG1_CH2, cursorECG.getDouble(colEcg1Ch2));
-					jsonECG.put(TRIP_COORD_SHIMMER_ECG_EXG2_CH1, cursorECG.getDouble(colEcg2Ch1));
-					jsonECG.put(TRIP_COORD_SHIMMER_ECG_EXG2_CH2, cursorECG.getDouble(colEcg2Ch2));
-					jsonECGs.put(jsonECG);
-
-					cursorECG.moveToNext();
+					sbECG.append(",\"sh_ecg\":[");
+				
+					while (!cursorECG.isAfterLast()) {
+						sbECG.append("{\"shc_t\":");
+						sbECG.append(cursorECG.getDouble(colEcgTimestamp));
+						sbECG.append(",\"shc_11\":");
+						sbECG.append(cursorECG.getDouble(colEcg1Ch1));
+						sbECG.append(",\"shc_12\":");
+						sbECG.append(cursorECG.getDouble(colEcg1Ch2));
+						sbECG.append(",\"shc_21\":");
+						sbECG.append(cursorECG.getDouble(colEcg2Ch1));
+						sbECG.append(",\"shc_22\":");
+						sbECG.append(cursorECG.getDouble(colEcg2Ch2));
+	
+						if (cursorECG.moveToNext()) {
+							sbECG.append("},");
+						}
+						else {
+							sbECG.append("}]");
+						}
+					}
 				}
 			}
 		}
@@ -757,7 +462,6 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 				cursorECG.close();
 			}
 		}
-		return jsonECGs;
 	}
 
 	private boolean gotEmgColIndexes = false;
@@ -766,16 +470,15 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 	private int colEmg1Ch2;
 	
 	/**
-	 * Get all shimmer ECG readings corresponding to this time index
+	 * Get all shimmer EMG readings corresponding to this time index
 	 * @return
 	 */
-	private JSONArray getJsonShimmerEMGReadings(double coordTime) {
-		JSONArray jsonEMGs = null;
-		JSONObject jsonEMG;
-		Cursor cursorEMG = null;
+	private void addJsonShimmerEMGReadings(StringBuilder sbEMG, double coordTime, String ecgSensorId) {
 		
+		Cursor cursorEMG = null;
+
 		try {
-			if (null != (cursorEMG = mDb.fetchShimmerEMGValues(coordTime))) {
+			if (null != (cursorEMG = mDb.fetchShimmerEMGValues(coordTime, ecgSensorId))) {
 
 				if (!gotEmgColIndexes) {
 					// Get column indexes
@@ -785,18 +488,26 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 					gotEmgColIndexes = true;
 				}
 	
-				// Collect shimmer readings into a json object
-				jsonEMGs = new JSONArray();
-				
-				while (!cursorEMG.isAfterLast()) {
-					
-					jsonEMG = new JSONObject();
-					jsonEMG.put(TRIP_COORD_SHIMMER_EMG_TIMESTAMP, cursorEMG.getDouble(colEmgTimestamp));
-					jsonEMG.put(TRIP_COORD_SHIMMER_EMG_EXG1_CH1, cursorEMG.getDouble(colEmg1Ch1));
-					jsonEMG.put(TRIP_COORD_SHIMMER_EMG_EXG1_CH2, cursorEMG.getDouble(colEmg1Ch2));
-					jsonEMGs.put(jsonEMG);
+				if (cursorEMG.getCount() > 0) {
 
-					cursorEMG.moveToNext();
+					sbEMG.append(",\"sh_emg\":[");
+					
+					while (!cursorEMG.isAfterLast()) {
+						
+						sbEMG.append("{\"shm_t\":");
+						sbEMG.append(cursorEMG.getDouble(colEmgTimestamp));
+						sbEMG.append(",\"shm_11\":");
+						sbEMG.append(cursorEMG.getDouble(colEmg1Ch1));
+						sbEMG.append(",\"shm_12\":");
+						sbEMG.append(cursorEMG.getDouble(colEmg1Ch2));
+	
+						if (cursorEMG.moveToNext()) {
+							sbEMG.append("},");
+						}
+						else {
+							sbEMG.append("}]");
+						}
+					}
 				}
 			}
 		}
@@ -808,9 +519,8 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 				cursorEMG.close();
 			}
 		}
-		return jsonEMGs;
 	}
-		
+	
 	/**
 	 * Returns the number of decimal places to round standard 
 	 * deviation to for the given shimmer sensor type
@@ -962,6 +672,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		return jsonHeartRateReading;
 	}
 	
+	@SuppressLint("SimpleDateFormat")
 	private JSONArray getPausesJSON(long tripId) throws JSONException {
 
 		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -1104,6 +815,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		return jsonShimmerConfigs;
 	}	
 	
+	@SuppressLint("SimpleDateFormat")
 	private Vector<String> getTripData(long tripId) {
 		Vector<String> tripData = new Vector<String>();
 		mDb.openReadOnly();
@@ -1221,6 +933,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		return postdata;
 	}
 
+	@SuppressLint("SimpleDateFormat")
 	private void getCoordsSB(StringBuilder sbTripCoords, long tripId) throws JSONException {
 		
 		//StringBuilder sbTripCoords = new StringBuilder();
@@ -1230,9 +943,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		JSONObject jsonHeartRateDeviceReadings = null;
 		JSONObject jsonBikePowerDeviceReadings = null;
 		JSONArray jsonSensorReadings = null;
-		JSONArray jsonShimmerReadings = null;
 		double coordTime;
-		boolean firstAntDevice = true;
 		
 		mDb.openReadOnly();
 
@@ -1292,7 +1003,6 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 			while (!cursorTripCoords.isAfterLast()) {
 
 				jsonSensorReadings = null;
-				jsonShimmerReadings = null;
 				jsonSensorReadings = null;
 				jsonSensorReadings = null;
 				
@@ -1534,15 +1244,16 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 			return false;
 		}
 		
-		//mDb.open();
+		// Update upload status in the database
+		mDb.open();
 		try {
-			//mDb.updateTripStatus(currentTripId, TripData.STATUS_SENT);
+			mDb.updateTripStatus(currentTripId, TripData.STATUS_SENT);
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 		}
 		finally {
-			//mDb.close();
+			mDb.close();
 		}
 		
 		return result;
