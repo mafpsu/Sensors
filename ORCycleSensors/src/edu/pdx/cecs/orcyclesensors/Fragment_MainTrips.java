@@ -30,6 +30,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.SQLException;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -56,6 +57,7 @@ public class Fragment_MainTrips extends Fragment {
 	private ListView lvSavedTrips;
 	private MenuItem menuDelete;
 	private MenuItem menuUpload;
+	private MenuItem menuGenFakeTrip;
 	private boolean resumeActionModeEdit;
 	private long[] savedActionModeItems;
 
@@ -301,6 +303,46 @@ public class Fragment_MainTrips extends Fragment {
 		}
 	}
 	
+	private void generateFakeTrip() {
+
+		TripData trip;
+		boolean hasSensorData = false;
+		boolean hasAntDeviceData = false;
+		boolean hasShimmerData = false;
+		boolean hasEpocData = false;
+		double latitude = 45.508936;		// PSU
+		double longitude = -122.681718;	// PSU
+		long currentTimeMillis = System.currentTimeMillis();
+		
+		Location location = new Location("null");;
+		location.setTime(currentTimeMillis);
+		location.setAccuracy(1.0f);
+		location.setAltitude(1.0);
+		location.setSpeed(1.0f);
+		location.setLatitude(latitude);
+		location.setLongitude(longitude);
+		
+		try {
+			trip = TripData.createTrip(getActivity());
+			trip.updateTrip(hasSensorData, hasAntDeviceData, hasShimmerData, hasEpocData);
+			
+			for (int i = 0; i < 2000; ++i) {
+				trip.addPointNow(location, (double)currentTimeMillis, 0.00001f);
+				currentTimeMillis += 1000;
+				// Set next position and time
+				location.setTime(currentTimeMillis);
+				location.setLatitude(location.getLatitude() + 0.00001);
+				location.setLongitude(location.getLongitude() + 0.00001);
+			}
+			trip.finish();
+		}
+		catch(Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
+		}
+		finally {
+		}
+	}
+	
 	// *********************************************************************************
 	// *                           Item Click Listener
 	// *********************************************************************************
@@ -393,6 +435,8 @@ public class Fragment_MainTrips extends Fragment {
 				menuDelete = menu.findItem(R.id.action_delete_saved_trips);
 				menuDelete.setEnabled(numSelectedItems > 0);
 				menuUpload = menu.findItem(R.id.action_upload_saved_trips);
+				menuGenFakeTrip = menu.findItem(R.id.action_generate_fake_trip);
+				menuGenFakeTrip.setEnabled(numSelectedItems == 0);
 
 				// determine upload status
 				int flag = 1;
@@ -427,17 +471,14 @@ public class Fragment_MainTrips extends Fragment {
 				switch (item.getItemId()) {
 				
 				case R.id.action_delete_saved_trips:
+					
 					// delete selected trips
 					actionDeleteSelectedTrips(savedTripsAdapter.getSelectedItems());
 					mode.finish(); // Action picked, so close the CAB
 					return true;
 
 				case R.id.action_upload_saved_trips:
-					// upload selected trips
-					// for (int i = 0; i < tripIdArray.size(); i++) {
-					// retryTripUpload(tripIdArray.get(i));
-					// }
-					// Log.v(MODULE_TAG, "" + storedID);
+
 					try {
 						retryTripUpload(storedID);
 					}
@@ -447,6 +488,17 @@ public class Fragment_MainTrips extends Fragment {
 					mode.finish(); // Action picked, so close the CAB
 					return true;
 				
+				case R.id.action_generate_fake_trip:
+					try {
+						generateFakeTrip();
+						populateTripList();
+					}
+					catch(Exception ex) {
+						Log.e(MODULE_TAG, ex.getMessage());
+					}
+					mode.finish(); // Action picked, so close the CAB
+					return true;
+					
 				default:
 					return false;
 				}
