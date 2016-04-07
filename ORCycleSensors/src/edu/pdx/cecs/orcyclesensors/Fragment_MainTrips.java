@@ -25,6 +25,7 @@ package edu.pdx.cecs.orcyclesensors;
 
 import java.util.ArrayList;
 
+import edu.pdx.cecs.orcyclesensors.shimmer.driver.ShimmerVerDetails;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -52,6 +53,7 @@ public class Fragment_MainTrips extends Fragment {
 	
 	private static final String EXTRA_ACTION_MODE_EDIT = "EXTRA_ACTION_MODE_EDIT";
 	private static final String EXTRA_ACTION_MODE_SELECTED_ITEMS = "EXTRA_ACTION_MODE_SELECTED_ITEMS";
+	private static final int FAKE_ECG_SENSOR_TYPE = 99;
 
 	private SavedTripsAdapter savedTripsAdapter;
 	private ListView lvSavedTrips;
@@ -308,11 +310,12 @@ public class Fragment_MainTrips extends Fragment {
 		TripData trip;
 		boolean hasSensorData = false;
 		boolean hasAntDeviceData = false;
-		boolean hasShimmerData = false;
+		boolean hasShimmerData = true;
 		boolean hasEpocData = false;
 		double latitude = 45.508936;		// PSU
 		double longitude = -122.681718;	// PSU
 		long currentTimeMillis = System.currentTimeMillis();
+		String bluetoothAddress = "00:00:00:00:00:00";
 		
 		Location location = new Location("null");;
 		location.setTime(currentTimeMillis);
@@ -322,14 +325,87 @@ public class Fragment_MainTrips extends Fragment {
 		location.setLatitude(latitude);
 		location.setLongitude(longitude);
 		
+		EcgGenerator gen = new EcgGenerator(bluetoothAddress);
+		MockShimmer shimmer = new MockShimmer();
+		
+		ShimmerConfig shimmerConfig = new ShimmerConfig(shimmer, bluetoothAddress,
+				ShimmerVerDetails.HW_ID.SHIMMER_3, true, false);
+
 		try {
 			trip = TripData.createTrip(getActivity());
 			trip.updateTrip(hasSensorData, hasAntDeviceData, hasShimmerData, hasEpocData);
+			trip.updateTrip(shimmerConfig);
 			
-			for (int i = 0; i < 2000; ++i) {
+			double avgEcg1Status;
+			double ssdEcg1Status;
+			double avgEcg1Ch1Readings;
+			double ssdEcg1Ch1Readings;
+			double avgEcg1Ch2Readings;
+			double ssdEcg1Ch2Readings;
+			
+			double avgEcg2Status;
+			double ssdEcg2Status;
+			double avgEcg2Ch1Readings;
+			double ssdEcg2Ch1Readings;
+			double avgEcg2Ch2Readings;
+			double ssdEcg2Ch2Readings;
+			double[] avgVals = new double[3];
+			double[] ssdVals = new double[3];
+			int numVals = gen.getNumSamples();
+
+
+			for (int i = 0; i < 3600; ++i) {
+				
+				// Add point data
 				trip.addPointNow(location, (double)currentTimeMillis, 0.00001f);
-				currentTimeMillis += 1000;
+				
+				avgEcg1Status = MyMath.getAverageValueD(gen.getEcg1Status());
+				ssdEcg1Status = MyMath.getStandardDeviationD(gen.getEcg1Status(), avgEcg1Status);
+				avgEcg1Ch1Readings = MyMath.getAverageValueD(gen.getEcg1Ch1Readings());
+				ssdEcg1Ch1Readings = MyMath.getStandardDeviationD(gen.getEcg1Ch1Readings(), avgEcg1Ch1Readings);
+				avgEcg1Ch2Readings = MyMath.getAverageValueD(gen.getEcg1Ch2Readings());
+				ssdEcg1Ch2Readings = MyMath.getStandardDeviationD(gen.getEcg1Ch2Readings(), avgEcg1Ch2Readings);
+				
+				avgEcg2Status = MyMath.getAverageValueD(gen.getEcg2Status());
+				ssdEcg2Status = MyMath.getStandardDeviationD(gen.getEcg2Status(), avgEcg2Status);
+				avgEcg2Ch1Readings = MyMath.getAverageValueD(gen.getEcg2Ch1Readings());
+				ssdEcg2Ch1Readings = MyMath.getStandardDeviationD(gen.getEcg2Ch1Readings(), avgEcg2Ch1Readings);
+				avgEcg2Ch2Readings = MyMath.getAverageValueD(gen.getEcg2Ch2Readings());
+				ssdEcg2Ch2Readings = MyMath.getStandardDeviationD(gen.getEcg2Ch2Readings(), avgEcg2Ch2Readings);
+				
+				avgVals[0] = avgEcg1Status;
+				avgVals[1] = avgEcg1Ch1Readings;
+				avgVals[2] = avgEcg1Ch2Readings;
+				
+				ssdVals[0] = ssdEcg1Status;
+				ssdVals[1] = ssdEcg1Ch1Readings;
+				ssdVals[2] = ssdEcg1Ch2Readings;
+				
+				trip.addShimmerReadings(currentTimeMillis, bluetoothAddress, ShimmerFormat.SHIMMER3_EXG1_ECG_24,
+						numVals, avgVals, ssdVals);
+
+				avgVals[0] = avgEcg2Status;
+				avgVals[1] = avgEcg2Ch1Readings;
+				avgVals[2] = avgEcg2Ch2Readings;
+				
+				ssdVals[0] = ssdEcg2Status;
+				ssdVals[1] = ssdEcg2Ch1Readings;
+				ssdVals[2] = ssdEcg2Ch2Readings;
+				
+				trip.addShimmerReadings(currentTimeMillis, bluetoothAddress, ShimmerFormat.SHIMMER3_EXG2_ECG_24,
+						numVals, avgVals, ssdVals);
+
+				trip.addShimmerReadingsECGData(currentTimeMillis, gen.getBluetoothAddress(),
+						gen.getTimestamps(), 
+						gen.getEcg1Ch1Readings(),
+						gen.getEcg1Ch2Readings(), 
+						gen.getEcg2Ch1Readings(), 
+						gen.getEcg2Ch2Readings());
+
+				gen.moveNext();
+
 				// Set next position and time
+				currentTimeMillis += 1000;
 				location.setTime(currentTimeMillis);
 				location.setLatitude(location.getLatitude() + 0.00001);
 				location.setLongitude(location.getLongitude() + 0.00001);

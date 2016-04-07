@@ -28,7 +28,7 @@ public class ShimmerConfig {
 	private final boolean isEcgEnabled;
 	private final boolean isEmgEnabled;
 	
-	public ShimmerConfig(Shimmer shimmer, String bluetoothAddress, int shimmerVersion, boolean isEcgEnabled, boolean isEmgEnabled) {
+	public ShimmerConfig(IShimmer shimmer, String bluetoothAddress, int shimmerVersion, boolean isEcgEnabled, boolean isEmgEnabled) {
 
 		this.bluetoothAddress = bluetoothAddress;
 		this.samplingRate = shimmer.getSamplingRate();
@@ -72,7 +72,7 @@ public class ShimmerConfig {
 		return this.bluetoothAddress;
 	}
 
-	private int getEXGGain(Shimmer shimmer){
+	private int getEXGGain(IShimmer shimmer){
 		
 		int gain = -1;
 		int gainEXG1CH1 = shimmer.getEXG1CH1GainValue();
@@ -85,7 +85,7 @@ public class ShimmerConfig {
 		return gain;
 	}
 	
-	private int getEXGResolution(Shimmer shimmer){
+	private int getEXGResolution(IShimmer shimmer){
 		
 		int res = -1;
 
