@@ -4,13 +4,24 @@ import edu.pdx.cecs.orcyclesensors.shimmer.android.Shimmer;
 
 public class MockShimmer implements IShimmer{
 
+	public enum SensorType {ECG, GSR};
+	private String bluetoothAddress;
 	private long enabledSensors;
 	private int exgGain = 0;
 	
-	public MockShimmer() {
-		enabledSensors = Shimmer.SENSOR_EXG1_24BIT + Shimmer.SENSOR_EXG2_24BIT;
+	public MockShimmer(SensorType sensorType, String bluetoothAddress) {
+		this.bluetoothAddress = bluetoothAddress;
+		if (sensorType == SensorType.ECG) {
+			enabledSensors = Shimmer.SENSOR_EXG1_24BIT + Shimmer.SENSOR_EXG2_24BIT;
+		}
+		else {
+			enabledSensors = Shimmer.SENSOR_GSR;
+		}
 	}
-	
+
+	public String getBluetoothAddress() {
+		return bluetoothAddress;
+	}
 	public double getSamplingRate(){return 0.0;}
 	public int getAccelRange(){return 0;}
 	public int getGSRRange(){return 0;}
