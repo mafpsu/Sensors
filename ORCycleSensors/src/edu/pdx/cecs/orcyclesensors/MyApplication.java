@@ -64,6 +64,7 @@ public class MyApplication extends android.app.Application {
 	private static final long DEFAULT_MIN_RECORDING_DELAY = 1000;
 
 	private static final String RAW_DATA_FILES_DIR_NAME = "data";
+	private static final String ZIP_FILES_DIR_NAME = "zip";
 
 	private static final String PREF_RECORD_RAW_DATA = "PREF_RECORD_RAW_DATA";
 	private static final boolean DEFAULT_VALUE_RECORD_RAW_DATA = false;
@@ -131,6 +132,10 @@ public class MyApplication extends android.app.Application {
 			}
 			//EmailManager.cleanAttachmentDirectory(); // TODO:  Don't do this here because mailer might not have mailed files yet
 
+    		if (!ZipFileManager.setDirPath(getFilesDir().getAbsolutePath(), ZIP_FILES_DIR_NAME)) {
+    			Log.e(MODULE_TAG, "Could not create zip file directory");
+    		}
+    		
 			ConnectRecordingService();
 			ConnectShimmerService();
 			loadApplicationSettings();

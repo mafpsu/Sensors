@@ -69,7 +69,8 @@ public class Fragment_MainTrips extends Fragment {
 	private Long storedID;
 
 	private Cursor cursorTrips;
-
+	private TripUploader uploader = null;
+	
 	// *********************************************************************************
 	// *                          Fragment Life Cycle
 	// *********************************************************************************
@@ -270,10 +271,8 @@ public class Fragment_MainTrips extends Fragment {
 	}
 
 	private void retryTripUpload(long tripId) {
-		TripUploader uploader = new TripUploader(getActivity(), MyApplication.getInstance().getUserId());
-		Fragment_MainTrips f2 = (Fragment_MainTrips) getActivity()
-				.getSupportFragmentManager().findFragmentByTag(
-						"android:switcher:" + R.id.pager + ":1");
+		uploader = new TripUploader(getActivity(), MyApplication.getInstance().getUserId());
+		Fragment_MainTrips f2 = (Fragment_MainTrips) getActivity().getSupportFragmentManager().findFragmentByTag("android:switcher:" + R.id.pager + ":1");
 
 		uploader.setFragmentMainTrips(f2);
 		uploader.execute(tripId);
