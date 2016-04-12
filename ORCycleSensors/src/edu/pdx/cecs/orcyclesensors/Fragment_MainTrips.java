@@ -25,11 +25,13 @@ package edu.pdx.cecs.orcyclesensors;
 
 import java.util.ArrayList;
 
+import edu.pdx.cecs.orcyclesensors.shimmer.driver.ShimmerVerDetails;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.SQLException;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -51,11 +53,13 @@ public class Fragment_MainTrips extends Fragment {
 	
 	private static final String EXTRA_ACTION_MODE_EDIT = "EXTRA_ACTION_MODE_EDIT";
 	private static final String EXTRA_ACTION_MODE_SELECTED_ITEMS = "EXTRA_ACTION_MODE_SELECTED_ITEMS";
+	private static final int FAKE_ECG_SENSOR_TYPE = 99;
 
 	private SavedTripsAdapter savedTripsAdapter;
 	private ListView lvSavedTrips;
 	private MenuItem menuDelete;
 	private MenuItem menuUpload;
+	private MenuItem menuGenFakeTrip;
 	private boolean resumeActionModeEdit;
 	private long[] savedActionModeItems;
 
@@ -65,7 +69,8 @@ public class Fragment_MainTrips extends Fragment {
 	private Long storedID;
 
 	private Cursor cursorTrips;
-
+	private TripUploader uploader = null;
+	
 	// *********************************************************************************
 	// *                          Fragment Life Cycle
 	// *********************************************************************************
@@ -266,10 +271,8 @@ public class Fragment_MainTrips extends Fragment {
 	}
 
 	private void retryTripUpload(long tripId) {
-		TripUploader uploader = new TripUploader(getActivity(), MyApplication.getInstance().getUserId());
-		Fragment_MainTrips f2 = (Fragment_MainTrips) getActivity()
-				.getSupportFragmentManager().findFragmentByTag(
-						"android:switcher:" + R.id.pager + ":1");
+		uploader = new TripUploader(getActivity(), MyApplication.getInstance().getUserId());
+		Fragment_MainTrips f2 = (Fragment_MainTrips) getActivity().getSupportFragmentManager().findFragmentByTag("android:switcher:" + R.id.pager + ":1");
 
 		uploader.setFragmentMainTrips(f2);
 		uploader.execute(tripId);
@@ -393,6 +396,8 @@ public class Fragment_MainTrips extends Fragment {
 				menuDelete = menu.findItem(R.id.action_delete_saved_trips);
 				menuDelete.setEnabled(numSelectedItems > 0);
 				menuUpload = menu.findItem(R.id.action_upload_saved_trips);
+				menuGenFakeTrip = menu.findItem(R.id.action_generate_fake_trip);
+				menuGenFakeTrip.setEnabled(numSelectedItems == 0);
 
 				// determine upload status
 				int flag = 1;
@@ -427,17 +432,14 @@ public class Fragment_MainTrips extends Fragment {
 				switch (item.getItemId()) {
 				
 				case R.id.action_delete_saved_trips:
+					
 					// delete selected trips
 					actionDeleteSelectedTrips(savedTripsAdapter.getSelectedItems());
 					mode.finish(); // Action picked, so close the CAB
 					return true;
 
 				case R.id.action_upload_saved_trips:
-					// upload selected trips
-					// for (int i = 0; i < tripIdArray.size(); i++) {
-					// retryTripUpload(tripIdArray.get(i));
-					// }
-					// Log.v(MODULE_TAG, "" + storedID);
+
 					try {
 						retryTripUpload(storedID);
 					}
@@ -447,6 +449,17 @@ public class Fragment_MainTrips extends Fragment {
 					mode.finish(); // Action picked, so close the CAB
 					return true;
 				
+				case R.id.action_generate_fake_trip:
+					try {
+						TripGenerator.generateFakeTrip(getActivity());
+						populateTripList();
+					}
+					catch(Exception ex) {
+						Log.e(MODULE_TAG, ex.getMessage());
+					}
+					mode.finish(); // Action picked, so close the CAB
+					return true;
+					
 				default:
 					return false;
 				}

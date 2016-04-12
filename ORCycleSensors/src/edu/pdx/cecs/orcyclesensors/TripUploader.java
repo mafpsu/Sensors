@@ -59,15 +59,24 @@
 package edu.pdx.cecs.orcyclesensors;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -76,7 +85,9 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import com.dsi.ant.plugins.antplus.pcc.defines.DeviceType;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -1171,19 +1182,9 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		return sb.toString();
 	}
 
-	public static byte[] compress(String string) throws IOException {
-		ByteArrayOutputStream os = new ByteArrayOutputStream(string.length());
-		GZIPOutputStream gos = new GZIPOutputStream(os);
-		gos.write(string.getBytes());
-		gos.close();
-		byte[] compressed = os.toByteArray();
-		os.close();
-		return compressed;
-	}
-
 	boolean uploadOneTrip(long currentTripId) {
 		boolean result = false;
-		byte[] postBodyDataZipped;
+		byte[] gzipData;
 		StringBuilder postBodyData;
 		String responseString;
 		
@@ -1191,8 +1192,8 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		try {
 			postBodyData = getPostData(currentTripId);
 			// PerformanceTimer.check("after getPostData(currentTripId)");
-		} catch (JSONException e) {
-			e.printStackTrace();
+		} catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
 			return result;
 		}
 
@@ -1202,24 +1203,33 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		HttpPost postRequest = new HttpPost(POST_URL);
 
 		try {
-			postBodyDataZipped = compress(postBodyData.toString());
+			try {
+				gzipData = ZipFileManager.compress_v2(postBodyData);
+			}
+			catch(OutOfMemoryError error) {
+				Log.e(MODULE_TAG, error.getMessage());
+				return false;
+			}
+			
+			// Free the memory allocated by this object ASAP!
 			postBodyData = null;
 
 			postRequest.setHeader("Cycleatl-Protocol-Version", "3");
 			postRequest.setHeader("Content-Encoding", "gzip");
 			postRequest.setHeader("Content-Type", "application/vnd.cycleatl.trip-v3+form");
+			postRequest.setEntity(new ByteArrayEntity(gzipData));
 
-			postRequest.setEntity(new ByteArrayEntity(postBodyDataZipped));
-			postBodyDataZipped = null;
+			// Free the memory allocated by this object ASAP!
+			gzipData = null;
 
 			HttpResponse response = client.execute(postRequest);
 			responseString = convertStreamToString(response.getEntity().getContent());
 
-		} catch (IllegalStateException e) {
-			e.printStackTrace();
+		} catch (IllegalStateException ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
 			return false;
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (IOException ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
 			return false;
 		}
 		
@@ -1228,8 +1238,8 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		try {
 			responseData = new JSONObject(responseString);
 		}
-		catch (JSONException e) {
-			e.printStackTrace();
+		catch (JSONException ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
 			return false;
 		}
 
@@ -1239,8 +1249,8 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 			}
 			result = true;
 		}
-		catch (Exception e) {
-			e.printStackTrace();
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
 			return false;
 		}
 		
@@ -1249,8 +1259,8 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		try {
 			mDb.updateTripStatus(currentTripId, TripData.STATUS_SENT);
 		}
-		catch (Exception e) {
-			e.printStackTrace();
+		catch (Exception ex) {
+			Log.e(MODULE_TAG, ex.getMessage());
 		}
 		finally {
 			mDb.close();
