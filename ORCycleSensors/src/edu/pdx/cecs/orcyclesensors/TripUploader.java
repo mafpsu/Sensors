@@ -747,7 +747,7 @@ public class TripUploader extends AsyncTask<Long, Integer, Boolean> {
 		int colIsEmgEnabled;
 		
 		hasEcgData = false;
-		hasEcgData = false;
+		hasEmgData = false;
 		
 		mDb.openReadOnly();
 		
