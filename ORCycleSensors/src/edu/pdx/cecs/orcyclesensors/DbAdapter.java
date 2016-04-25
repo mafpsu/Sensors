@@ -94,8 +94,9 @@ public class DbAdapter {
 	private static final int DATABASE_VERSION_SHIMMER_EXG_VALUES_TABLE = 6;
 	private static final int DATABASE_VERSION_SHIMMER_CONFIG_TABLE = 7;
 	private static final int DATABASE_VERSION_SHIMMER_EXG_INDEXES = 8;
+	private static final int DATABASE_VERSION_ADD_COLUMNS = 10;
 	
-	private static final int DATABASE_VERSION = DATABASE_VERSION_SHIMMER_EXG_INDEXES;
+	private static final int DATABASE_VERSION = DATABASE_VERSION_ADD_COLUMNS;
 
 	// Table names
 	private static final String DATABASE_NAME = "data";
@@ -538,6 +539,47 @@ public class DbAdapter {
 				}
 			}
 
+			// Create index for Shimmer ECG and EMG data
+			if (oldVersion < DATABASE_VERSION_ADD_COLUMNS) {
+				try {
+					db.execSQL("ALTER TABLE trips ADD COLUMN has_sensor_data integer;");
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+				try {
+					db.execSQL("ALTER TABLE trips ADD COLUMN has_ant_device_data integer;");
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+				try {
+					db.execSQL("ALTER TABLE trips ADD COLUMN has_shimmer_data integer;");
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+				try {
+					db.execSQL("ALTER TABLE trips ADD COLUMN has_epoc_data integer;");
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+
+			
+				try {
+					db.execSQL("ALTER TABLE shimmer_config ADD COLUMN sc_has_ecg integer;");
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+				try {
+					db.execSQL("ALTER TABLE shimmer_config ADD COLUMN sc_has_emg integer;");
+				}
+				catch(Exception ex) {
+					Log.e(MODULE_TAG, ex.getMessage());
+				}
+			}
 		}
 
 		@Override
