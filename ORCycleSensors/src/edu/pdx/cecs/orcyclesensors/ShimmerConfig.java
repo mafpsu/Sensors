@@ -28,6 +28,46 @@ public class ShimmerConfig {
 	private final boolean isEcgEnabled;
 	private final boolean isEmgEnabled;
 	
+	public ShimmerConfig(Shimmer shimmer, String bluetoothAddress, int shimmerVersion, boolean isEcgEnabled, boolean isEmgEnabled) {
+
+		this.bluetoothAddress = bluetoothAddress;
+		this.samplingRate = shimmer.getSamplingRate();
+		this.accelerometerRange = shimmer.getAccelRange();
+		this.mGSRRange = shimmer.getGSRRange();
+		this.batteryLimit = shimmer.getBattLimitWarning();
+		this.internalExpPower = shimmer.getInternalExpPower();
+		this.isLowPowerMagEnabled = shimmer.isLowPowerMagEnabled();
+		this.isLowPowerAccelEnabled = shimmer.isLowPowerAccelEnabled();
+		this.isLowPowerGyroEnabled = shimmer.isLowPowerGyroEnabled();
+		this.fiveVReg = shimmer.get5VReg();
+		this.isEcgEnabled = isEcgEnabled;
+		this.isEmgEnabled = isEmgEnabled;
+
+    	// Shimmer version dependent
+    	if (shimmerVersion == ShimmerVerDetails.HW_ID.SHIMMER_3){
+        	gyroRange = shimmer.getGyroRange();
+        	magRange = shimmer.getMagRange();
+        	pressureResolution = shimmer.getPressureResolution();
+        	referenceElectrode = shimmer.getEXGReferenceElectrode();
+        	leadOffDetection = shimmer.getLeadOffDetectionMode();
+        	leadOffCurrent = shimmer.getLeadOffDetectionCurrent();
+        	leadOffComparator = shimmer.getLeadOffComparatorTreshold();
+        	exgGain = getEXGGain(shimmer);
+        	exgRes = getEXGResolution(shimmer);
+    	}
+    	else {
+        	gyroRange = -1;
+        	magRange = -1;
+        	pressureResolution = -1;
+        	referenceElectrode = -1;
+        	leadOffDetection = -1;
+        	leadOffCurrent = -1;
+        	leadOffComparator = -1;
+        	exgGain = -1;
+        	exgRes = -1;
+    	}
+	}
+	
 	public ShimmerConfig(IShimmer shimmer, String bluetoothAddress, int shimmerVersion, boolean isEcgEnabled, boolean isEmgEnabled) {
 
 		this.bluetoothAddress = bluetoothAddress;
@@ -72,6 +112,19 @@ public class ShimmerConfig {
 		return this.bluetoothAddress;
 	}
 
+	private int getEXGGain(Shimmer shimmer){
+		
+		int gain = -1;
+		int gainEXG1CH1 = shimmer.getEXG1CH1GainValue();
+		int gainEXG1CH2 = shimmer.getEXG1CH2GainValue();
+		int gainEXG2CH1 = shimmer.getEXG2CH1GainValue();
+		int gainEXG2CH2 = shimmer.getEXG2CH2GainValue();
+		if(gainEXG1CH1 == gainEXG1CH2 && gainEXG1CH1 == gainEXG2CH1 && gainEXG1CH1 == gainEXG2CH2) //if all the chips are set to the same gain value
+			gain = gainEXG1CH1;
+		
+		return gain;
+	}
+	
 	private int getEXGGain(IShimmer shimmer){
 		
 		int gain = -1;
@@ -85,6 +138,21 @@ public class ShimmerConfig {
 		return gain;
 	}
 	
+	private int getEXGResolution(Shimmer shimmer){
+		
+		int res = -1;
+
+		long enabledSensors = shimmer.getEnabledSensors();
+		if ((enabledSensors & Shimmer.SENSOR_EXG1_24BIT)>0 && (enabledSensors & Shimmer.SENSOR_EXG2_24BIT)>0){
+			res = 24;
+		}
+		if ((enabledSensors & Shimmer.SENSOR_EXG1_16BIT)>0 && (enabledSensors & Shimmer.SENSOR_EXG2_16BIT)>0){
+			res = 16;
+		}
+		
+		return res;
+	}
+
 	private int getEXGResolution(IShimmer shimmer){
 		
 		int res = -1;

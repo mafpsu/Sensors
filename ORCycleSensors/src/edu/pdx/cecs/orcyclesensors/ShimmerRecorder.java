@@ -211,7 +211,7 @@ public class ShimmerRecorder {
 				else if (signalName.equals(Shimmer3.ObjectClusterSensorName.EXG2_CH2_16BIT))  { ecg2Ch2Readings = dataBuffer; isEcgEnabled = true;}
 			}
 			
-			shimmerConfig = new ShimmerConfig((IShimmer)shimmer, bluetoothAddress, shimmerVersion, isEcgEnabled, isEmgEnabled);
+			shimmerConfig = new ShimmerConfig(shimmer, bluetoothAddress, shimmerVersion, isEcgEnabled, isEmgEnabled);
 
 			// If flag is set, Create data files for writing the raw data
 			String[] signalGroup;
